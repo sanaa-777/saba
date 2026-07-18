@@ -39,6 +39,8 @@
           <li><a href="/caricatures">كاريكاتير</a></li>
           <li><a href="/publications">المنشورات</a></li>
           <li><a href="/files">ملفات وتحقيقات</a></li>
+          <li><a href="/services">الخدمات المجانية</a></li>
+          <li><a href="/subscribe">الاشتراك</a></li>
           <li><a href="/rss">التغذية RSS</a></li>
         </ul>
       </div>
@@ -75,6 +77,57 @@
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
+</script>
+
+<!-- Video Modal (global) -->
+<div id="videoModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:10000;align-items:center;justify-content:center;">
+  <div style="position:relative;width:90%;max-width:900px;">
+    <button onclick="closeVideoModal()" style="position:absolute;top:-40px;left:0;background:none;border:none;color:#fff;font-size:30px;cursor:pointer;">✕</button>
+    <video id="globalVideoPlayer" controls style="width:100%;border-radius:12px;">
+      <source src="" type="video/mp4">
+    </video>
+    <h3 id="globalVideoTitle" style="color:#fff;text-align:center;margin-top:10px;font-family:'Tajawal',sans-serif;"></h3>
+  </div>
+</div>
+
+<!-- Image Modal (global) -->
+<div id="imageModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:10000;align-items:center;justify-content:center;flex-direction:column;">
+  <button onclick="closeImageModal()" style="position:absolute;top:20px;left:20px;background:none;border:none;color:#fff;font-size:30px;cursor:pointer;z-index:10001;">✕</button>
+  <img id="globalModalImage" src="" alt="" style="max-width:90%;max-height:80vh;border-radius:8px;box-shadow:0 4px 30px rgba(0,0,0,0.5);"/>
+  <h3 id="globalModalTitle" style="color:#fff;text-align:center;margin-top:15px;font-family:'Tajawal',sans-serif;font-size:18px;"></h3>
+</div>
+
+<script>
+function openVideoModal(src, title) {
+  var modal = document.getElementById('videoModal');
+  var player = document.getElementById('globalVideoPlayer');
+  var titleEl = document.getElementById('globalVideoTitle');
+  player.querySelector('source').src = src;
+  player.load();
+  titleEl.textContent = title;
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeVideoModal() {
+  var modal = document.getElementById('videoModal');
+  var player = document.getElementById('globalVideoPlayer');
+  player.pause();
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+function openImageModal(src, title) {
+  document.getElementById('globalModalImage').src = src;
+  document.getElementById('globalModalTitle').textContent = title;
+  document.getElementById('imageModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeImageModal() {
+  document.getElementById('imageModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.getElementById('videoModal').addEventListener('click', function(e) { if (e.target === this) closeVideoModal(); });
+document.getElementById('imageModal').addEventListener('click', function(e) { if (e.target === this) closeImageModal(); });
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { closeVideoModal(); closeImageModal(); } });
 </script>
 </body>
 </html>

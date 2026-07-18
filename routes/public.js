@@ -226,6 +226,16 @@ router.get('/publications', (req, res) => {
   res.render('media/publications', { title: 'المنشورات', publications });
 });
 
+// Services page
+router.get('/services', (req, res) => {
+  res.render('services', { title: 'الخدمات المجانية' });
+});
+
+// Subscribe page
+router.get('/subscribe', (req, res) => {
+  res.render('subscribe', { title: 'الاشتراك' });
+});
+
 // Files/Coverage page
 router.get('/files', (req, res) => {
   const db = getDb();

@@ -135,12 +135,12 @@
         <section class="section-block">
           <div class="section-header section-header-video">
             <h2><span class="header-icon">🎬</span> فيديو</h2>
-            <a href="/videos" class="more-link">المزيد ←</a>
+            <a href="/videos" class="more-link"><%= t('more') %> ←</a>
           </div>
           <div class="videos-grid">
             <% videos.forEach(video => { %>
-              <div class="video-card">
-                <div class="video-thumbnail">
+              <div class="video-card" onclick="openVideoModal('<%= video.file_path %>', '<%= video.title %>')">
+                <div class="video-thumbnail" style="position:relative;">
                   <img src="<%= video.thumbnail || video.file_path %>" alt="<%= video.title %>" loading="lazy">
                   <div class="play-button">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
@@ -158,12 +158,12 @@
         <section class="section-block">
           <div class="section-header section-header-gallery">
             <h2><span class="header-icon">📷</span> صور</h2>
-            <a href="/galleries" class="more-link">المزيد ←</a>
+            <a href="/galleries" class="more-link"><%= t('more') %> ←</a>
           </div>
           <div class="galleries-grid">
             <% galleries.forEach(gallery => { %>
-              <a href="/gallery/<%= gallery.id %>" class="gallery-card">
-                <img src="<%= gallery.thumbnail || gallery.file_path %>" alt="<%= gallery.title %>" loading="lazy">
+              <a href="javascript:void(0)" class="gallery-card" onclick="openImageModal('<%= gallery.file_path %>', '<%= gallery.title %>')">
+                <img src="<%= gallery.file_path %>" alt="<%= gallery.title %>" loading="lazy">
                 <div class="gallery-overlay">
                   <h4><%= gallery.title %></h4>
                 </div>

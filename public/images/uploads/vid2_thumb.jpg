@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <defs><linearGradient id="vg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#b71c1c"/><stop offset="100%" style="stop-color:#1a237e"/></linearGradient></defs>
+  <rect fill="url(#vg2)" width="800" height="500"/>
+  <circle cx="400" cy="230" r="50" fill="rgba(0,0,0,0.4)" stroke="rgba(255,255,255,0.6)" stroke-width="3"/>
+  <polygon points="385,210 385,250 420,230" fill="rgba(255,255,255,0.9)"/>
+  <rect x="0" y="380" width="800" height="120" fill="rgba(0,0,0,0.5)"/>
+  <text fill="rgba(255,255,255,0.9)" font-family="Tajawal,sans-serif" font-size="20" x="400" y="420" text-anchor="middle">لحظة استهداف مصنع في صنعاء</text>
+  <text fill="rgba(255,255,255,0.5)" font-family="Tajawal,sans-serif" font-size="14" x="400" y="460" text-anchor="middle">🎬 فيديو | وكالة سبأ</text>
+</svg>
