@@ -82,10 +82,12 @@ app.set('io', io);
 const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');
 const featuresRoutes = require('./routes/features');
+const apiRoutes = require('./routes/api');
 
 app.use('/', publicRoutes);
 app.use('/admin', adminRoutes);
 app.use('/api', featuresRoutes);
+app.use('/api/v1', apiRoutes);
 
 // API endpoint for real-time breaking news
 app.get('/api/breaking-news', (req, res) => {
