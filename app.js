@@ -1,9 +1,15 @@
 const express = require('express');
 const session = require('express-session');
+const cookieParser = require('cookie-parser');
 const path = require('path');
+const http = require('http');
+const { Server } = require('socket.io');
 const { initDatabase, getDb } = require('./db/init');
+const { languageMiddleware } = require('./middleware/language');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 // Initialize database
@@ -17,14 +23,18 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(cookieParser());
 app.use(session({
-  secret: 'saba-news-secret-key-2024',
+  secret: process.env.SESSION_SECRET || 'saba-news-secret-key-2024',
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-// Global middleware - make categories and settings available to all views
+// Language middleware
+app.use(languageMiddleware);
+
+// Global middleware - make categories, settings, and language available to all views
 app.use((req, res, next) => {
   const db = getDb();
   res.locals.categories = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order').all();
@@ -33,29 +43,90 @@ app.use((req, res, next) => {
   settings.forEach(s => { res.locals.settings[s.key] = s.value; });
   res.locals.currentPath = req.path;
   res.locals.session = req.session;
+
+  // Get active poll for sidebar
+  try {
+    res.locals.activePoll = db.prepare("SELECT * FROM polls WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1").get();
+    if (res.locals.activePoll) {
+      res.locals.activePollOptions = db.prepare("SELECT * FROM poll_options WHERE poll_id = ? ORDER BY id").all(res.locals.activePoll.id);
+      const totalVotes = db.prepare("SELECT SUM(votes) as total FROM poll_options WHERE poll_id = ?").get(res.locals.activePoll.id).total || 0;
+      res.locals.activePollTotalVotes = totalVotes;
+    }
+  } catch (e) {
+    res.locals.activePoll = null;
+  }
+
+  // Get breaking news count for ticker
+  try {
+    res.locals.breakingNews = db.prepare("SELECT * FROM breaking_news WHERE is_active = 1 ORDER BY sort_order").all();
+  } catch (e) {
+    res.locals.breakingNews = [];
+  }
+
   next();
 });
+
+// Socket.IO for real-time updates
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+// Make io accessible to routes
+app.set('io', io);
 
 // Routes
 const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');
+const featuresRoutes = require('./routes/features');
 
 app.use('/', publicRoutes);
 app.use('/admin', adminRoutes);
+app.use('/api', featuresRoutes);
+
+// API endpoint for real-time breaking news
+app.get('/api/breaking-news', (req, res) => {
+  const db = getDb();
+  const breaking = db.prepare("SELECT * FROM breaking_news WHERE is_active = 1 ORDER BY sort_order").all();
+  res.json({ success: true, breaking });
+});
+
+// API endpoint for new news count
+app.get('/api/new-news-count', (req, res) => {
+  const db = getDb();
+  const since = req.query.since || new Date(Date.now() - 3600000).toISOString();
+  const count = db.prepare(
+    "SELECT COUNT(*) as cnt FROM news WHERE status = 1 AND published_at > ?"
+  ).get(since).cnt;
+  res.json({ count });
+});
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).render('404', { title: 'الصفحة غير موجودة' });
+  res.status(404).render('404', { title: res.locals.t ? res.locals.t('page_not_found') : 'الصفحة غير موجودة' });
 });
 
 // Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).render('error', { title: 'خطأ في الخادم', error: err.message });
+  res.status(500).render('error', {
+    title: 'خطأ في الخادم',
+    error: process.env.NODE_ENV === 'production' ? 'حدث خطأ غير متوقع' : err.message
+  });
 });
 
-app.listen(PORT, () => {
+// Broadcast breaking news function
+function broadcastBreakingNews(data) {
+  io.emit('breaking-news', data);
+}
+
+// Start server
+server.listen(PORT, () => {
   console.log(`SABA News running on http://localhost:${PORT}`);
+  console.log(`Socket.IO enabled for real-time updates`);
 });
 
-module.exports = app;
+module.exports = { app, server, io, broadcastBreakingNews };

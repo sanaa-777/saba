@@ -69,7 +69,11 @@ router.get('/', requireAuth, (req, res) => {
     totalTags: db.prepare('SELECT COUNT(*) as cnt FROM tags').get().cnt,
     totalMedia: db.prepare('SELECT COUNT(*) as cnt FROM media').get().cnt,
     totalViews: db.prepare('SELECT COALESCE(SUM(views), 0) as total FROM news').get().total,
-    breakingNews: db.prepare('SELECT COUNT(*) as cnt FROM breaking_news WHERE is_active = 1').get().cnt
+    breakingNews: db.prepare('SELECT COUNT(*) as cnt FROM breaking_news WHERE is_active = 1').get().cnt,
+    totalComments: db.prepare('SELECT COUNT(*) as cnt FROM comments').get().cnt,
+    pendingComments: db.prepare('SELECT COUNT(*) as cnt FROM comments WHERE status = 0').get().cnt,
+    totalPolls: db.prepare('SELECT COUNT(*) as cnt FROM polls').get().cnt,
+    totalSubscribers: db.prepare('SELECT COUNT(*) as cnt FROM newsletter_subscribers WHERE is_active = 1').get().cnt
   };
   const recentNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id ORDER BY n.created_at DESC LIMIT 10`).all();
   res.render('admin/dashboard', { title: 'لوحة التحكم', admin: req.session.admin, stats, recentNews });
@@ -404,6 +408,111 @@ router.post('/settings', requireAuth, (req, res) => {
     update.run(key, value);
   }
   res.redirect('/admin/settings');
+});
+
+// Comments management
+router.get('/comments', requireAuth, (req, res) => {
+  const db = getDb();
+  const status = req.query.status;
+  let comments;
+  if (status !== undefined && status !== '') {
+    comments = db.prepare(`SELECT c.*, n.title as news_title FROM comments c LEFT JOIN news n ON c.news_id = n.id WHERE c.status = ? ORDER BY c.created_at DESC`).all(status);
+  } else {
+    comments = db.prepare(`SELECT c.*, n.title as news_title FROM comments c LEFT JOIN news n ON c.news_id = n.id ORDER BY c.created_at DESC`).all();
+  }
+  const stats = {
+    total: db.prepare('SELECT COUNT(*) as c FROM comments').get().c,
+    pending: db.prepare('SELECT COUNT(*) as c FROM comments WHERE status = 0').get().c,
+    approved: db.prepare('SELECT COUNT(*) as c FROM comments WHERE status = 1').get().c
+  };
+  res.render('admin/comments', { title: 'إدارة التعليقات', admin: req.session.admin, comments, stats, filterStatus: status || '' });
+});
+
+router.post('/comments/approve/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  db.prepare('UPDATE comments SET status = 1 WHERE id = ?').run(req.params.id);
+  res.redirect('/admin/comments');
+});
+
+router.post('/comments/reject/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  db.prepare('UPDATE comments SET status = 2 WHERE id = ?').run(req.params.id);
+  res.redirect('/admin/comments');
+});
+
+router.post('/comments/delete/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  db.prepare('DELETE FROM comments WHERE id = ?').run(req.params.id);
+  res.redirect('/admin/comments');
+});
+
+// Polls management
+router.get('/polls', requireAuth, (req, res) => {
+  const db = getDb();
+  const polls = db.prepare(`SELECT *, (SELECT SUM(votes) FROM poll_options WHERE poll_id = polls.id) as total_votes FROM polls ORDER BY created_at DESC`).all();
+  polls.forEach(poll => {
+    poll.options = db.prepare('SELECT * FROM poll_options WHERE poll_id = ? ORDER BY id').all(poll.id);
+  });
+  res.render('admin/polls', { title: 'إدارة الاستطلاعات', admin: req.session.admin, polls });
+});
+
+router.post('/polls/create', requireAuth, (req, res) => {
+  const db = getDb();
+  const { question, options } = req.body;
+  if (!question || !options) return res.redirect('/admin/polls');
+  
+  const result = db.prepare('INSERT INTO polls (question, is_active) VALUES (?, 1)').run(question);
+  const optionList = Array.isArray(options) ? options : options.split('\n').filter(o => o.trim());
+  const insertOpt = db.prepare('INSERT INTO poll_options (poll_id, option_text, votes) VALUES (?, ?, 0)');
+  optionList.forEach(opt => insertOpt.run(result.lastInsertRowid, opt.trim()));
+  
+  res.redirect('/admin/polls');
+});
+
+router.post('/polls/toggle/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  const poll = db.prepare('SELECT is_active FROM polls WHERE id = ?').get(req.params.id);
+  if (poll) {
+    db.prepare('UPDATE polls SET is_active = ? WHERE id = ?').run(poll.is_active ? 0 : 1, req.params.id);
+  }
+  res.redirect('/admin/polls');
+});
+
+router.post('/polls/delete/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  db.prepare('DELETE FROM poll_votes WHERE poll_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM poll_options WHERE poll_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM polls WHERE id = ?').run(req.params.id);
+  res.redirect('/admin/polls');
+});
+
+// Newsletter management
+router.get('/newsletter', requireAuth, (req, res) => {
+  const db = getDb();
+  const subscribers = db.prepare('SELECT * FROM newsletter_subscribers ORDER BY created_at DESC').all();
+  const campaigns = db.prepare('SELECT * FROM newsletter_campaigns ORDER BY created_at DESC').all();
+  const stats = {
+    total: db.prepare('SELECT COUNT(*) as c FROM newsletter_subscribers').get().c,
+    active: db.prepare('SELECT COUNT(*) as c FROM newsletter_subscribers WHERE is_active = 1').get().c
+  };
+  res.render('admin/newsletter', { title: 'النشرة البريدية', admin: req.session.admin, subscribers, campaigns, stats });
+});
+
+router.post('/newsletter/send', requireAuth, (req, res) => {
+  const db = getDb();
+  const { subject, content } = req.body;
+  if (!subject || !content) return res.redirect('/admin/newsletter');
+  
+  const subscribers = db.prepare('SELECT * FROM newsletter_subscribers WHERE is_active = 1').all();
+  db.prepare('INSERT INTO newsletter_campaigns (subject, content, sent_at, recipients_count, status) VALUES (?, ?, CURRENT_TIMESTAMP, ?, 1)').run(subject, content, subscribers.length);
+  console.log(`Newsletter "${subject}" sent to ${subscribers.length} subscribers`);
+  res.redirect('/admin/newsletter');
+});
+
+router.post('/newsletter/subscribers/delete/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  db.prepare('DELETE FROM newsletter_subscribers WHERE id = ?').run(req.params.id);
+  res.redirect('/admin/newsletter');
 });
 
 // Admin profile

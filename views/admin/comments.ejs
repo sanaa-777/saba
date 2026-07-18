@@ -1,0 +1,48 @@
+<%- include('header') %>
+
+<div class="admin-card">
+  <div class="admin-card-header">
+    <h3>إدارة التعليقات</h3>
+    <div style="display:flex;gap:10px;">
+      <span class="badge badge-warning">قيد المراجعة: <%= stats.pending %></span>
+      <span class="badge badge-success">مقبول: <%= stats.approved %></span>
+    </div>
+  </div>
+  <div class="filters-bar">
+    <a href="/admin/comments" class="btn btn-sm <%= !filterStatus ? 'btn-primary' : 'btn-secondary' %>">الكل (<%= stats.total %>)</a>
+    <a href="/admin/comments?status=0" class="btn btn-sm <%= filterStatus === '0' ? 'btn-primary' : 'btn-secondary' %>">قيد المراجعة (<%= stats.pending %>)</a>
+    <a href="/admin/comments?status=1" class="btn btn-sm <%= filterStatus === '1' ? 'btn-primary' : 'btn-secondary' %>">مقبول (<%= stats.approved %>)</a>
+  </div>
+  <div class="admin-card-body" style="padding:0;overflow-x:auto;">
+    <table class="admin-table">
+      <thead><tr><th>#</th><th>الخبر</th><th>الكاتب</th><th>التعليق</th><th>التاريخ</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+      <tbody>
+        <% comments.forEach(c => { %>
+        <tr>
+          <td><%= c.id %></td>
+          <td><%= c.news_title ? c.news_title.substring(0, 30) + '...' : '-' %></td>
+          <td><%= c.author_name %></td>
+          <td><%= c.content.substring(0, 60) %>...</td>
+          <td><%= new Date(c.created_at).toLocaleDateString('ar-YE') %></td>
+          <td>
+            <% if (c.status === 0) { %><span class="badge badge-warning">قيد المراجعة</span>
+            <% } else if (c.status === 1) { %><span class="badge badge-success">مقبول</span>
+            <% } else { %><span class="badge badge-danger">مرفوض</span><% } %>
+          </td>
+          <td class="actions">
+            <% if (c.status !== 1) { %>
+            <form method="POST" action="/admin/comments/approve/<%= c.id %>" style="display:inline;"><button class="btn btn-sm btn-success">قبول</button></form>
+            <% } %>
+            <% if (c.status !== 2) { %>
+            <form method="POST" action="/admin/comments/reject/<%= c.id %>" style="display:inline;"><button class="btn btn-sm btn-secondary">رفض</button></form>
+            <% } %>
+            <form method="POST" action="/admin/comments/delete/<%= c.id %>" style="display:inline;" onsubmit="return confirm('حذف التعليق؟')"><button class="btn btn-sm btn-danger">حذف</button></form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('footer') %>

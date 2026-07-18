@@ -1,0 +1,71 @@
+<%- include('header') %>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue">📧</div>
+    <div class="stat-info"><h3><%= stats.total %></h3><p>إجمالي المشتركين</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green">✅</div>
+    <div class="stat-info"><h3><%= stats.active %></h3><p>مشتركين نشطين</p></div>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-header">
+    <h3>إرسال نشرة بريدية</h3>
+  </div>
+  <div class="admin-card-body">
+    <form method="POST" action="/admin/newsletter/send">
+      <div class="form-group"><label>الموضوع</label><input type="text" name="subject" required placeholder="موضوع النشرة..."></div>
+      <div class="form-group"><label>المحتوى</label><textarea name="content" rows="6" required placeholder="محتوى النشرة البريدية..."></textarea></div>
+      <button type="submit" class="btn btn-primary" onclick="return confirm('إرسال النشرة إلى <%= stats.active %> مشترك؟')">إرسال النشرة</button>
+    </form>
+  </div>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h3>المشتركين</h3></div>
+  <div class="admin-card-body" style="padding:0;overflow-x:auto;">
+    <table class="admin-table">
+      <thead><tr><th>#</th><th>البريد</th><th>الاسم</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+      <tbody>
+        <% subscribers.forEach(sub => { %>
+        <tr>
+          <td><%= sub.id %></td>
+          <td><%= sub.email %></td>
+          <td><%= sub.name || '-' %></td>
+          <td><% if (sub.is_active) { %><span class="badge badge-success">نشط</span><% } else { %><span class="badge badge-warning">غير نشط</span><% } %></td>
+          <td><%= new Date(sub.created_at).toLocaleDateString('ar-YE') %></td>
+          <td>
+            <form method="POST" action="/admin/newsletter/subscribers/delete/<%= sub.id %>" style="display:inline;" onsubmit="return confirm('حذف؟')">
+              <button class="btn btn-sm btn-danger">حذف</button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<% if (campaigns.length > 0) { %>
+<div class="admin-card">
+  <div class="admin-card-header"><h3>الحملات السابقة</h3></div>
+  <div class="admin-card-body" style="padding:0;">
+    <table class="admin-table">
+      <thead><tr><th>#</th><th>الموضوع</th><th>المستلمين</th><th>التاريخ</th></tr></thead>
+      <tbody>
+        <% campaigns.forEach(c => { %>
+        <tr>
+          <td><%= c.id %></td><td><%= c.subject %></td><td><%= c.recipients_count %></td>
+          <td><%= new Date(c.sent_at).toLocaleDateString('ar-YE') %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% } %>
+
+<%- include('footer') %>

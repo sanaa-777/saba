@@ -128,6 +128,73 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_news_breaking ON news(is_breaking);
     CREATE INDEX IF NOT EXISTS idx_news_slider ON news(is_slider);
     CREATE INDEX IF NOT EXISTS idx_news_featured ON news(is_featured);
+
+    -- Comments table
+    CREATE TABLE IF NOT EXISTS comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      news_id INTEGER NOT NULL,
+      author_name TEXT NOT NULL,
+      author_email TEXT,
+      content TEXT NOT NULL,
+      status INTEGER DEFAULT 0,
+      ip_address TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (news_id) REFERENCES news(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_comments_news ON comments(news_id);
+    CREATE INDEX IF NOT EXISTS idx_comments_status ON comments(status);
+
+    -- Polls table
+    CREATE TABLE IF NOT EXISTS polls (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      question TEXT NOT NULL,
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      expires_at DATETIME
+    );
+
+    -- Poll options
+    CREATE TABLE IF NOT EXISTS poll_options (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      poll_id INTEGER NOT NULL,
+      option_text TEXT NOT NULL,
+      votes INTEGER DEFAULT 0,
+      FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE
+    );
+
+    -- Poll votes (to prevent double voting)
+    CREATE TABLE IF NOT EXISTS poll_votes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      poll_id INTEGER NOT NULL,
+      option_id INTEGER NOT NULL,
+      ip_address TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE,
+      FOREIGN KEY (option_id) REFERENCES poll_options(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_poll_votes_poll ON poll_votes(poll_id, ip_address);
+
+    -- Newsletter subscribers
+    CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      name TEXT,
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      unsubscribed_at DATETIME
+    );
+    CREATE INDEX IF NOT EXISTS idx_newsletter_email ON newsletter_subscribers(email);
+
+    -- Newsletter campaigns
+    CREATE TABLE IF NOT EXISTS newsletter_campaigns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      subject TEXT NOT NULL,
+      content TEXT NOT NULL,
+      sent_at DATETIME,
+      recipients_count INTEGER DEFAULT 0,
+      status INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Check if data exists
@@ -715,6 +782,45 @@ function seedData(db) {
   insertMedia.run('image', 'معرض صور: صنعاء القديمة', '/images/uploads/gal1.jpg', '/images/uploads/gal1_thumb.jpg', 'مجموعة صور من صنعاء القديمة', 'ثقافة');
   insertMedia.run('image', 'معرض صور: جزيرة سقطرى', '/images/uploads/gal2.jpg', '/images/uploads/gal2_thumb.jpg', 'مجموعة صور من جزيرة سقطرى الطبيعية', 'سياحة');
   insertMedia.run('audio', 'خطاب قائد الثورة - 21 سبتمبر', '/images/uploads/aud1.mp3', null, 'خطاب قائد الثورة بمناسبة ذكرى 21 سبتمبر', 'خطابات');
+
+  // Seed polls
+  const insertPoll = db.prepare('INSERT INTO polls (question, is_active, created_at) VALUES (?, ?, CURRENT_TIMESTAMP)');
+  const insertPollOption = db.prepare('INSERT INTO poll_options (poll_id, option_text, votes) VALUES (?, ?, ?)');
+
+  const poll1 = insertPoll.run('ما رأيك في الأداء الحكومي خلال الفترة الماضية؟', 1);
+  insertPollOption.run(poll1.lastInsertRowid, 'ممتاز', 45);
+  insertPollOption.run(poll1.lastInsertRowid, 'جيد', 120);
+  insertPollOption.run(poll1.lastInsertRowid, 'متوسط', 85);
+  insertPollOption.run(poll1.lastInsertRowid, 'ضعيف', 30);
+
+  const poll2 = insertPoll.run('هل تؤيد استمرار المفاوضات السلام؟', 1);
+  insertPollOption.run(poll2.lastInsertRowid, 'نعم بالتأكيد', 200);
+  insertPollOption.run(poll2.lastInsertRowid, 'نعم بشروط', 150);
+  insertPollOption.run(poll2.lastInsertRowid, 'لا أؤيد', 40);
+  insertPollOption.run(poll2.lastInsertRowid, 'غير مهتم', 15);
+
+  const poll3 = insertPoll.run('ما القطاع الأكثر أهمية للتنمية؟', 1);
+  insertPollOption.run(poll3.lastInsertRowid, 'التعليم', 180);
+  insertPollOption.run(poll3.lastInsertRowid, 'الصحة', 160);
+  insertPollOption.run(poll3.lastInsertRowid, 'البنية التحتية', 90);
+  insertPollOption.run(poll3.lastInsertRowid, 'الزراعة', 70);
+
+  // Seed comments
+  const insertComment = db.prepare('INSERT INTO comments (news_id, author_name, content, status, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)');
+  insertComment.run(1, 'أحمد محمد', 'خبر مهم جداً، نتمنى التوفيق للقيادة', 1);
+  insertComment.run(1, 'فاطمة علي', 'اللهم وفقهم لما فيه خير البلاد', 1);
+  insertComment.run(4, 'خالد عبدالله', 'فوز تاريخي للمنتخب، مبروك لجميع اليمنيين', 1);
+  insertComment.run(4, 'مريم حسين', 'إنجاز رائع، نتمنى مزيداً من النجاحات', 1);
+  insertComment.run(7, 'يوسف أحمد', 'ندعو الله أن يحفظ اليمن من كل سوء', 1);
+  insertComment.run(2, 'سارة محمود', 'اليمن دائماً مع الحق والعدالة', 0);
+  insertComment.run(5, 'عمر حسن', 'خطاب ملهم من القائد', 1);
+
+  // Seed newsletter subscribers
+  const insertSubscriber = db.prepare('INSERT INTO newsletter_subscribers (email, name, is_active) VALUES (?, ?, ?)');
+  insertSubscriber.run('ahmed@example.com', 'أحمد محمد', 1);
+  insertSubscriber.run('fatima@example.com', 'فاطمة علي', 1);
+  insertSubscriber.run('khalid@example.com', 'خالد عبدالله', 1);
+  insertSubscriber.run('maryam@example.com', 'مريم حسين', 1);
 
   console.log('Database seeded successfully!');
 }

@@ -92,6 +92,10 @@ router.get('/news/:id', (req, res) => {
   // Tags
   const tags = db.prepare(`SELECT t.* FROM tags t JOIN news_tags nt ON t.id = nt.tag_id WHERE nt.news_id = ?`).all(article.id);
 
+  // Comments (approved only)
+  const comments = db.prepare(`SELECT * FROM comments WHERE news_id = ? AND status = 1 ORDER BY created_at DESC`).all(article.id);
+  const commentCount = db.prepare(`SELECT COUNT(*) as cnt FROM comments WHERE news_id = ? AND status = 1`).get(article.id).cnt;
+
   // Related news
   const relatedNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.category_id = ? AND n.id != ? AND n.status = 1 ORDER BY n.published_at DESC LIMIT 5`).all(article.category_id, article.id);
 
@@ -106,6 +110,8 @@ router.get('/news/:id', (req, res) => {
     title: article.title,
     article,
     tags,
+    comments,
+    commentCount,
     relatedNews,
     latestNews,
     prevArticle,

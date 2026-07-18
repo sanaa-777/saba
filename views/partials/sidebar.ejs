@@ -2,8 +2,8 @@
   <!-- Latest News Tabs -->
   <div class="sidebar-widget">
     <div class="widget-tabs">
-      <button class="tab-btn active" data-tab="latest">الأحدث</button>
-      <button class="tab-btn" data-tab="most-read">الأكثر قراءة</button>
+      <button class="tab-btn active" data-tab="latest"><%= t('latest_news') %></button>
+      <button class="tab-btn" data-tab="most-read"><%= t('most_read') %></button>
     </div>
     <div class="tab-content active" id="tab-latest">
       <ul class="sidebar-news-list">
@@ -28,7 +28,7 @@
               <span class="news-number"><%= i + 1 %></span>
               <div class="news-info">
                 <a href="/news/<%= item.id %>"><%= item.title %></a>
-                <span class="news-date"><%= item.views %> مشاهدة</span>
+                <span class="news-date"><%= item.views %> <%= t('views') %></span>
               </div>
             </li>
           <% }); %>
@@ -37,9 +37,33 @@
     </div>
   </div>
 
+  <!-- Poll Widget -->
+  <% if (typeof activePoll !== 'undefined' && activePoll) { %>
+  <div class="sidebar-widget poll-widget">
+    <h3 class="widget-title"><%= t('polls') %></h3>
+    <div class="poll-question" id="pollWidget">
+      <p class="poll-text"><%= activePoll.question %></p>
+      <div class="poll-options" id="pollOptions">
+        <% activePollOptions.forEach(option => { %>
+        <div class="poll-option">
+          <button class="poll-vote-btn" data-poll="<%= activePoll.id %>" data-option="<%= option.id %>">
+            <%= option.option_text %>
+          </button>
+          <div class="poll-bar">
+            <div class="poll-bar-fill" style="width: <%= activePollTotalVotes > 0 ? Math.round(option.votes / activePollTotalVotes * 100) : 0 %>%"></div>
+          </div>
+          <span class="poll-percent"><%= activePollTotalVotes > 0 ? Math.round(option.votes / activePollTotalVotes * 100) : 0 %>% (<%= option.votes %>)</span>
+        </div>
+        <% }); %>
+      </div>
+      <p class="poll-total"><%= t('total_votes') %>: <span id="pollTotalVotes"><%= activePollTotalVotes %></span></p>
+    </div>
+  </div>
+  <% } %>
+
   <!-- Social Media Widget -->
   <div class="sidebar-widget">
-    <h3 class="widget-title">تابعنا</h3>
+    <h3 class="widget-title"><%= t('follow_us') %></h3>
     <div class="social-follow">
       <a href="<%= settings.facebook || '#' %>" target="_blank" class="social-btn facebook">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
@@ -62,11 +86,12 @@
 
   <!-- Newsletter Widget -->
   <div class="sidebar-widget newsletter-widget">
-    <h3 class="widget-title">النشرة البريدية</h3>
-    <p>اشترك في نشرتنا البريدية لتصلك آخر الأخبار</p>
-    <form class="newsletter-form">
-      <input type="email" placeholder="بريدك الإلكتروني" required>
-      <button type="submit">اشترك</button>
+    <h3 class="widget-title"><%= t('newsletter') %></h3>
+    <p><%= t('newsletter_desc') %></p>
+    <form class="newsletter-form" id="newsletterForm">
+      <input type="email" name="email" placeholder="<%= t('email') %>" required>
+      <button type="submit"><%= t('subscribe') %></button>
     </form>
+    <div class="newsletter-message" id="newsletterMessage" style="display:none;"></div>
   </div>
 </aside>

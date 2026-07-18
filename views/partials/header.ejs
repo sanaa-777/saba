@@ -40,13 +40,28 @@
       </div>
       <div class="header-search">
         <form action="/search" method="GET">
-          <input type="text" name="q" placeholder="ابحث في الأخبار..." aria-label="بحث">
-          <button type="submit" aria-label="بحث">
+          <input type="text" name="q" placeholder="<%= t('search_placeholder') %>" aria-label="<%= t('search') %>">
+          <button type="submit" aria-label="<%= t('search') %>">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           </button>
         </form>
       </div>
-      <button class="mobile-menu-toggle" aria-label="القائمة">
+      <!-- Language Switcher -->
+      <div class="lang-switcher">
+        <button class="lang-btn" id="langToggle">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span><%= lang.toUpperCase() %></span>
+        </button>
+        <div class="lang-dropdown" id="langDropdown">
+          <a href="?lang=ar" class="<%= lang === 'ar' ? 'active' : '' %>">🇸🇦 العربية</a>
+          <a href="?lang=en" class="<%= lang === 'en' ? 'active' : '' %>">🇬🇧 English</a>
+          <a href="?lang=fr" class="<%= lang === 'fr' ? 'active' : '' %>">🇫🇷 Français</a>
+          <a href="?lang=es" class="<%= lang === 'es' ? 'active' : '' %>">🇪🇸 Español</a>
+          <a href="?lang=de" class="<%= lang === 'de' ? 'active' : '' %>">🇩🇪 Deutsch</a>
+          <a href="?lang=fa" class="<%= lang === 'fa' ? 'active' : '' %>">🇮🇷 فارسی</a>
+        </div>
+      </div>
+      <button class="mobile-menu-toggle" aria-label="<%= t('home') %>">
         <span></span><span></span><span></span>
       </button>
     </div>

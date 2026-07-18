@@ -5,6 +5,149 @@
 document.addEventListener('DOMContentLoaded', function() {
 
   // ============================================
+  // Language Switcher
+  // ============================================
+  const langToggle = document.getElementById('langToggle');
+  const langDropdown = document.getElementById('langDropdown');
+  if (langToggle && langDropdown) {
+    langToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      langDropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', () => langDropdown.classList.remove('open'));
+  }
+
+  // ============================================
+  // Comment Form
+  // ============================================
+  const commentForm = document.getElementById('commentForm');
+  if (commentForm) {
+    commentForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('commentMessage');
+      const formData = new FormData(commentForm);
+      const data = Object.fromEntries(formData);
+      
+      try {
+        const res = await fetch('/api/comments/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        msg.style.display = 'block';
+        msg.textContent = result.message;
+        msg.className = 'comment-message ' + (result.success ? 'success' : 'error');
+        if (result.success) commentForm.reset();
+      } catch (err) {
+        msg.style.display = 'block';
+        msg.textContent = 'حدث خطأ';
+        msg.className = 'comment-message error';
+      }
+    });
+  }
+
+  // ============================================
+  // Poll Voting
+  // ============================================
+  document.querySelectorAll('.poll-vote-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      const pollId = this.dataset.poll;
+      const optionId = this.dataset.option;
+      
+      try {
+        const res = await fetch('/api/polls/vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ poll_id: pollId, option_id: optionId })
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          // Update UI
+          const widget = document.getElementById('pollWidget');
+          if (widget) {
+            const options = widget.querySelectorAll('.poll-option');
+            options.forEach((opt, i) => {
+              if (result.options[i]) {
+                const pct = result.totalVotes > 0 ? Math.round(result.options[i].votes / result.totalVotes * 100) : 0;
+                opt.querySelector('.poll-bar-fill').style.width = pct + '%';
+                opt.querySelector('.poll-percent').textContent = pct + '% (' + result.options[i].votes + ')';
+                opt.querySelector('.poll-vote-btn').classList.add('voted');
+                opt.querySelector('.poll-vote-btn').disabled = true;
+              }
+            });
+            document.getElementById('pollTotalVotes').textContent = result.totalVotes;
+          }
+        } else {
+          alert(result.message);
+        }
+      } catch (err) {
+        alert('حدث خطأ');
+      }
+    });
+  });
+
+  // ============================================
+  // Newsletter Form
+  // ============================================
+  const newsletterForm = document.getElementById('newsletterForm');
+  if (newsletterForm) {
+    newsletterForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('newsletterMessage');
+      const email = newsletterForm.querySelector('input[name="email"]').value;
+      
+      try {
+        const res = await fetch('/api/newsletter/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const result = await res.json();
+        if (msg) {
+          msg.style.display = 'block';
+          msg.textContent = result.message;
+          msg.className = 'newsletter-message ' + (result.success ? 'success' : 'error');
+        }
+        if (result.success) newsletterForm.reset();
+      } catch (err) {
+        if (msg) {
+          msg.style.display = 'block';
+          msg.textContent = 'حدث خطأ';
+          msg.className = 'newsletter-message error';
+        }
+      }
+    });
+  }
+
+  // ============================================
+  // Socket.IO - Real-time Breaking News
+  // ============================================
+  if (typeof io !== 'undefined') {
+    const socket = io();
+    socket.on('breaking-news', (data) => {
+      const ticker = document.querySelector('.ticker-track');
+      if (ticker && data.text) {
+        const item = document.createElement('a');
+        item.href = data.link || '#';
+        item.className = 'ticker-item';
+        item.textContent = data.text;
+        ticker.prepend(item);
+      }
+    });
+
+    // New news counter
+    socket.on('new-news', (data) => {
+      const counter = document.querySelector('.new-news-count');
+      if (counter) {
+        counter.textContent = data.count;
+        counter.style.display = 'inline-block';
+      }
+    });
+  }
+
+  // ============================================
   // Mobile Navigation
   // ============================================
   const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
