@@ -1,0 +1,42 @@
+<%- include('header') %>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h3>إعدادات الموقع</h3></div>
+  <div class="admin-card-body">
+    <form method="POST" action="/admin/settings">
+      <h4 style="margin-bottom:15px;color:#1a237e;">معلومات عامة</h4>
+      <div class="form-row">
+        <div class="form-group"><label>اسم الموقع (عربي)</label><input type="text" name="site_name" value="<%= settings.site_name || '' %>"></div>
+        <div class="form-group"><label>اسم الموقع (إنجليزي)</label><input type="text" name="site_name_en" value="<%= settings.site_name_en || '' %>"></div>
+      </div>
+      <div class="form-group"><label>وصف الموقع</label><textarea name="site_description" rows="2"><%= settings.site_description || '' %></textarea></div>
+      <div class="form-group"><label>الكلمات المفتاحية</label><input type="text" name="site_keywords" value="<%= settings.site_keywords || '' %>"></div>
+      
+      <h4 style="margin:20px 0 15px;color:#1a237e;">معلومات التواصل</h4>
+      <div class="form-row">
+        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" name="contact_email" value="<%= settings.contact_email || '' %>"></div>
+        <div class="form-group"><label>الهاتف</label><input type="text" name="contact_phone" value="<%= settings.contact_phone || '' %>"></div>
+      </div>
+      <div class="form-group"><label>العنوان</label><input type="text" name="contact_address" value="<%= settings.contact_address || '' %>"></div>
+      
+      <h4 style="margin:20px 0 15px;color:#1a237e;">روابط التواصل الاجتماعي</h4>
+      <div class="form-row">
+        <div class="form-group"><label>فيسبوك</label><input type="url" name="facebook" value="<%= settings.facebook || '' %>"></div>
+        <div class="form-group"><label>تويتر</label><input type="url" name="twitter" value="<%= settings.twitter || '' %>"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>يوتيوب</label><input type="url" name="youtube" value="<%= settings.youtube || '' %>"></div>
+        <div class="form-group"><label>تلغرام</label><input type="url" name="telegram" value="<%= settings.telegram || '' %>"></div>
+      </div>
+      
+      <h4 style="margin:20px 0 15px;color:#1a237e;">إعدادات أخرى</h4>
+      <div class="form-group"><label>عدد الأخبار في الصفحة</label><input type="number" name="articles_per_page" value="<%= settings.articles_per_page || 20 %>"></div>
+      
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">حفظ الإعدادات</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('footer') %>

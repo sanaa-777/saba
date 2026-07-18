@@ -1,0 +1,89 @@
+<%- include('header') %>
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue">📰</div>
+    <div class="stat-info"><h3><%= stats.totalNews %></h3><p>إجمالي الأخبار</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green">✅</div>
+    <div class="stat-info"><h3><%= stats.publishedNews %></h3><p>منشورة</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange">📝</div>
+    <div class="stat-info"><h3><%= stats.draftNews %></h3><p>مسودة</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon purple">👁️</div>
+    <div class="stat-info"><h3><%= stats.totalViews.toLocaleString() %></h3><p>إجمالي المشاهدات</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon teal">📂</div>
+    <div class="stat-info"><h3><%= stats.totalCategories %></h3><p>التصنيفات</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red">⚡</div>
+    <div class="stat-info"><h3><%= stats.breakingNews %></h3><p>أخبار عاجلة</p></div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="admin-card">
+  <div class="admin-card-header">
+    <h3>إجراءات سريعة</h3>
+  </div>
+  <div class="admin-card-body" style="display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="/admin/news/create" class="btn btn-primary">+ إضافة خبر جديد</a>
+    <a href="/admin/breaking" class="btn btn-danger">إدارة الأخبار العاجلة</a>
+    <a href="/admin/slider" class="btn btn-success">إدارة السلايدر</a>
+    <a href="/admin/media" class="btn btn-secondary">إدارة الوسائط</a>
+  </div>
+</div>
+
+<!-- Recent News -->
+<div class="admin-card">
+  <div class="admin-card-header">
+    <h3>آخر الأخبار</h3>
+    <a href="/admin/news" class="btn btn-sm btn-secondary">عرض الكل</a>
+  </div>
+  <div class="admin-card-body" style="padding:0;">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>العنوان</th>
+          <th>التصنيف</th>
+          <th>الحالة</th>
+          <th>المشاهدات</th>
+          <th>التاريخ</th>
+          <th>إجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% recentNews.forEach(item => { %>
+        <tr>
+          <td><%= item.id %></td>
+          <td><%= item.title.substring(0, 50) %>...</td>
+          <td><%= item.category_name || '-' %></td>
+          <td>
+            <% if (item.status === 1) { %>
+              <span class="badge badge-success">منشور</span>
+            <% } else { %>
+              <span class="badge badge-warning">مسودة</span>
+            <% } %>
+          </td>
+          <td><%= item.views %></td>
+          <td><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></td>
+          <td class="actions">
+            <a href="/admin/news/edit/<%= item.id %>" class="btn btn-sm btn-primary">تعديل</a>
+            <a href="/news/<%= item.id %>" class="btn btn-sm btn-secondary" target="_blank">عرض</a>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('footer') %>

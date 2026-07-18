@@ -1,0 +1,104 @@
+<%- include('header') %>
+
+<div class="admin-card">
+  <div class="admin-card-header">
+    <h3><%= article ? 'تعديل خبر' : 'إضافة خبر جديد' %></h3>
+    <a href="/admin/news" class="btn btn-secondary">← العودة</a>
+  </div>
+  <div class="admin-card-body">
+    <form method="POST" action="<%= article ? '/admin/news/edit/' + article.id : '/admin/news/create' %>" enctype="multipart/form-data">
+      <div class="form-row">
+        <div class="form-group">
+          <label>العنوان *</label>
+          <input type="text" name="title" value="<%= article ? article.title : '' %>" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>الملخص</label>
+          <textarea name="summary" rows="3"><%= article ? article.summary : '' %></textarea>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>المحتوى *</label>
+          <textarea name="content" rows="12" required><%= article ? article.content : '' %></textarea>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>التصنيف</label>
+          <select name="category_id">
+            <option value="">اختر التصنيف</option>
+            <% categories.forEach(cat => { %>
+              <option value="<%= cat.id %>" <%= article && article.category_id == cat.id ? 'selected' : '' %>><%= cat.name_ar %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>المصدر</label>
+          <input type="text" name="source" value="<%= article ? article.source || '' : 'سبأ' %>">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>الصورة الرئيسية</label>
+          <input type="file" name="image" accept="image/*">
+          <% if (article && article.image) { %>
+            <div style="margin-top:8px;"><img src="<%= article.image %>" style="max-width:200px;border-radius:6px;"></div>
+            <label class="form-check" style="margin-top:8px;"><input type="checkbox" name="keep_image" value="1" checked> الاحتفاظ بالصورة الحالية</label>
+          <% } %>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>الوسوم</label>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;padding:10px;background:#f9f9f9;border-radius:6px;">
+            <% tags.forEach(tag => { %>
+              <label class="form-check">
+                <input type="checkbox" name="tags" value="<%= tag.id %>" <%= article && articleTags && articleTags.includes(tag.id) ? 'checked' : '' %>>
+                <%= tag.name %>
+              </label>
+            <% }); %>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-check"><input type="checkbox" name="is_breaking" value="1" <%= article && article.is_breaking ? 'checked' : '' %>> خبر عاجل</label>
+        </div>
+        <div class="form-group">
+          <label class="form-check"><input type="checkbox" name="is_slider" value="1" <%= article && article.is_slider ? 'checked' : '' %>> إظهار في السلايدر</label>
+        </div>
+        <div class="form-group">
+          <label class="form-check"><input type="checkbox" name="is_featured" value="1" <%= article && article.is_featured ? 'checked' : '' %>> خبر مميز</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>الحالة</label>
+          <select name="status">
+            <option value="1" <%= article && article.status === 1 ? 'selected' : '' %>>منشور</option>
+            <option value="0" <%= article && article.status === 0 ? 'selected' : '' %>>مسودة</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>عنوان SEO</label>
+          <input type="text" name="meta_title" value="<%= article ? article.meta_title || '' : '' %>">
+        </div>
+        <div class="form-group">
+          <label>وصف SEO</label>
+          <input type="text" name="meta_description" value="<%= article ? article.meta_description || '' : '' %>">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary"><%= article ? 'حفظ التعديلات' : 'نشر الخبر' %></button>
+        <a href="/admin/news" class="btn btn-secondary">إلغاء</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('footer') %>

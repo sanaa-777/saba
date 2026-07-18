@@ -1,0 +1,35 @@
+<%- include('header') %>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h3>إدارة الأخبار العاجلة</h3></div>
+  <div class="admin-card-body">
+    <form method="POST" action="/admin/breaking/create" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+      <input type="text" name="text" placeholder="نص الخبر العاجل" required style="flex:2;padding:10px;border:1px solid #ddd;border-radius:6px;">
+      <input type="text" name="link" placeholder="الرابط (اختياري)" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;">
+      <input type="number" name="sort_order" placeholder="الترتيب" value="0" style="width:80px;padding:10px;border:1px solid #ddd;border-radius:6px;">
+      <label class="form-check"><input type="checkbox" name="is_active" value="1" checked> مفعل</label>
+      <button type="submit" class="btn btn-primary">إضافة</button>
+    </form>
+    <table class="admin-table">
+      <thead><tr><th>#</th><th>النص</th><th>الرابط</th><th>الترتيب</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+      <tbody>
+        <% breaking.forEach(item => { %>
+        <tr>
+          <td><%= item.id %></td>
+          <td><%= item.text.substring(0, 60) %>...</td>
+          <td><%= item.link || '-' %></td>
+          <td><%= item.sort_order %></td>
+          <td><%= item.is_active ? '<span class="badge badge-success">مفعل</span>' : '<span class="badge badge-warning">معطل</span>' %></td>
+          <td class="actions">
+            <form method="POST" action="/admin/breaking/delete/<%= item.id %>" style="display:inline;" onsubmit="return confirm('حذف؟')">
+              <button class="btn btn-sm btn-danger">حذف</button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('footer') %>

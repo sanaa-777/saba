@@ -1,0 +1,42 @@
+<%- include('header') %>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h3>إدارة الإعلانات</h3></div>
+  <div class="admin-card-body">
+    <form method="POST" action="/admin/ads/create" enctype="multipart/form-data" style="margin-bottom:20px;padding:15px;background:#f9f9f9;border-radius:8px;">
+      <div class="form-row">
+        <div class="form-group"><label>اسم الإعلان</label><input type="text" name="name" required></div>
+        <div class="form-group"><label>الموضع</label>
+          <select name="position"><option value="header">أعلى الصفحة</option><option value="sidebar">الشريط الجانبي</option><option value="footer">أسفل الصفحة</option><option value="content">داخل المحتوى</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>الصورة</label><input type="file" name="image" accept="image/*"></div>
+        <div class="form-group"><label>الرابط</label><input type="text" name="link"></div>
+      </div>
+      <div class="form-group"><label>كود HTML (اختياري)</label><textarea name="code" rows="3"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>تاريخ البداية</label><input type="date" name="start_date"></div>
+        <div class="form-group"><label>تاريخ النهاية</label><input type="date" name="end_date"></div>
+      </div>
+      <label class="form-check"><input type="checkbox" name="is_active" value="1" checked> مفعل</label>
+      <button type="submit" class="btn btn-primary">إضافة</button>
+    </form>
+    <table class="admin-table">
+      <thead><tr><th>#</th><th>الاسم</th><th>الموضع</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+      <tbody>
+        <% ads.forEach(ad => { %>
+        <tr>
+          <td><%= ad.id %></td><td><%= ad.name %></td><td><%= ad.position %></td>
+          <td><%= ad.is_active ? '<span class="badge badge-success">مفعل</span>' : '<span class="badge badge-warning">معطل</span>' %></td>
+          <td class="actions">
+            <form method="POST" action="/admin/ads/delete/<%= ad.id %>" style="display:inline;" onsubmit="return confirm('حذف؟')"><button class="btn btn-sm btn-danger">حذف</button></form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('footer') %>

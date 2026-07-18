@@ -1,0 +1,60 @@
+<%- include('header') %>
+
+<div class="admin-card">
+  <div class="admin-card-header">
+    <h3>إدارة الوسائط</h3>
+    <button class="btn btn-primary" onclick="document.getElementById('uploadSection').style.display='block'">+ رفع ملف</button>
+  </div>
+  <div class="admin-card-body">
+    <div id="uploadSection" style="display:none;margin-bottom:20px;">
+      <form method="POST" action="/admin/media/upload" enctype="multipart/form-data">
+        <div class="upload-area" onclick="this.querySelector('input').click()">
+          <p>📁 اضغط لاختيار ملف أو اسحب الملف هنا</p>
+          <input type="file" name="file" style="display:none;" accept="image/*,video/*,audio/*" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>العنوان</label><input type="text" name="title"></div>
+          <div class="form-group"><label>النوع</label>
+            <select name="type"><option value="image">صورة</option><option value="video">فيديو</option><option value="audio">صوت</option></select>
+          </div>
+          <div class="form-group"><label>التصنيف</label><input type="text" name="category"></div>
+        </div>
+        <div class="form-group"><label>الوصف</label><textarea name="description" rows="2"></textarea></div>
+        <button type="submit" class="btn btn-primary">رفع</button>
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('uploadSection').style.display='none'">إلغاء</button>
+      </form>
+    </div>
+    <div class="filters-bar">
+      <a href="/admin/media" class="btn btn-sm <%= !filterType ? 'btn-primary' : 'btn-secondary' %>">الكل</a>
+      <a href="/admin/media?type=image" class="btn btn-sm <%= filterType === 'image' ? 'btn-primary' : 'btn-secondary' %>">صور</a>
+      <a href="/admin/media?type=video" class="btn btn-sm <%= filterType === 'video' ? 'btn-primary' : 'btn-secondary' %>">فيديو</a>
+      <a href="/admin/media?type=audio" class="btn btn-sm <%= filterType === 'audio' ? 'btn-primary' : 'btn-secondary' %>">صوت</a>
+    </div>
+    <% if (media.length > 0) { %>
+    <div class="media-grid-admin">
+      <% media.forEach(item => { %>
+      <div class="media-item">
+        <% if (item.type === 'image') { %>
+          <img src="<%= item.file_path %>" alt="<%= item.title %>">
+        <% } else if (item.type === 'video') { %>
+          <div style="height:120px;background:#333;display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px;">🎬</div>
+        <% } else { %>
+          <div style="height:120px;background:#e3f2fd;display:flex;align-items:center;justify-content:center;font-size:32px;">🎵</div>
+        <% } %>
+        <div class="media-item-info">
+          <p title="<%= item.title %>"><%= item.title %></p>
+          <p style="font-size:11px;color:#999;"><%= item.type %> | <%= item.category || '-' %></p>
+          <form method="POST" action="/admin/media/delete/<%= item.id %>" onsubmit="return confirm('حذف؟')">
+            <button class="btn btn-sm btn-danger">حذف</button>
+          </form>
+        </div>
+      </div>
+      <% }); %>
+    </div>
+    <% } else { %>
+    <div class="empty-state"><p>لا توجد ملفات مرفوعة</p></div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('footer') %>

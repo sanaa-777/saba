@@ -1,0 +1,24 @@
+{
+  "name": "saba-news",
+  "version": "1.0.0",
+  "description": "SABA News Agency Website Clone - وكالة سبأ للأنباء",
+  "main": "app.js",
+  "scripts": {
+    "start": "node start.js",
+    "dev": "node app.js",
+    "seed": "node db/seed.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "multer": "^1.4.5-lts.1",
+    "rss": "^1.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

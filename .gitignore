@@ -1,0 +1,7 @@
+node_modules/
+db/saba.db
+db/saba.db-shm
+db/saba.db-wal
+.env
+*.log
+.DS_Store

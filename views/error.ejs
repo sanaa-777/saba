@@ -1,0 +1,15 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<main class="main-content">
+  <div class="container">
+    <div class="error-page">
+      <h1>⚠️</h1>
+      <h2><%= title %></h2>
+      <p><%= typeof error !== 'undefined' ? error : 'حدث خطأ غير متوقع' %></p>
+      <a href="/" class="btn btn-primary">العودة للرئيسية</a>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,132 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<main class="main-content">
+  <div class="container">
+    <nav class="breadcrumbs">
+      <a href="/">الرئيسية</a>
+      <span class="separator">/</span>
+      <span class="current">البحث</span>
+    </nav>
+
+    <div class="content-grid">
+      <div class="content-area">
+        <section class="section-block">
+          <div class="section-header">
+            <h2>البحث المتقدم</h2>
+          </div>
+
+          <!-- Search Form -->
+          <form class="search-form" action="/search" method="GET">
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label for="q">كلمة البحث</label>
+                <input type="text" id="q" name="q" value="<%= query.q || '' %>" placeholder="أدخل كلمة البحث...">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="category">التصنيف</label>
+                <select id="category" name="category">
+                  <option value="">جميع التصنيفات</option>
+                  <% if (typeof categories !== 'undefined') { %>
+                    <% categories.forEach(cat => { %>
+                      <option value="<%= cat.id %>" <%= query.category == cat.id ? 'selected' : '' %>><%= cat.name_ar %></option>
+                    <% }); %>
+                  <% } %>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="scope">نطاق البحث</label>
+                <select id="scope" name="scope">
+                  <option value="all" <%= query.scope === 'all' ? 'selected' : '' %>>العنوان والمحتوى</option>
+                  <option value="title" <%= query.scope === 'title' ? 'selected' : '' %>>العنوان فقط</option>
+                  <option value="content" <%= query.scope === 'content' ? 'selected' : '' %>>المحتوى فقط</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="sort">ترتيب النتائج</label>
+                <select id="sort" name="sort">
+                  <option value="newest" <%= query.sort === 'newest' ? 'selected' : '' %>>الأحدث أولاً</option>
+                  <option value="oldest" <%= query.sort === 'oldest' ? 'selected' : '' %>>الأقدم أولاً</option>
+                  <option value="views" <%= query.sort === 'views' ? 'selected' : '' %>>الأكثر مشاهدة</option>
+                  <option value="title" <%= query.sort === 'title' ? 'selected' : '' %>>أبجدي</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="date_from">من تاريخ</label>
+                <input type="date" id="date_from" name="date_from" value="<%= query.date_from || '' %>">
+              </div>
+              <div class="form-group">
+                <label for="date_to">إلى تاريخ</label>
+                <input type="date" id="date_to" name="date_to" value="<%= query.date_to || '' %>">
+              </div>
+            </div>
+            <div class="form-row">
+              <button type="submit" class="btn btn-primary">بحث</button>
+              <a href="/search" class="btn btn-secondary">مسح</a>
+            </div>
+          </form>
+
+          <!-- Search Results -->
+          <% if (query.q) { %>
+          <div class="search-results">
+            <div class="results-header">
+              <h3>نتائج البحث عن: "<%= query.q %>"</h3>
+              <span><%= pagination.total %> نتيجة</span>
+            </div>
+
+            <% if (results.length > 0) { %>
+            <div class="news-list">
+              <% results.forEach(item => { %>
+                <article class="news-list-item">
+                  <div class="list-item-image">
+                    <a href="/news/<%= item.id %>">
+                      <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
+                    </a>
+                  </div>
+                  <div class="list-item-content">
+                    <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
+                    <p><%= item.summary %></p>
+                    <div class="card-meta">
+                      <span class="card-category"><%= item.category_name %></span>
+                      <span class="card-date"><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
+                    </div>
+                  </div>
+                </article>
+              <% }); %>
+            </div>
+
+            <!-- Pagination -->
+            <% if (pagination.totalPages > 1) { %>
+            <div class="pagination">
+              <% if (pagination.page > 1) { %>
+                <a href="?q=<%= query.q %>&category=<%= query.category || '' %>&scope=<%= query.scope || '' %>&sort=<%= query.sort || '' %>&date_from=<%= query.date_from || '' %>&date_to=<%= query.date_to || '' %>&page=<%= pagination.page - 1 %>" class="page-link">السابق</a>
+              <% } %>
+              <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+                <a href="?q=<%= query.q %>&category=<%= query.category || '' %>&scope=<%= query.scope || '' %>&sort=<%= query.sort || '' %>&date_from=<%= query.date_from || '' %>&date_to=<%= query.date_to || '' %>&page=<%= i %>" class="page-link <%= i === pagination.page ? 'active' : '' %>"><%= i %></a>
+              <% } %>
+              <% if (pagination.page < pagination.totalPages) { %>
+                <a href="?q=<%= query.q %>&category=<%= query.category || '' %>&scope=<%= query.scope || '' %>&sort=<%= query.sort || '' %>&date_from=<%= query.date_from || '' %>&date_to=<%= query.date_to || '' %>&page=<%= pagination.page + 1 %>" class="page-link">التالي</a>
+              <% } %>
+            </div>
+            <% } %>
+
+            <% } else { %>
+            <div class="no-results">
+              <p>لم يتم العثور على نتائج مطابقة لبحثك</p>
+            </div>
+            <% } %>
+          </div>
+          <% } %>
+        </section>
+      </div>
+
+      <%- include('partials/sidebar') %>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,56 @@
+<%- include('../partials/head') %>
+<%- include('../partials/header') %>
+
+<main class="main-content">
+  <div class="container">
+    <nav class="breadcrumbs">
+      <a href="/">الرئيسية</a>
+      <span class="separator">/</span>
+      <a href="/galleries">معرض الصور</a>
+      <span class="separator">/</span>
+      <span class="current"><%= gallery.title %></span>
+    </nav>
+
+    <div class="content-grid">
+      <div class="content-area">
+        <section class="section-block">
+          <div class="section-header">
+            <h2><%= gallery.title %></h2>
+          </div>
+
+          <div class="gallery-detail">
+            <div class="gallery-main-image">
+              <img src="<%= gallery.file_path %>" alt="<%= gallery.title %>" id="mainGalleryImage">
+            </div>
+            <% if (gallery.description) { %>
+            <div class="gallery-description">
+              <p><%= gallery.description %></p>
+            </div>
+            <% } %>
+            <span class="gallery-date"><%= new Date(gallery.created_at).toLocaleDateString('ar-YE') %></span>
+          </div>
+
+          <% if (typeof relatedImages !== 'undefined' && relatedImages.length > 0) { %>
+          <div class="related-galleries">
+            <h3>صور ذات صلة</h3>
+            <div class="media-grid">
+              <% relatedImages.forEach(img => { %>
+                <a href="/gallery/<%= img.id %>" class="gallery-card">
+                  <div class="gallery-thumbnail">
+                    <img src="<%= img.thumbnail || img.file_path %>" alt="<%= img.title %>" loading="lazy">
+                  </div>
+                  <h4><%= img.title %></h4>
+                </a>
+              <% }); %>
+            </div>
+          </div>
+          <% } %>
+        </section>
+      </div>
+
+      <%- include('../partials/sidebar') %>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

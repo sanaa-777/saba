@@ -1,0 +1,37 @@
+<%- include('header') %>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h3>إدارة التصنيفات</h3></div>
+  <div class="admin-card-body">
+    <form method="POST" action="/admin/categories/create" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+      <input type="text" name="name_ar" placeholder="الاسم بالعربية" required style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;">
+      <input type="text" name="name_en" placeholder="الاسم بالإنجليزية" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;">
+      <input type="text" name="slug" placeholder="الرابط المختصر" required style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;">
+      <input type="number" name="sort_order" placeholder="الترتيب" value="0" style="width:80px;padding:10px;border:1px solid #ddd;border-radius:6px;">
+      <button type="submit" class="btn btn-primary">إضافة</button>
+    </form>
+    <table class="admin-table">
+      <thead><tr><th>#</th><th>الاسم بالعربية</th><th>الاسم بالإنجليزية</th><th>الرابط</th><th>الترتيب</th><th>الأخبار</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+      <tbody>
+        <% categories.forEach(cat => { %>
+        <tr>
+          <td><%= cat.id %></td>
+          <td><%= cat.name_ar %></td>
+          <td><%= cat.name_en || '-' %></td>
+          <td><%= cat.slug %></td>
+          <td><%= cat.sort_order %></td>
+          <td><%= cat.news_count || 0 %></td>
+          <td><%= cat.is_active ? 'مفعل' : 'معطل' %></td>
+          <td class="actions">
+            <form method="POST" action="/admin/categories/delete/<%= cat.id %>" style="display:inline;" onsubmit="return confirm('حذف التصنيف؟')">
+              <button class="btn btn-sm btn-danger">حذف</button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('footer') %>

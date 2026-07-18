@@ -1,0 +1,206 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<!-- Breaking News Ticker -->
+<% if (typeof breakingNews !== 'undefined' && breakingNews.length > 0) { %>
+<div class="breaking-news-ticker">
+  <div class="container">
+    <div class="ticker-label">
+      <span class="pulse-dot"></span>
+      عاجل
+    </div>
+    <div class="ticker-content">
+      <div class="ticker-track">
+        <% breakingNews.forEach(item => { %>
+          <a href="<%= item.link || '#' %>" class="ticker-item"><%= item.text %></a>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<!-- Main Slider -->
+<% if (typeof sliderItems !== 'undefined' && sliderItems.length > 0) { %>
+<section class="main-slider">
+  <div class="container">
+    <div class="slider-wrapper">
+      <div class="slider-container">
+        <% sliderItems.forEach((slide, index) => { %>
+          <div class="slide <%= index === 0 ? 'active' : '' %>" data-index="<%= index %>">
+            <div class="slide-image">
+              <img src="<%= slide.image || '/images/placeholder.jpg' %>" alt="<%= slide.title %>" loading="lazy">
+              <div class="slide-overlay"></div>
+            </div>
+            <div class="slide-content">
+              <h2><a href="<%= slide.link || '/news/' + slide.news_id %>"><%= slide.title %></a></h2>
+              <p><%= slide.summary %></p>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+      <button class="slider-btn slider-prev" aria-label="السابق">&#10095;</button>
+      <button class="slider-btn slider-next" aria-label="التالي">&#10094;</button>
+      <div class="slider-dots">
+        <% sliderItems.forEach((_, index) => { %>
+          <span class="dot <%= index === 0 ? 'active' : '' %>" data-index="<%= index %>"></span>
+        <% }); %>
+      </div>
+    </div>
+    <div class="slider-thumbnails">
+      <% sliderItems.forEach((slide, index) => { %>
+        <div class="thumbnail <%= index === 0 ? 'active' : '' %>" data-index="<%= index %>">
+          <img src="<%= slide.image || '/images/placeholder.jpg' %>" alt="<%= slide.title %>">
+          <span><%= slide.title.substring(0, 40) %>...</span>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- Main Content Area -->
+<main class="main-content">
+  <div class="container">
+    <div class="content-grid">
+      <div class="content-area">
+        <!-- Featured News -->
+        <% if (typeof featuredNews !== 'undefined' && featuredNews.length > 0) { %>
+        <section class="section-block">
+          <div class="section-header">
+            <h2><span class="header-icon">⭐</span> أخبار مميزة</h2>
+          </div>
+          <div class="featured-news-grid">
+            <% featuredNews.slice(0, 4).forEach((item, i) => { %>
+              <article class="featured-card <%= i === 0 ? 'featured-main' : '' %>">
+                <div class="card-image">
+                  <a href="/news/<%= item.id %>">
+                    <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
+                  </a>
+                  <span class="card-category"><%= item.category_name %></span>
+                </div>
+                <div class="card-content">
+                  <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
+                  <% if (i === 0) { %><p><%= item.summary %></p><% } %>
+                  <div class="card-meta">
+                    <span class="card-date">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <%= new Date(item.published_at).toLocaleDateString('ar-YE') %>
+                    </span>
+                    <span class="card-views">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      <%= item.views %>
+                    </span>
+                  </div>
+                </div>
+              </article>
+            <% }); %>
+          </div>
+        </section>
+        <% } %>
+
+        <!-- Category Sections -->
+        <% if (typeof categories !== 'undefined' && typeof categoryNews !== 'undefined') { %>
+          <% categories.forEach(cat => { %>
+            <% if (categoryNews[cat.id] && categoryNews[cat.id].length > 0) { %>
+            <section class="section-block category-section">
+              <div class="section-header" style="border-color: <%= ['#1a237e','#c62828','#2e7d32','#e65100','#6a1b9a','#00838f','#ef6c00','#4e342e','#283593','#ad1457','#1b5e20','#bf360c','#4527a0','#00695c','#827717'][cat.sort_order - 1] || '#1a237e' %>">
+                <h2><a href="/category/<%= cat.id %>"><%= cat.name_ar %></a></h2>
+                <a href="/category/<%= cat.id %>" class="more-link">المزيد ←</a>
+              </div>
+              <div class="category-news-grid">
+                <% categoryNews[cat.id].slice(0, 6).forEach((item, i) => { %>
+                  <article class="news-card">
+                    <div class="card-image">
+                      <a href="/news/<%= item.id %>">
+                        <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
+                      </a>
+                    </div>
+                    <div class="card-content">
+                      <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
+                      <div class="card-meta">
+                        <span class="card-date"><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
+                      </div>
+                    </div>
+                  </article>
+                <% }); %>
+              </div>
+            </section>
+            <% } %>
+          <% }); %>
+        <% } %>
+
+        <!-- Videos Section -->
+        <% if (typeof videos !== 'undefined' && videos.length > 0) { %>
+        <section class="section-block">
+          <div class="section-header section-header-video">
+            <h2><span class="header-icon">🎬</span> فيديو</h2>
+            <a href="/videos" class="more-link">المزيد ←</a>
+          </div>
+          <div class="videos-grid">
+            <% videos.forEach(video => { %>
+              <div class="video-card">
+                <div class="video-thumbnail">
+                  <img src="<%= video.thumbnail || video.file_path %>" alt="<%= video.title %>" loading="lazy">
+                  <div class="play-button">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                </div>
+                <h4><%= video.title %></h4>
+              </div>
+            <% }); %>
+          </div>
+        </section>
+        <% } %>
+
+        <!-- Photo Galleries Section -->
+        <% if (typeof galleries !== 'undefined' && galleries.length > 0) { %>
+        <section class="section-block">
+          <div class="section-header section-header-gallery">
+            <h2><span class="header-icon">📷</span> صور</h2>
+            <a href="/galleries" class="more-link">المزيد ←</a>
+          </div>
+          <div class="galleries-grid">
+            <% galleries.forEach(gallery => { %>
+              <a href="/gallery/<%= gallery.id %>" class="gallery-card">
+                <img src="<%= gallery.thumbnail || gallery.file_path %>" alt="<%= gallery.title %>" loading="lazy">
+                <div class="gallery-overlay">
+                  <h4><%= gallery.title %></h4>
+                </div>
+              </a>
+            <% }); %>
+          </div>
+        </section>
+        <% } %>
+
+        <!-- Audio Section -->
+        <% if (typeof audios !== 'undefined' && audios.length > 0) { %>
+        <section class="section-block">
+          <div class="section-header section-header-audio">
+            <h2><span class="header-icon">🎙️</span> صوتيات</h2>
+            <a href="/audios" class="more-link">المزيد ←</a>
+          </div>
+          <div class="audios-list">
+            <% audios.forEach(audio => { %>
+              <div class="audio-card">
+                <div class="audio-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="#1a237e"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                </div>
+                <div class="audio-info">
+                  <h4><%= audio.title %></h4>
+                  <p><%= audio.description %></p>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        </section>
+        <% } %>
+      </div>
+
+      <!-- Sidebar -->
+      <%- include('partials/sidebar') %>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/footer') %>

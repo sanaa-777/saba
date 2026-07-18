@@ -1,0 +1,32 @@
+<%- include('header') %>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h3>إدارة الوسوم</h3></div>
+  <div class="admin-card-body">
+    <form method="POST" action="/admin/tags/create" style="display:flex;gap:10px;margin-bottom:20px;">
+      <input type="text" name="name" placeholder="اسم الوسم" required style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;">
+      <input type="text" name="slug" placeholder="الرابط المختصر" required style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;">
+      <button type="submit" class="btn btn-primary">إضافة</button>
+    </form>
+    <table class="admin-table">
+      <thead><tr><th>#</th><th>الاسم</th><th>الرابط</th><th>الاستخدام</th><th>إجراءات</th></tr></thead>
+      <tbody>
+        <% tags.forEach(tag => { %>
+        <tr>
+          <td><%= tag.id %></td>
+          <td><%= tag.name %></td>
+          <td><%= tag.slug %></td>
+          <td><%= tag.usage_count || 0 %> خبر</td>
+          <td class="actions">
+            <form method="POST" action="/admin/tags/delete/<%= tag.id %>" style="display:inline;" onsubmit="return confirm('حذف الوسم؟')">
+              <button class="btn btn-sm btn-danger">حذف</button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('footer') %>

@@ -1,0 +1,48 @@
+<%- include('header') %>
+
+<div class="admin-card">
+  <div class="admin-card-header"><h3>إدارة السلايدر</h3>
+    <button class="btn btn-primary" onclick="document.getElementById('addSlide').style.display='block'">+ إضافة شريحة</button>
+  </div>
+  <div class="admin-card-body">
+    <div id="addSlide" style="display:none;margin-bottom:20px;padding:20px;background:#f9f9f9;border-radius:8px;">
+      <form method="POST" action="/admin/slider/create" enctype="multipart/form-data">
+        <div class="form-row">
+          <div class="form-group"><label>العنوان</label><input type="text" name="title" required></div>
+          <div class="form-group"><label>الخبر المرتبط</label>
+            <select name="news_id"><option value="">اختر خبر</option><% news.forEach(n => { %><option value="<%= n.id %>"><%= n.title.substring(0, 50) %></option><% }); %></select>
+          </div>
+        </div>
+        <div class="form-group"><label>الملخص</label><textarea name="summary" rows="2"></textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label>الصورة</label><input type="file" name="image" accept="image/*"></div>
+          <div class="form-group"><label>الرابط</label><input type="text" name="link"></div>
+          <div class="form-group"><label>الترتيب</label><input type="number" name="sort_order" value="0"></div>
+        </div>
+        <label class="form-check"><input type="checkbox" name="is_active" value="1" checked> مفعل</label>
+        <div class="form-actions"><button type="submit" class="btn btn-primary">إضافة</button></div>
+      </form>
+    </div>
+    <table class="admin-table">
+      <thead><tr><th>#</th><th>صورة</th><th>العنوان</th><th>الترتيب</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+      <tbody>
+        <% sliderItems.forEach(item => { %>
+        <tr>
+          <td><%= item.id %></td>
+          <td><% if (item.image) { %><img src="<%= item.image %>" class="thumb"><% } %></td>
+          <td><%= item.title %></td>
+          <td><%= item.sort_order %></td>
+          <td><%= item.is_active ? '<span class="badge badge-success">مفعل</span>' : '<span class="badge badge-warning">معطل</span>' %></td>
+          <td class="actions">
+            <form method="POST" action="/admin/slider/delete/<%= item.id %>" style="display:inline;" onsubmit="return confirm('حذف؟')">
+              <button class="btn btn-sm btn-danger">حذف</button>
+            </form>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('footer') %>
