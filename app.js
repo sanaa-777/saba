@@ -38,8 +38,8 @@ app.use(cookieSession({
   keys: [process.env.SESSION_SECRET || 'awtar-secret-key-2024'],
   maxAge: 24 * 60 * 60 * 1000,
   sameSite: 'lax',
-  httpOnly: true,
-  secure: isVercel
+  httpOnly: false,
+  secure: false
 }));
 
 // Language middleware
