@@ -1738,3 +1738,13 @@ select:focus {
   color: var(--text);
   font-size: 15px;
 }
+
+/* Cards without images */
+.story-card.no-image { display: block; }
+.story-card.no-image .story-card-body { padding: 16px; }
+.story-card.no-image .story-card-body h3 { font-size: 18px; margin-top: 0; }
+.story-card-horizontal.no-image { display: block; }
+.story-card-horizontal.no-image .story-card-body { padding: 12px; }
+.latest-card.no-image { display: block; }
+.latest-card.no-image .latest-card-body { padding: 12px; }
+.latest-card.no-image .latest-card-body h4 { font-size: 15px; }

@@ -83,7 +83,7 @@
                   <article class="news-list-item">
                     <div class="list-item-image">
                       <a href="/news/<%= item.id %>">
-                        <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
+                        <% if (item.image) { %><img src="<%= item.image %>" alt="<%= item.title %><% } %>" loading="lazy">
                       </a>
                     </div>
                     <div class="list-item-content">

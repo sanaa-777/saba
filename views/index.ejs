@@ -106,10 +106,12 @@
       </div>
       <div class="home-featured-strip">
         <% featuredNews.slice(0, 4).forEach(item => { %>
-          <article class="story-card">
+          <article class="story-card<%= !item.image ? ' no-image' : '' %>">
+            <% if (item.image) { %>
             <a class="story-card-media" href="/news/<%= item.id %>">
-              <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
+              <img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy">
             </a>
+            <% } %>
             <div class="story-card-body">
               <span class="eyebrow"><%= item.category_name || 'عام' %></span>
               <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
@@ -136,8 +138,8 @@
       </div>
       <div class="latest-scroll">
         <% latestNews.slice(0, 8).forEach(item => { %>
-          <article class="latest-card">
-            <a href="/news/<%= item.id %>"><img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy"></a>
+          <article class="latest-card<%= !item.image ? ' no-image' : '' %>">
+            <% if (item.image) { %><a href="/news/<%= item.id %>"><img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy"></a><% } %>
             <div class="latest-card-body">
               <span class="cat-badge"><%= item.category_name || 'عام' %></span>
               <h4><a href="/news/<%= item.id %>"><%= item.title %></a></h4>
@@ -178,10 +180,12 @@
               <a href="/category/<%= cat.id %>" class="section-link">المزيد</a>
             </div>
             <div class="category-module">
-              <article class="story-card">
+              <article class="story-card<%= !items[0].image ? ' no-image' : '' %>">
+                <% if (items[0].image) { %>
                 <a class="story-card-media" href="/news/<%= items[0].id %>">
-                  <img src="<%= items[0].image || '/images/placeholder.jpg' %>" alt="<%= items[0].title %>" loading="lazy">
+                  <img src="<%= items[0].image %>" alt="<%= items[0].title %>" loading="lazy">
                 </a>
+                <% } %>
                 <div class="story-card-body">
                   <span class="eyebrow"><%= cat.name_ar %></span>
                   <h3><a href="/news/<%= items[0].id %>"><%= items[0].title %></a></h3>
@@ -194,10 +198,12 @@
               </article>
               <div class="story-stack">
                 <% items.slice(1, 5).forEach(item => { %>
-                  <article class="story-card-horizontal">
+                  <article class="story-card-horizontal<%= !item.image ? ' no-image' : '' %>">
+                    <% if (item.image) { %>
                     <a class="story-card-media" href="/news/<%= item.id %>">
-                      <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
+                      <img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy">
                     </a>
+                    <% } %>
                     <div class="story-card-body">
                       <span class="eyebrow"><%= item.category_name || cat.name_ar %></span>
                       <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>

@@ -30,7 +30,7 @@
             <div class="featured-listing">
               <article class="lead-card">
                 <a class="lead-card-media" href="/news/<%= news[0].id %>">
-                  <img src="<%= news[0].image || '/images/placeholder.jpg' %>" alt="<%= news[0].title %>">
+                  <% if (news[0].image) { %><img src="<%= news[0].image %>" alt="<%= news[0].title %><% } %>">
                 </a>
                 <div class="lead-card-body">
                   <span class="eyebrow"><%= category.name_ar %></span>
@@ -48,7 +48,7 @@
                 <% news.slice(1, 5).forEach(item => { %>
                   <article class="story-card-horizontal">
                     <a class="story-card-media" href="/news/<%= item.id %>">
-                      <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
+                      <% if (item.image) { %><img src="<%= item.image %>" alt="<%= item.title %><% } %>" loading="lazy">
                     </a>
                     <div class="story-card-body">
                       <span class="eyebrow"><%= item.category_name || category.name_ar %></span>
@@ -78,7 +78,7 @@
                 <article class="news-list-item">
                   <div class="list-item-image">
                     <a href="/news/<%= item.id %>">
-                      <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
+                      <% if (item.image) { %><img src="<%= item.image %>" alt="<%= item.title %><% } %>" loading="lazy">
                     </a>
                   </div>
                   <div class="list-item-content">
