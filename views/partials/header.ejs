@@ -7,21 +7,11 @@
       <span class="date-hijri"></span>
     </div>
     <div class="top-bar-left">
-      <a href="<%= settings.facebook || '#' %>" target="_blank" class="social-icon" aria-label="Facebook">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-      </a>
-      <a href="<%= settings.twitter || '#' %>" target="_blank" class="social-icon" aria-label="Twitter">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-      </a>
-      <a href="<%= settings.youtube || '#' %>" target="_blank" class="social-icon" aria-label="YouTube">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-      </a>
-      <a href="<%= settings.telegram || '#' %>" target="_blank" class="social-icon" aria-label="Telegram">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-      </a>
-      <a href="/rss" class="social-icon" aria-label="RSS">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6.503 20.752c0 1.794-1.456 3.248-3.251 3.248-1.796 0-3.252-1.454-3.252-3.248 0-1.794 1.456-3.248 3.252-3.248 1.795.001 3.251 1.454 3.251 3.248zm-6.503-12.572v4.811c6.05.062 10.96 4.966 11.022 11.009h4.817c-.062-8.71-7.118-15.758-15.839-15.82zm0-8.18v4.819c12.951.115 23.347 10.607 23.464 23.498h4.536c-.12-15.621-12.842-28.334-28-28.317z"/></svg>
-      </a>
+      <a href="<%= settings.facebook || '#' %>" target="_blank" class="social-icon" aria-label="Facebook">FB</a>
+      <a href="<%= settings.twitter || '#' %>" target="_blank" class="social-icon" aria-label="Twitter">X</a>
+      <a href="<%= settings.youtube || '#' %>" target="_blank" class="social-icon" aria-label="YouTube">YT</a>
+      <a href="<%= settings.telegram || '#' %>" target="_blank" class="social-icon" aria-label="Telegram">TG</a>
+      <a href="/rss" class="social-icon" aria-label="RSS">RSS</a>
     </div>
   </div>
 </div>
@@ -30,27 +20,32 @@
 <header class="site-header">
   <div class="container">
     <div class="header-inner">
+      <!-- Mobile Menu Toggle -->
+      <button class="mobile-menu-toggle" id="mobileMenuBtn" aria-label="القائمة">
+        <span></span><span></span><span></span>
+      </button>
+      
       <div class="logo">
         <a href="/">
+          <img src="/images/logo.png" alt="أوتر" class="logo-img" width="50" height="50">
           <div class="logo-text">
             <h1>أوتر</h1>
             <span>Awtar</span>
           </div>
         </a>
       </div>
+      
       <div class="header-search">
         <form action="/search" method="GET">
           <input type="text" name="q" placeholder="<%= t('search_placeholder') %>" aria-label="<%= t('search') %>">
-          <button type="submit" aria-label="<%= t('search') %>">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          </button>
+          <button type="submit" aria-label="<%= t('search') %>">🔍</button>
         </form>
       </div>
+      
       <!-- Language Switcher -->
-      <div class="lang-switcher">
-        <button class="lang-btn" id="langToggle">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          <span><%= lang.toUpperCase() %></span>
+      <div class="lang-switcher" id="langSwitcher">
+        <button class="lang-btn" id="langToggle" aria-label="تغيير اللغة">
+          🌐 <span><%= lang.toUpperCase() %></span> ▾
         </button>
         <div class="lang-dropdown" id="langDropdown">
           <a href="?lang=ar" class="<%= lang === 'ar' ? 'active' : '' %>">🇸🇦 العربية</a>
@@ -61,9 +56,6 @@
           <a href="?lang=fa" class="<%= lang === 'fa' ? 'active' : '' %>">🇮🇷 فارسی</a>
         </div>
       </div>
-      <button class="mobile-menu-toggle" aria-label="<%= t('home') %>">
-        <span></span><span></span><span></span>
-      </button>
     </div>
   </div>
 </header>
@@ -72,22 +64,27 @@
 <nav class="main-nav" id="mainNav">
   <div class="container">
     <ul class="nav-list">
-      <li class="nav-item"><a href="/" class="nav-link">الرئيسية</a></li>
-      <% if (typeof categories !== 'undefined') { %>
-        <% categories.forEach(cat => { %>
+      <li class="nav-item"><a href="/" class="nav-link active">الرئيسية</a></li>
+      <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+        <% categories.slice(0, 10).forEach(cat => { %>
           <li class="nav-item">
             <a href="/category/<%= cat.id %>" class="nav-link"><%= cat.name_ar %></a>
           </li>
         <% }); %>
       <% } %>
-      <li class="nav-item"><a href="/videos" class="nav-link">فيديو</a></li>
-      <li class="nav-item"><a href="/galleries" class="nav-link">صور</a></li>
-      <li class="nav-item"><a href="/audios" class="nav-link">صوتيات</a></li>
-      <li class="nav-item"><a href="/caricatures" class="nav-link">كاريكاتير</a></li>
-      <li class="nav-item"><a href="/publications" class="nav-link">منشورات</a></li>
-      <li class="nav-item"><a href="/files" class="nav-link">ملفات</a></li>
-      <li class="nav-item"><a href="/services" class="nav-link">خدمات مجانية</a></li>
-      <li class="nav-item"><a href="/subscribe" class="nav-link">اشتراك</a></li>
+      <li class="nav-item nav-dropdown">
+        <a href="#" class="nav-link">المزيد ▾</a>
+        <ul class="nav-dropdown-menu">
+          <li><a href="/videos">📹 فيديو</a></li>
+          <li><a href="/galleries">🖼️ صور</a></li>
+          <li><a href="/audios">🎧 صوتيات</a></li>
+          <li><a href="/caricatures">✏️ كاريكاتير</a></li>
+          <li><a href="/publications">📄 منشورات</a></li>
+          <li><a href="/files">📁 ملفات</a></li>
+          <li><a href="/services">🆓 خدمات مجانية</a></li>
+          <li><a href="/subscribe">📧 اشتراك</a></li>
+        </ul>
+      </li>
     </ul>
   </div>
 </nav>
@@ -95,25 +92,39 @@
 <!-- Mobile Navigation -->
 <div class="mobile-nav" id="mobileNav">
   <div class="mobile-nav-header">
-    <span>القائمة</span>
-    <button class="mobile-nav-close" aria-label="إغلاق">&times;</button>
+    <div class="mobile-nav-logo">أوتر</div>
+    <button class="mobile-nav-close" id="mobileNavClose" aria-label="إغلاق">✕</button>
+  </div>
+  <div class="mobile-nav-search">
+    <form action="/search" method="GET">
+      <input type="text" name="q" placeholder="ابحث...">
+      <button type="submit">🔍</button>
+    </form>
   </div>
   <ul class="mobile-nav-list">
-    <li><a href="/">الرئيسية</a></li>
-    <% if (typeof categories !== 'undefined') { %>
+    <li><a href="/">🏠 الرئيسية</a></li>
+    <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
       <% categories.forEach(cat => { %>
         <li><a href="/category/<%= cat.id %>"><%= cat.name_ar %></a></li>
       <% }); %>
     <% } %>
-    <li><a href="/videos">فيديو</a></li>
-    <li><a href="/galleries">صور</a></li>
-    <li><a href="/audios">صوتيات</a></li>
-    <li><a href="/caricatures">كاريكاتير</a></li>
-    <li><a href="/publications">منشورات</a></li>
-    <li><a href="/files">ملفات</a></li>
-    <li><a href="/services">خدمات مجانية</a></li>
-    <li><a href="/subscribe">اشتراك</a></li>
-    <li><a href="/search">بحث</a></li>
+    <li class="mobile-nav-divider"></li>
+    <li><a href="/videos">📹 فيديو</a></li>
+    <li><a href="/galleries">🖼️ صور</a></li>
+    <li><a href="/audios">🎧 صوتيات</a></li>
+    <li><a href="/caricatures">✏️ كاريكاتير</a></li>
+    <li><a href="/publications">📄 منشورات</a></li>
+    <li><a href="/files">📁 ملفات</a></li>
+    <li><a href="/services">🆓 خدمات مجانية</a></li>
+    <li><a href="/subscribe">📧 اشتراك</a></li>
+    <li class="mobile-nav-divider"></li>
+    <li><a href="/about">ℹ️ من نحن</a></li>
+    <li><a href="/contact">📬 اتصل بنا</a></li>
   </ul>
+  <div class="mobile-nav-lang">
+    <a href="?lang=ar" class="<%= lang === 'ar' ? 'active' : '' %>">🇸🇦 عربي</a>
+    <a href="?lang=en" class="<%= lang === 'en' ? 'active' : '' %>">🇬🇧 EN</a>
+    <a href="?lang=fr" class="<%= lang === 'fr' ? 'active' : '' %>">🇫🇷 FR</a>
+  </div>
 </div>
 <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>

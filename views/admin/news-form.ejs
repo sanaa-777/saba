@@ -53,7 +53,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>الصورة الرئيسية</label>
-          <input type="file" name="image" accept="image/*" id="imageInput">
+          <input type="file" name="image" accept="image/*,video/*,audio/*" id="imageInput">
           <% if (article && article.image) { %>
             <div style="margin-top:8px;"><img src="<%= article.image %>" style="max-width:200px;border-radius:6px;" id="currentImage"></div>
             <label class="form-check" style="margin-top:8px;"><input type="checkbox" name="keep_image" value="1" checked id="keepImage"> الاحتفاظ بالصورة الحالية</label>
@@ -134,7 +134,8 @@ document.getElementById('newsForm').addEventListener('submit', async function(e)
   try {
     const response = await fetch(this.action, {
       method: 'POST',
-      body: formData
+      body: formData,
+      credentials: 'same-origin'
     });
     
     const result = await response.json();

@@ -257,7 +257,17 @@ router.get('/settings', (req, res) => {
 
 const { requireAuth } = require('../middleware/auth');
 const multer = require('multer');
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|gif|webp|mp4|webm|mp3|wav/;
+    const ext = allowed.test(file.originalname.split('.').pop().toLowerCase());
+    const mime = allowed.test(file.mimetype.split('/')[1] || '');
+    if (ext || mime) return cb(null, true);
+    cb(null, true); // allow all for now
+  }
+});
 
 function saveImageToDb(file) {
   if (!file) return null;

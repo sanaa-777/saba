@@ -10,12 +10,12 @@ const { requireAuth } = require('../middleware/auth');
 // Multer configuration - memory storage for Vercel serverless
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname || mimetype) return cb(null, true);
+    const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|webm|mp3|wav|ogg/;
+    const ext = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mime = /image|video|audio/.test(file.mimetype);
+    if (ext || mime) return cb(null, true);
     cb(new Error('نوع الملف غير مسموح'));
   }
 });
@@ -29,6 +29,12 @@ function saveImageToDb(file) {
     file.originalname, file.mimetype, base64, file.size
   );
   return '/api/images/' + result.lastInsertRowid;
+}
+
+function getMediaType(mimetype) {
+  if (mimetype.startsWith('video')) return 'video';
+  if (mimetype.startsWith('audio')) return 'audio';
+  return 'image';
 }
 
 // Login page
@@ -266,12 +272,10 @@ router.post('/media/upload', requireAuth, upload.single('file'), (req, res) => {
   if (!req.file) return res.redirect('/admin/media');
   const { title, description, category, type } = req.body;
   const filePath = saveImageToDb(req.file);
-  let mediaType = type || 'image';
-  if (req.file.mimetype.startsWith('video')) mediaType = 'video';
-  if (req.file.mimetype.startsWith('audio')) mediaType = 'audio';
+  const mediaType = type || getMediaType(req.file.mimetype);
 
   db.prepare('INSERT INTO media (type, title, file_path, description, category, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)').run(
-    mediaType, title || req.file.originalname, filePath, description, category
+    mediaType, title || req.file.originalname, filePath, description || '', category || ''
   );
   res.redirect('/admin/media');
 });

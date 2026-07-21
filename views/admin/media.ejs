@@ -7,7 +7,7 @@
   </div>
   <div class="admin-card-body">
     <div id="uploadSection" style="display:none;margin-bottom:20px;">
-      <form method="POST" action="/admin/media/upload" enctype="multipart/form-data">
+      <form id="mediaUploadForm" method="POST" action="/admin/media/upload" enctype="multipart/form-data">
         <div class="upload-area" onclick="this.querySelector('input').click()">
           <p>📁 اضغط لاختيار ملف أو اسحب الملف هنا</p>
           <input type="file" name="file" style="display:none;" accept="image/*,video/*,audio/*" required>
