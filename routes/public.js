@@ -231,6 +231,26 @@ router.get('/services', (req, res) => {
   res.render('services', { title: 'الخدمات المجانية' });
 });
 
+// About page
+router.get('/about', (req, res) => {
+  res.render('about', { title: 'من نحن' });
+});
+
+// Contact page
+router.get('/contact', (req, res) => {
+  res.render('contact', { title: 'اتصل بنا' });
+});
+
+// Privacy policy
+router.get('/privacy', (req, res) => {
+  res.render('privacy', { title: 'سياسة الخصوصية' });
+});
+
+// Terms and conditions
+router.get('/terms', (req, res) => {
+  res.render('terms', { title: 'الشروط والأحكام' });
+});
+
 // Subscribe page
 router.get('/subscribe', (req, res) => {
   res.render('subscribe', { title: 'الاشتراك' });
