@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getDb } = require('../db/init');
+const { createNews, updateNews, deleteNews } = require('../services/news-admin-service');
 
 // ============================================
 // PUBLIC API ENDPOINTS
@@ -282,17 +283,22 @@ router.post('/admin/news/create', requireAuth, upload.single('image'), (req, res
     const { title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags } = req.body;
     if (!title || !content) return res.status(400).json({ success: false, message: 'العنوان والمحتوى مطلوبان' });
     const image = saveImageToDb(req.file);
-    const slug = title.replace(/\s+/g, '-').substring(0, 80);
-    const publishedAt = status === '1' || status === 1 ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
-    const result = db.prepare(`INSERT INTO news (title, summary, content, image, category_id, source, is_breaking, is_slider, is_featured, status, published_at, created_at, updated_at, meta_title, meta_description, slug) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)`).run(
-      title, summary || '', content, image, category_id || null, source || 'أوتر', is_breaking ? 1 : 0, is_slider ? 1 : 0, is_featured ? 1 : 0, status ? parseInt(status) : 1, publishedAt, meta_title || '', meta_description || '', slug
-    );
-    if (tags) {
-      const tagIds = Array.isArray(tags) ? tags.map(Number) : [parseInt(tags)];
-      const insertTag = db.prepare('INSERT OR IGNORE INTO news_tags (news_id, tag_id) VALUES (?, ?)');
-      tagIds.forEach(tid => insertTag.run(result.lastInsertRowid, tid));
-    }
-    res.json({ success: true, message: 'تم نشر الخبر بنجاح', id: result.lastInsertRowid });
+    const newsId = createNews(db, {
+      title,
+      summary,
+      content,
+      category_id,
+      source,
+      is_breaking,
+      is_slider,
+      is_featured,
+      status,
+      meta_title,
+      meta_description,
+      tags,
+      image
+    });
+    res.json({ success: true, message: 'تم نشر الخبر بنجاح', id: newsId });
   } catch (err) {
     res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
   }
@@ -309,17 +315,23 @@ router.post('/admin/news/edit/:id', requireAuth, upload.single('image'), (req, r
     let image = existing.image;
     if (req.file) image = saveImageToDb(req.file);
     else if (!keep_image) image = null;
-    const slug = title.replace(/\s+/g, '-').substring(0, 80);
-    const publishedAt = status === '1' || status === 1 ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
-    db.prepare(`UPDATE news SET title=?, summary=?, content=?, image=?, category_id=?, source=?, is_breaking=?, is_slider=?, is_featured=?, status=?, published_at=COALESCE(?, published_at), updated_at=CURRENT_TIMESTAMP, meta_title=?, meta_description=?, slug=? WHERE id=?`).run(
-      title, summary || '', content, image, category_id || null, source || 'أوتر', is_breaking ? 1 : 0, is_slider ? 1 : 0, is_featured ? 1 : 0, status ? parseInt(status) : 1, publishedAt, meta_title || '', meta_description || '', slug, req.params.id
-    );
-    db.prepare('DELETE FROM news_tags WHERE news_id = ?').run(req.params.id);
-    if (tags) {
-      const tagIds = Array.isArray(tags) ? tags.map(Number) : [parseInt(tags)];
-      const insertTag = db.prepare('INSERT OR IGNORE INTO news_tags (news_id, tag_id) VALUES (?, ?)');
-      tagIds.forEach(tid => insertTag.run(req.params.id, tid));
-    }
+
+    updateNews(db, req.params.id, {
+      title,
+      summary,
+      content,
+      category_id,
+      source,
+      is_breaking,
+      is_slider,
+      is_featured,
+      status,
+      meta_title,
+      meta_description,
+      tags,
+      image
+    });
+
     res.json({ success: true, message: 'تم حفظ التعديلات بنجاح' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
@@ -330,9 +342,7 @@ router.post('/admin/news/edit/:id', requireAuth, upload.single('image'), (req, r
 router.post('/admin/news/delete/:id', requireAuth, (req, res) => {
   try {
     const db = getDb();
-    db.prepare('DELETE FROM news_tags WHERE news_id = ?').run(req.params.id);
-    db.prepare('DELETE FROM slider WHERE news_id = ?').run(req.params.id);
-    db.prepare('DELETE FROM news WHERE id = ?').run(req.params.id);
+    deleteNews(db, req.params.id);
     res.json({ success: true, message: 'تم حذف الخبر' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'خطأ: ' + err.message });

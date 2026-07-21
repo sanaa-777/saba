@@ -69,12 +69,28 @@
 </div>
 
 <script>
+async function parseDeleteResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return response.json();
+  }
+  const text = await response.text();
+  return {
+    success: false,
+    message: text && text.trim() ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : 'تعذر تفسير استجابة الخادم'
+  };
+}
+
 async function deleteNews(id) {
   if (!confirm('هل أنت متأكد من حذف هذا الخبر؟')) return;
   try {
-    const res = await fetch('/api/v1/admin/news/delete/' + id, { method: 'POST' });
-    const result = await res.json();
-    if (result.success) {
+    const res = await fetch('/api/v1/admin/news/delete/' + id, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    });
+    const result = await parseDeleteResponse(res);
+    if (res.ok && result.success) {
       const row = document.getElementById('news-row-' + id);
       if (row) {
         row.style.transition = 'opacity 0.3s';
@@ -82,10 +98,10 @@ async function deleteNews(id) {
         setTimeout(() => row.remove(), 300);
       }
     } else {
-      alert(result.message || 'خطأ في الحذف');
+      alert(result.message || 'تعذر حذف الخبر');
     }
   } catch (err) {
-    alert('خطأ في الاتصال');
+    alert('تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى');
   }
 }
 </script>

@@ -5,3 +5,5 @@ db/awtar.db-wal
 .env
 *.log
 .DS_Store
+.vercel
+.env*

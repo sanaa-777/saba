@@ -100,6 +100,18 @@
 </div>
 
 <script>
+async function parseServerResponse(response) {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return response.json();
+  }
+  const text = await response.text();
+  return {
+    success: false,
+    message: text && text.trim() ? text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : 'استجاب الخادم بصيغة غير متوقعة'
+  };
+}
+
 document.getElementById('newsForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const btn = document.getElementById('submitBtn');
@@ -112,9 +124,14 @@ document.getElementById('newsForm').addEventListener('submit', async function(e)
   statusMsg.style.display = 'none';
   const formData = new FormData(this);
   try {
-    const response = await fetch(this.action, { method: 'POST', body: formData, credentials: 'same-origin' });
-    const result = await response.json();
-    if (result.success) {
+    const response = await fetch(this.action, {
+      method: 'POST',
+      body: formData,
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    });
+    const result = await parseServerResponse(response);
+    if (response.ok && result.success) {
       statusMsg.className = 'status-msg success';
       statusMsg.textContent = result.message;
       statusMsg.style.display = 'flex';
@@ -125,12 +142,12 @@ document.getElementById('newsForm').addEventListener('submit', async function(e)
       }
     } else {
       statusMsg.className = 'status-msg error';
-      statusMsg.textContent = result.message || 'حدث خطأ';
+      statusMsg.textContent = result.message || 'حدث خطأ أثناء حفظ الخبر';
       statusMsg.style.display = 'flex';
     }
   } catch (err) {
     statusMsg.className = 'status-msg error';
-    statusMsg.textContent = 'خطأ في الاتصال: ' + err.message;
+    statusMsg.textContent = 'تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى';
     statusMsg.style.display = 'flex';
   } finally {
     btn.disabled = false;

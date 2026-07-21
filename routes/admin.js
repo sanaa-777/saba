@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { getDb } = require('../db/init');
 const { requireAuth } = require('../middleware/auth');
+const { createNews, updateNews, deleteNews } = require('../services/news-admin-service');
 
 // Multer configuration - memory storage for Vercel serverless
 const upload = multer({
@@ -116,31 +117,22 @@ router.post('/news/create', requireAuth, upload.single('image'), (req, res) => {
   const db = getDb();
   const { title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags } = req.body;
   const image = saveImageToDb(req.file);
-  const slug = title.replace(/\s+/g, '-').substring(0, 80);
-  const publishedAt = status === '1' ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
 
-  const result = db.prepare(`INSERT INTO news (title, summary, content, image, category_id, source, is_breaking, is_slider, is_featured, status, published_at, created_at, updated_at, meta_title, meta_description, slug) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)`).run(
-    title, summary, content, image, category_id || null, source, is_breaking ? 1 : 0, is_slider ? 1 : 0, is_featured ? 1 : 0, status ? parseInt(status) : 1, publishedAt, meta_title, meta_description, slug
-  );
-
-  // Handle tags
-  if (tags) {
-    const tagIds = Array.isArray(tags) ? tags.map(Number) : [parseInt(tags)];
-    const insertTag = db.prepare('INSERT OR IGNORE INTO news_tags (news_id, tag_id) VALUES (?, ?)');
-    for (const tagId of tagIds) {
-      insertTag.run(result.lastInsertRowid, tagId);
-    }
-  }
-
-  // Add to slider if flagged
-  if (is_slider && image) {
-    db.prepare('INSERT INTO slider (news_id, image, title, summary, link, sort_order, is_active) VALUES (?, ?, ?, ?, ?, 0, 1)').run(result.lastInsertRowid, image, title, summary, `/news/${result.lastInsertRowid}`);
-  }
-
-  // Add to breaking if flagged
-  if (is_breaking) {
-    db.prepare('INSERT INTO breaking_news (text, link, is_active, sort_order) VALUES (?, ?, 1, 0)').run(title, `/news/${result.lastInsertRowid}`);
-  }
+  createNews(db, {
+    title,
+    summary,
+    content,
+    category_id,
+    source,
+    is_breaking,
+    is_slider,
+    is_featured,
+    status,
+    meta_title,
+    meta_description,
+    tags,
+    image
+  });
 
   res.redirect('/admin/news');
 });
@@ -165,22 +157,21 @@ router.post('/news/edit/:id', requireAuth, upload.single('image'), (req, res) =>
   if (req.file) image = saveImageToDb(req.file);
   if (!keep_image && !req.file) image = null;
 
-  const slug = title.replace(/\s+/g, '-').substring(0, 80);
-  const publishedAt = status === '1' ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
-
-  db.prepare(`UPDATE news SET title=?, summary=?, content=?, image=?, category_id=?, source=?, is_breaking=?, is_slider=?, is_featured=?, status=?, published_at=COALESCE(?, published_at), updated_at=CURRENT_TIMESTAMP, meta_title=?, meta_description=?, slug=? WHERE id=?`).run(
-    title, summary, content, image, category_id || null, source, is_breaking ? 1 : 0, is_slider ? 1 : 0, is_featured ? 1 : 0, status ? parseInt(status) : 1, publishedAt, meta_title, meta_description, slug, req.params.id
-  );
-
-  // Update tags
-  db.prepare('DELETE FROM news_tags WHERE news_id = ?').run(req.params.id);
-  if (tags) {
-    const tagIds = Array.isArray(tags) ? tags.map(Number) : [parseInt(tags)];
-    const insertTag = db.prepare('INSERT OR IGNORE INTO news_tags (news_id, tag_id) VALUES (?, ?)');
-    for (const tagId of tagIds) {
-      insertTag.run(req.params.id, tagId);
-    }
-  }
+  updateNews(db, req.params.id, {
+    title,
+    summary,
+    content,
+    category_id,
+    source,
+    is_breaking,
+    is_slider,
+    is_featured,
+    status,
+    meta_title,
+    meta_description,
+    tags,
+    image
+  });
 
   res.redirect('/admin/news');
 });
@@ -188,9 +179,7 @@ router.post('/news/edit/:id', requireAuth, upload.single('image'), (req, res) =>
 // News delete
 router.post('/news/delete/:id', requireAuth, (req, res) => {
   const db = getDb();
-  db.prepare('DELETE FROM news_tags WHERE news_id = ?').run(req.params.id);
-  db.prepare('DELETE FROM slider WHERE news_id = ?').run(req.params.id);
-  db.prepare('DELETE FROM news WHERE id = ?').run(req.params.id);
+  deleteNews(db, req.params.id);
   res.redirect('/admin/news');
 });
 
