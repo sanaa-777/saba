@@ -155,24 +155,6 @@ app.get('/api/new-news-count', (req, res) => {
   res.json({ count });
 });
 
-// Health check endpoint
-app.get('/api/health', async (req, res) => {
-  const dbUrl = process.env.DATABASE_URL ? 'SET (' + process.env.DATABASE_URL.substring(0, 30) + '...)' : 'NOT SET';
-  try {
-    const { Pool } = require('pg');
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-      connectionTimeoutMillis: 10000
-    });
-    const result = await pool.query('SELECT 1 as test');
-    await pool.end();
-    res.json({ status: 'ok', dbUrl, rows: result.rows });
-  } catch (err) {
-    res.status(500).json({ status: 'error', dbUrl, message: err.message, code: err.code });
-  }
-});
-
 // 404 handler
 app.use((req, res) => {
   res.status(404).render('404', { title: res.locals.t ? res.locals.t('page_not_found') : 'الصفحة غير موجودة' });
