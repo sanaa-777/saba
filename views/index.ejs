@@ -1,6 +1,20 @@
 <%- include('partials/head') %>
 <%- include('partials/header') %>
-
+<%
+  function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return 'الآن';
+    if (diff < 3600) return 'قبل ' + Math.floor(diff / 60) + ' دقيقة';
+    if (diff < 86400) return 'قبل ' + Math.floor(diff / 3600) + ' ساعة';
+    if (diff < 172800) return 'قبل يوم';
+    if (diff < 604800) return 'قبل ' + Math.floor(diff / 86400) + ' أيام';
+    if (diff < 2592000) return 'قبل ' + Math.floor(diff / 604800) + ' أسابيع';
+    return date.toLocaleDateString('ar-YE');
+  }
+%>
 <main class="home-page">
   <div class="container">
     <% const lead = sliderItems && sliderItems.length ? sliderItems[0] : (featuredNews && featuredNews.length ? featuredNews[0] : latestNews[0]); %>
@@ -18,8 +32,7 @@
                 <h2><%= lead.title || lead.news_title %></h2>
                 <% if (lead.summary) { %><p><%= lead.summary %></p><% } %>
                 <div class="story-meta inverse">
-                  <span><%= new Date((lead.published_at || Date.now())).toLocaleDateString('ar-YE') %></span>
-                  <span><%= lead.source || settings.site_name || 'أوتر' %></span>
+                  <span><%= timeAgo(lead.published_at) %></span>
                 </div>
               </div>
             </div>
@@ -38,7 +51,7 @@
                 <span class="eyebrow"><%= item.category_name || 'أخبار' %></span>
                 <h3><a href="/news/<%= item.news_id || item.id %>"><%= item.title || item.news_title %></a></h3>
                 <div class="story-meta">
-                  <span><%= new Date((item.published_at || Date.now())).toLocaleDateString('ar-YE') %></span>
+                  <span><%= timeAgo(item.published_at) %></span>
                 </div>
               </div>
             </article>
@@ -62,8 +75,7 @@
                 <span class="eyebrow <%= item.is_breaking ? 'accent' : '' %>"><%= item.category_name || 'عام' %></span>
                 <h4><a href="/news/<%= item.id %>"><%= item.title %></a></h4>
                 <div class="story-meta">
-                  <span><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
-                  <span><%= item.source || settings.site_name || 'أوتر' %></span>
+                  <span><%= timeAgo(item.published_at) %></span>
                 </div>
               </div>
             </article>
@@ -119,8 +131,7 @@
               <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
               <% if (item.summary) { %><p><%= item.summary %></p><% } %>
               <div class="story-meta">
-                <span><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
-                <span><%= item.source || settings.site_name || 'أوتر' %></span>
+                <span><%= timeAgo(item.published_at) %></span>
               </div>
             </div>
           </article>
@@ -146,8 +157,7 @@
               <span class="cat-badge"><%= item.category_name || 'عام' %></span>
               <h4><a href="/news/<%= item.id %>"><%= item.title %></a></h4>
               <div class="story-meta">
-                <span><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
-                <span><%= item.source || settings.site_name || 'أوتر' %></span>
+                <span><%= timeAgo(item.published_at) %></span>
               </div>
             </div>
           </article>
@@ -193,7 +203,7 @@
                   <h3><a href="/news/<%= items[0].id %>"><%= items[0].title %></a></h3>
                   <% if (items[0].summary) { %><p><%= items[0].summary %></p><% } %>
                   <div class="story-meta">
-                    <span><%= new Date(items[0].published_at).toLocaleDateString('ar-YE') %></span>
+                    <span><%= timeAgo(items[0].published_at) %></span>
                     <span><%= items[0].source || settings.site_name || 'أوتر' %></span>
                   </div>
                 </div>
@@ -210,7 +220,7 @@
                       <span class="eyebrow"><%= item.category_name || cat.name_ar %></span>
                       <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
                       <div class="story-meta">
-                        <span><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
+                        <span><%= timeAgo(item.published_at) %></span>
                       </div>
                     </div>
                   </article>
@@ -242,7 +252,7 @@
             <div class="media-card-body">
               <span class="eyebrow">فيديو</span>
               <h3><%= item.title %></h3>
-              <div class="story-meta"><span><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></span></div>
+              <div class="story-meta"><span><%= timeAgo(item.created_at) %></span></div>
             </div>
           </article>
         <% }) %>
@@ -255,7 +265,7 @@
             <div class="media-card-body">
               <span class="eyebrow">صور</span>
               <h3><a href="/gallery/<%= item.id %>"><%= item.title %></a></h3>
-              <div class="story-meta"><span><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></span></div>
+              <div class="story-meta"><span><%= timeAgo(item.created_at) %></span></div>
             </div>
           </article>
         <% }) %>
@@ -268,7 +278,7 @@
             <div class="media-card-body">
               <span class="eyebrow">منشور</span>
               <h3><a href="/publications"><%= item.title %></a></h3>
-              <div class="story-meta"><span><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></span></div>
+              <div class="story-meta"><span><%= timeAgo(item.created_at) %></span></div>
             </div>
           </article>
         <% }) %>

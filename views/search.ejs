@@ -1,5 +1,19 @@
 <%- include('partials/head') %>
 <%- include('partials/header') %>
+<%
+  function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return 'الآن';
+    if (diff < 3600) return 'قبل ' + Math.floor(diff / 60) + ' دقيقة';
+    if (diff < 86400) return 'قبل ' + Math.floor(diff / 3600) + ' ساعة';
+    if (diff < 172800) return 'قبل يوم';
+    if (diff < 604800) return 'قبل ' + Math.floor(diff / 86400) + ' أيام';
+    return date.toLocaleDateString('ar-YE');
+  }
+%>
 
 <main class="main-content">
   <div class="container">
@@ -91,8 +105,7 @@
                       <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
                       <% if (item.summary) { %><p><%= item.summary %></p><% } %>
                       <div class="card-meta">
-                        <span><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
-                        <span><%= item.source || settings.site_name || 'أوتر' %></span>
+                        <span><%= timeAgo(item.published_at) %></span>
                         <span><%= item.views %> مشاهدة</span>
                       </div>
                     </div>
