@@ -301,6 +301,11 @@ router.get('/sitemap.xml', (req, res) => {
   // Homepage
   xml += `  <url><loc>${baseUrl}/</loc><changefreq>always</changefreq><priority>1.0</priority></url>\n`;
 
+  // Static pages
+  ['/about', '/contact', '/privacy', '/terms', '/services', '/subscribe'].forEach(p => {
+    xml += `  <url><loc>${baseUrl}${p}</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>\n`;
+  });
+
   // Categories
   const categories = db.prepare('SELECT * FROM categories WHERE is_active = 1').all();
   for (const cat of categories) {
