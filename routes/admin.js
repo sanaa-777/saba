@@ -274,8 +274,40 @@ router.post('/media/delete/:id', requireAuth, (req, res) => {
 // Breaking news
 router.get('/breaking', requireAuth, (req, res) => {
   const db = getDb();
-  const breaking = db.prepare('SELECT * FROM breaking_news ORDER BY sort_order').all();
-  res.render('admin/breaking', { title: 'الأخبار العاجلة', admin: req.session.admin, breaking });
+  const breaking = db.prepare('SELECT * FROM breaking_news ORDER BY sort_order, id DESC').all();
+  // Get news from عاجl category for quick add
+  let urgentNews = [];
+  try {
+    const urgentCat = db.prepare("SELECT id FROM categories WHERE slug = 'breaking' OR name_ar = 'عاجل' LIMIT 1").get();
+    if (urgentCat) {
+      urgentNews = db.prepare('SELECT id, title FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 20').all(urgentCat.id);
+    }
+  } catch(e) {}
+  res.render('admin/breaking', { title: 'الأخبار العاجلة', admin: req.session.admin, breaking, urgentNews });
+});
+
+// Add news from عاجl category to breaking ticker
+router.post('/breaking/add-from-news', requireAuth, (req, res) => {
+  const db = getDb();
+  const { news_id, sort_order } = req.body;
+  if (!news_id) return res.redirect('/admin/breaking');
+  const article = db.prepare('SELECT id, title FROM news WHERE id = ?').get(news_id);
+  if (!article) return res.redirect('/admin/breaking');
+  // Check if already exists
+  const existing = db.prepare('SELECT id FROM breaking_news WHERE link = ?').get('/news/' + article.id);
+  if (existing) return res.redirect('/admin/breaking');
+  db.prepare('INSERT INTO breaking_news (text, link, is_active, sort_order) VALUES (?, ?, 1, ?)').run(article.title, '/news/' + article.id, sort_order || 0);
+  res.redirect('/admin/breaking');
+});
+
+// Toggle breaking news active status
+router.post('/breaking/toggle/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  const item = db.prepare('SELECT is_active FROM breaking_news WHERE id = ?').get(req.params.id);
+  if (item) {
+    db.prepare('UPDATE breaking_news SET is_active = ? WHERE id = ?').run(item.is_active ? 0 : 1, req.params.id);
+  }
+  res.redirect('/admin/breaking');
 });
 
 router.post('/breaking/create', requireAuth, (req, res) => {

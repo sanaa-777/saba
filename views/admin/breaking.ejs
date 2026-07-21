@@ -1,34 +1,105 @@
 <%- include('header') %>
 
+<style>
+.urgent-info{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+.urgent-info svg{color:#dc2626;flex-shrink:0}
+.urgent-info p{margin:0;color:#7f1d1d;font-size:14px}
+.auto-badge{display:inline-block;background:#dbeafe;color:#2563eb;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.manual-badge{display:inline-block;background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.form-section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:20px}
+.form-section h4{margin:0 0 12px;color:#1e293b}
+</style>
+
 <div class="admin-card">
-  <div class="admin-card-header"><h3>إدارة الأخبار العاجلة</h3></div>
+  <div class="admin-card-header"><h3>⚡ إدارة الأخبار العاجلة</h3></div>
   <div class="admin-card-body">
-    <form method="POST" action="/admin/breaking/create" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
-      <input type="text" name="text" placeholder="نص الخبر العاجل" required style="flex:2;padding:10px;border:1px solid #ddd;border-radius:6px;">
-      <input type="text" name="link" placeholder="الرابط (اختياري)" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;">
-      <input type="number" name="sort_order" placeholder="الترتيب" value="0" style="width:80px;padding:10px;border:1px solid #ddd;border-radius:6px;">
-      <label class="form-check"><input type="checkbox" name="is_active" value="1" checked> مفعل</label>
-      <button type="submit" class="btn btn-primary">إضافة</button>
-    </form>
-    <table class="admin-table">
-      <thead><tr><th>#</th><th>النص</th><th>الرابط</th><th>الترتيب</th><th>الحالة</th><th>إجراءات</th></tr></thead>
-      <tbody>
-        <% breaking.forEach(item => { %>
-        <tr>
-          <td><%= item.id %></td>
-          <td><%= item.text.substring(0, 60) %>...</td>
-          <td><%= item.link || '-' %></td>
-          <td><%= item.sort_order %></td>
-          <td><%= item.is_active ? '<span class="badge badge-success">مفعل</span>' : '<span class="badge badge-warning">معطل</span>' %></td>
-          <td class="actions">
-            <form method="POST" action="/admin/breaking/delete/<%= item.id %>" style="display:inline;" onsubmit="return confirm('حذف؟')">
-              <button class="btn btn-sm btn-danger">حذف</button>
-            </form>
-          </td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
+    
+    <!-- Info -->
+    <div class="urgent-info">
+      <svg width="24"24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      <div>
+        <p><strong>تلقائي:</strong> أي خبر يُنشر في تصنيف <strong>"عاجل"</strong> يظهر تلقائياً في الشريط المتحرك.</p>
+        <p><strong>يدوي:</strong> يمكنك إضافة أخبار عاجلة مخصصة من هنا يدوياً.</p>
+      </div>
+    </div>
+
+    <!-- Quick Add from عاجl Category -->
+    <div class="form-section">
+      <h4>📤 رفع خبر عاجل من تصنيف عاجل</h4>
+      <form method="POST" action="/admin/breaking/add-from-news" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+        <div style="flex:2">
+          <label style="font-size:13px;color:#64748b;display:block;margin-bottom:4px">اختر خبر من تصنيف عاجل</label>
+          <select name="news_id" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
+            <option value="">-- اختر خبر --</option>
+            <% if (typeof urgentNews !== 'undefined' && urgentNews) { urgentNews.forEach(n => { %>
+              <option value="<%= n.id %>"><%= n.title.substring(0, 80) %></option>
+            <% }); } %>
+          </select>
+        </div>
+        <input type="number" name="sort_order" placeholder="الترتيب" value="0" style="width:80px;padding:10px;border:1px solid #ddd;border-radius:6px;">
+        <button type="submit" class="btn btn-primary">⚡ رفع للشريط</button>
+      </form>
+    </div>
+
+    <!-- Manual Add -->
+    <div class="form-section">
+      <h4>✏️ إضافة خبر عاجل يدوي</h4>
+      <form method="POST" action="/admin/breaking/create" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+        <div style="flex:2">
+          <label style="font-size:13px;color:#64748b;display:block;margin-bottom:4px">نص الخبر العاجل</label>
+          <input type="text" name="text" placeholder="اكتب نص الخبر العاجل" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:13px;color:#64748b;display:block;margin-bottom:4px">الرابط (اختياري)</label>
+          <input type="text" name="link" placeholder="https://..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
+        </div>
+        <input type="number" name="sort_order" placeholder="الترتيب" value="0" style="width:80px;padding:10px;border:1px solid #ddd;border-radius:6px;">
+        <label class="form-check"><input type="checkbox" name="is_active" value="1" checked> مفعل</label>
+        <button type="submit" class="btn btn-primary">➕ إضافة</button>
+      </form>
+    </div>
+
+    <!-- Current Breaking News -->
+    <h4 style="margin:20px 0 12px">📋 الأخبار العاجلة الحالية (<%= breaking.length %>)</h4>
+    <% if (breaking.length === 0) { %>
+    <div style="text-align:center;padding:30px;color:#94a3b8">
+      <p>لا توجد أخبار عاجلة حالياً. أضف أخبار يدوياً أو انشر أخبار في تصنيف "عاجل".</p>
+    </div>
+    <% } else { %>
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr><th>#</th><th>النوع</th><th>النص</th><th>الرابط</th><th>الترتيب</th><th>الحالة</th><th>إجراءات</th></tr>
+        </thead>
+        <tbody>
+          <% breaking.forEach(item => { %>
+          <tr>
+            <td><%= item.id %></td>
+            <td>
+              <% if (item.link && item.link.startsWith('/news/')) { %>
+                <span class="auto-badge">تلقائي</span>
+              <% } else { %>
+                <span class="manual-badge">يدوي</span>
+              <% } %>
+            </td>
+            <td><%= item.text.length > 60 ? item.text.substring(0, 60) + '...' : item.text %></td>
+            <td><% if (item.link) { %><a href="<%= item.link %>" target="_blank" style="color:#3b82f6;font-size:12px"><%= item.link.substring(0, 30) %></a><% } else { %>-<% } %></td>
+            <td><%= item.sort_order %></td>
+            <td><span class="badge <%= item.is_active ? 'badge-success' : 'badge-warning' %>"><%= item.is_active ? 'مفعل' : 'معطل' %></span></td>
+            <td class="actions">
+              <form method="POST" action="/admin/breaking/toggle/<%= item.id %>" style="display:inline;">
+                <button class="btn btn-sm btn-secondary"><%= item.is_active ? 'تعطيل' : 'تفعيل' %></button>
+              </form>
+              <form method="POST" action="/admin/breaking/delete/<%= item.id %>" style="display:inline;" onsubmit="return confirm('حذف الخبر العاجل؟')">
+                <button class="btn btn-sm btn-danger">🗑️ حذف</button>
+              </form>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
   </div>
 </div>
 
