@@ -1,5 +1,5 @@
 const express = require('express');
-const session = require('express-session');
+const cookieSession = require('cookie-session');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const http = require('http');
@@ -33,11 +33,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cookieParser());
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'awtar-secret-key-2024',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 }
+app.use(cookieSession({
+  name: 'awtar_session',
+  keys: [process.env.SESSION_SECRET || 'awtar-secret-key-2024'],
+  maxAge: 24 * 60 * 60 * 1000,
+  sameSite: 'lax',
+  httpOnly: true,
+  secure: isVercel
 }));
 
 // Language middleware
