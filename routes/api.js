@@ -271,12 +271,8 @@ const upload = multer({
 
 function saveImageToDb(file) {
   if (!file) return null;
-  const db = getDb();
   const base64 = file.buffer.toString('base64');
-  const result = db.prepare('INSERT INTO images (filename, mime_type, data, size) VALUES (?, ?, ?, ?)').run(
-    file.originalname, file.mimetype, base64, file.size
-  );
-  return '/api/images/' + result.lastInsertRowid;
+  return `data:${file.mimetype};base64,${base64}`;
 }
 
 // POST /api/v1/admin/news/create
