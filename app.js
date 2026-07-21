@@ -78,13 +78,14 @@ app.use((req, res, next) => {
   try {
     // Get manual breaking news
     const manualBreaking = db.prepare("SELECT id, text, link, sort_order, created_at FROM breaking_news WHERE is_active = 1").all();
-    // Get auto عاجl news from category (use slug 'breaking' for reliability)
+    // Get auto عاجl news from category
     let autoBreaking = [];
     try {
-      const urgentCat = db.prepare("SELECT id FROM categories WHERE slug = 'breaking' LIMIT 1").get();
+      // Find عاجl category by checking all categories
+      const allCats = res.locals.categories || [];
+      const urgentCat = allCats.find(c => c.slug === 'breaking' || c.name_ar === 'عاجل');
       if (urgentCat) {
-        const catId = parseInt(urgentCat.id) || urgentCat.id;
-        autoBreaking = db.prepare("SELECT id, title as text, '/news/' || id as link, 999 as sort_order, published_at as created_at FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 10").all(catId);
+        autoBreaking = db.prepare("SELECT id, title as text, '/news/' || id as link, 999 as sort_order, published_at as created_at FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 10").all(urgentCat.id);
       }
     } catch(e) {}
     // Combine and deduplicate, limit to 10
