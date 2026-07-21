@@ -1996,3 +1996,24 @@ img {
   height: 100%;
   border: none;
 }
+
+/* ═══ Hero cards without images ═══ */
+.hero-secondary-card.no-image .hero-secondary-card-content {
+  padding: 12px;
+}
+.hero-secondary-card.no-image .hero-secondary-card-content h3 {
+  font-size: 14px;
+  margin: 4px 0;
+}
+.hero-primary.no-image .hero-primary-overlay {
+  position: relative;
+  background: linear-gradient(135deg, #0f3b82, #1e5aa8);
+  padding: 24px;
+  border-radius: var(--radius-lg);
+}
+.hero-primary.no-image .hero-primary-media {
+  min-height: auto;
+}
+.hero-primary.no-image .story-meta.inverse {
+  color: rgba(255,255,255,.7);
+}

@@ -9,10 +9,10 @@
     <% if (lead) { %>
     <section class="home-top-grid">
       <div class="hero-cluster">
-        <article class="hero-primary">
+        <article class="hero-primary<%= !lead.image ? ' no-image' : '' %>">
           <a href="/news/<%= lead.news_id || lead.id %>">
             <div class="hero-primary-media">
-              <img src="<%= lead.image %>" alt="<%= lead.title || lead.news_title %>">
+              <% if (lead.image) { %><img src="<%= lead.image %>" alt="<%= lead.title || lead.news_title %>"><% } %>
               <div class="hero-primary-overlay">
                 <span class="eyebrow accent"><%= (lead.category_name || 'الواجهة الرئيسية') %></span>
                 <h2><%= lead.title || lead.news_title %></h2>
@@ -28,10 +28,12 @@
 
         <div class="hero-secondary-list">
           <% secondaryStories.forEach(item => { %>
-            <article class="hero-secondary-card">
+            <article class="hero-secondary-card<%= !item.image ? ' no-image' : '' %>">
+              <% if (item.image) { %>
               <a class="hero-secondary-card-media" href="/news/<%= item.news_id || item.id %>">
                 <img src="<%= item.image %>" alt="<%= item.title || item.news_title %>" loading="lazy">
               </a>
+              <% } %>
               <div class="hero-secondary-card-content">
                 <span class="eyebrow"><%= item.category_name || 'أخبار' %></span>
                 <h3><a href="/news/<%= item.news_id || item.id %>"><%= item.title || item.news_title %></a></h3>
