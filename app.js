@@ -83,8 +83,9 @@ app.use((req, res, next) => {
     try {
       // Find عاجl category ID first
       const urgentCat = db.prepare("SELECT id FROM categories WHERE slug = 'breaking' OR name_ar LIKE '%عاجل%' LIMIT 1").get();
-      if (urgentCat && urgentCat.id) {
-        autoBreaking = db.prepare("SELECT id, title as text, '/news/' || id as link, 999 as sort_order, published_at as created_at FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 10").all(urgentCat.id);
+      if (urgentCat) {
+        const catId = parseInt(urgentCat.id) || 16; // fallback to 16
+        autoBreaking = db.prepare("SELECT id, title as text, '/news/' || id as link, 999 as sort_order, published_at as created_at FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 10").all(catId);
       }
     } catch(e) {}
     // Combine and deduplicate, limit to 10
