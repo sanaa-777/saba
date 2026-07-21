@@ -21,8 +21,12 @@ try {
 const PORT = process.env.PORT || 3000;
 const isVercel = !!process.env.VERCEL;
 
-// Initialize database
-initDatabase();
+// Initialize database (with error handling for Vercel)
+try {
+  initDatabase();
+} catch (err) {
+  console.error('Database initialization failed:', err.message);
+}
 
 // View engine
 app.set('view engine', 'ejs');
