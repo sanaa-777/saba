@@ -1,42 +1,154 @@
 <%- include('header') %>
 
+<style>
+.ad-preview{max-width:80px;max-height:50px;object-fit:cover;border-radius:4px;vertical-align:middle}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;justify-content:center;align-items:center}
+.modal-overlay.active{display:flex}
+.modal-box{background:#fff;border-radius:12px;width:90%;max-width:550px;max-height:90vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{margin:0 0 16px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.btn-cancel{background:#e2e8f0;color:#475569;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-family:inherit}
+.btn-save{background:#3b82f6;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-family:inherit}
+</style>
+
 <div class="admin-card">
-  <div class="admin-card-header"><h3>إدارة الإعلانات</h3></div>
+  <div class="admin-card-header"><h3>📢 إدارة الإعلانات</h3></div>
   <div class="admin-card-body">
+    <!-- Add Form -->
     <form method="POST" action="/admin/ads/create" enctype="multipart/form-data" style="margin-bottom:20px;padding:15px;background:#f9f9f9;border-radius:8px;">
       <div class="form-row">
         <div class="form-group"><label>اسم الإعلان</label><input type="text" name="name" required></div>
         <div class="form-group"><label>الموضع</label>
-          <select name="position"><option value="header">أعلى الصفحة</option><option value="sidebar">الشريط الجانبي</option><option value="footer">أسفل الصفحة</option><option value="content">داخل المحتوى</option></select>
+          <select name="position">
+            <option value="header">أعلى الصفحة (Header)</option>
+            <option value="sidebar">الشريط الجانبي (Sidebar)</option>
+            <option value="content">داخل المحتوى (Content)</option>
+            <option value="footer">أسفل الصفحة (Footer)</option>
+          </select>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>الصورة</label><input type="file" name="image" accept="image/*"></div>
-        <div class="form-group"><label>الرابط</label><input type="text" name="link"></div>
+        <div class="form-group"><label>الرابط</label><input type="text" name="link" placeholder="https://..."></div>
       </div>
-      <div class="form-group"><label>كود HTML (اختياري)</label><textarea name="code" rows="3"></textarea></div>
+      <div class="form-group"><label>كود HTML (اختياري - يتجاوز الصورة)</label><textarea name="code" rows="3" placeholder="<div>إعلان مخصص</div>"></textarea></div>
       <div class="form-row">
-        <div class="form-group"><label>تاريخ البداية</label><input type="date" name="start_date"></div>
-        <div class="form-group"><label>تاريخ النهاية</label><input type="date" name="end_date"></div>
+        <div class="form-group"><label>تاريخ البداية (اختياري)</label><input type="date" name="start_date"></div>
+        <div class="form-group"><label>تاريخ النهاية (اختياري)</label><input type="date" name="end_date"></div>
       </div>
       <label class="form-check"><input type="checkbox" name="is_active" value="1" checked> مفعل</label>
-      <button type="submit" class="btn btn-primary">إضافة</button>
+      <button type="submit" class="btn btn-primary">➕ إضافة إعلان</button>
     </form>
-    <table class="admin-table">
-      <thead><tr><th>#</th><th>الاسم</th><th>الموضع</th><th>الحالة</th><th>إجراءات</th></tr></thead>
-      <tbody>
-        <% ads.forEach(ad => { %>
-        <tr>
-          <td><%= ad.id %></td><td><%= ad.name %></td><td><%= ad.position %></td>
-          <td><%= ad.is_active ? '<span class="badge badge-success">مفعل</span>' : '<span class="badge badge-warning">معطل</span>' %></td>
-          <td class="actions">
-            <form method="POST" action="/admin/ads/delete/<%= ad.id %>" style="display:inline;" onsubmit="return confirm('حذف؟')"><button class="btn btn-sm btn-danger">حذف</button></form>
-          </td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
+
+    <% if (ads.length === 0) { %>
+    <div style="text-align:center;padding:30px;color:#94a3b8">
+      <p>لا توجد إعلانات. أضف إعلاناً ليظهر في الموقع.</p>
+    </div>
+    <% } else { %>
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr><th>#</th><th>معاينة</th><th>الاسم</th><th>الموضع</th><th>الرابط</th><th>التواريخ</th><th>الحالة</th><th>إجراءات</th></tr>
+        </thead>
+        <tbody>
+          <% ads.forEach(ad => { %>
+          <tr>
+            <td><%= ad.id %></td>
+            <td>
+              <% if (ad.image) { %>
+                <img class="ad-preview" src="<%= ad.image.substring(0, 30) === 'data:' ? ad.image : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>">
+              <% } else if (ad.code) { %>
+                <span class="badge badge-info">HTML</span>
+              <% } else { %>
+                <span style="color:#94a3b8">—</span>
+              <% } %>
+            </td>
+            <td><strong><%= ad.name %></strong></td>
+            <td>
+              <span class="badge badge-<%= ad.position === 'header' ? 'success' : ad.position === 'sidebar' ? 'info' : ad.position === 'content' ? 'warning' : 'default' %>">
+                <%= ad.position === 'header' ? 'أعلى' : ad.position === 'sidebar' ? 'جانبي' : ad.position === 'content' ? 'محتوى' : 'أسفل' %>
+              </span>
+            </td>
+            <td><% if (ad.link) { %><a href="<%- ad.link %>" target="_blank" style="font-size:12px;color:#3b82f6"><%- ad.link.substring(0,30) %>...</a><% } else { %><span style="color:#94a3b8">—</span><% } %></td>
+            <td style="font-size:11px">
+              <% if (ad.start_date) { %>من: <%= new Date(ad.start_date).toLocaleDateString('ar-YE') %><br><% } %>
+              <% if (ad.end_date) { %>إلى: <%= new Date(ad.end_date).toLocaleDateString('ar-YE') %><% } %>
+              <% if (!ad.start_date && !ad.end_date) { %><span style="color:#94a3b8">دائماً</span><% } %>
+            </td>
+            <td><span class="badge <%= ad.is_active ? 'badge-success' : 'badge-warning' %>"><%= ad.is_active ? 'مفعل' : 'معطل' %></span></td>
+            <td class="actions">
+              <button class="btn btn-sm btn-primary" onclick="openEditModal(<%= ad.id %>)">✏️ تعديل</button>
+              <form method="POST" action="/admin/ads/delete/<%= ad.id %>" style="display:inline;" onsubmit="return confirm('حذف الإعلان نهائياً؟')"><button class="btn btn-sm btn-danger">🗑️ حذف</button></form>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
   </div>
 </div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <h3>✏️ تعديل الإعلان</h3>
+    <form method="POST" id="editForm" enctype="multipart/form-data">
+      <div class="form-row">
+        <div class="form-group"><label>اسم الإعلان</label><input type="text" name="name" id="editName" required></div>
+        <div class="form-group"><label>الموضع</label>
+          <select name="position" id="editPosition">
+            <option value="header">أعلى الصفحة</option>
+            <option value="sidebar">الشريط الجانبي</option>
+            <option value="content">داخل المحتوى</option>
+            <option value="footer">أسفل الصفحة</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>صورة جديدة (اتركه فارغاً للاحتفاظ بالحالية)</label><input type="file" name="image" accept="image/*"></div>
+        <div class="form-group"><label>الرابط</label><input type="text" name="link" id="editLink"></div>
+      </div>
+      <div class="form-group"><label>كود HTML</label><textarea name="code" id="editCode" rows="3"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>تاريخ البداية</label><input type="date" name="start_date" id="editStart"></div>
+        <div class="form-group"><label>تاريخ النهاية</label><input type="date" name="end_date" id="editEnd"></div>
+      </div>
+      <label class="form-check"><input type="checkbox" name="is_active" value="1" id="editActive"> مفعل</label>
+      <label class="form-check"><input type="checkbox" name="keep_image" value="1" id="editKeep" checked> الاحتفاظ بالصورة الحالية</label>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeModal()">إلغاء</button>
+        <button type="submit" class="btn-save">💾 حفظ التعديلات</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const adsData = <%- JSON.stringify(ads) %>;
+
+function openEditModal(id) {
+  const ad = adsData.find(a => a.id === id);
+  if (!ad) return;
+  document.getElementById('editForm').action = '/admin/ads/edit/' + id;
+  document.getElementById('editName').value = ad.name || '';
+  document.getElementById('editPosition').value = ad.position || 'header';
+  document.getElementById('editLink').value = ad.link || '';
+  document.getElementById('editCode').value = ad.code || '';
+  document.getElementById('editStart').value = ad.start_date ? ad.start_date.substring(0,10) : '';
+  document.getElementById('editEnd').value = ad.end_date ? ad.end_date.substring(0,10) : '';
+  document.getElementById('editActive').checked = !!ad.is_active;
+  document.getElementById('editKeep').checked = true;
+  document.getElementById('editModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('active');
+}
+
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
 
 <%- include('footer') %>

@@ -47,8 +47,8 @@ router.get('/', (req, res) => {
 
   let activeAds = [];
   try {
-    activeAds = db.prepare(`SELECT * FROM advertisements WHERE is_active = 1 AND (start_date IS NULL OR start_date = '' OR start_date <= CURRENT_DATE) AND (end_date IS NULL OR end_date = '' OR end_date >= CURRENT_DATE) ORDER BY id DESC`).all();
-  } catch(e) {}
+    activeAds = db.prepare(`SELECT * FROM advertisements WHERE is_active = 1 AND (start_date IS NULL OR start_date <= CURRENT_DATE) AND (end_date IS NULL OR end_date >= CURRENT_DATE) ORDER BY id DESC`).all();
+  } catch(e) { activeAds = []; }
   const headerAds = activeAds.filter(ad => ad.position === 'header');
   const contentAds = activeAds.filter(ad => ad.position === 'content');
   const sidebarAds = activeAds.filter(ad => ad.position === 'sidebar');

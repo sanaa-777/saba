@@ -273,6 +273,20 @@
       </div>
     </section>
     <% } %>
+
+    <% if (footerAds && footerAds.length > 0) { const ad = footerAds[0]; %>
+    <section class="home-ad-block footer-ad">
+      <% if (ad.code) { %>
+        <div class="home-ad-inner"><%- ad.code %></div>
+      <% } else { %>
+        <a class="home-ad-inner" href="<%= ad.link || '#' %>" <%= ad.link ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+          <% if (ad.image) { %><img src="<%= ad.image %>" alt="<%= ad.name %>" loading="lazy"><% } %>
+          <div class="home-ad-caption"><span>إعلان</span><strong><%= ad.name %></strong></div>
+        </a>
+      <% } %>
+    </section>
+    <% } %>
+
   </div>
 </main>
 
