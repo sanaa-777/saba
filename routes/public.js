@@ -5,45 +5,50 @@ const RSS = require('rss');
 
 // Homepage
 router.get('/', (req, res) => {
+  try {
   const db = getDb();
 
   // Breaking news
-  const breakingNews = db.prepare('SELECT * FROM breaking_news WHERE is_active = 1 ORDER BY sort_order').all();
+  let breakingNews = [];
+  try { breakingNews = db.prepare('SELECT * FROM breaking_news WHERE is_active = 1 ORDER BY sort_order').all(); } catch(e) {}
 
   // Slider items
-  const sliderItems = db.prepare(`SELECT s.*, n.title as news_title, n.id as news_id FROM slider s LEFT JOIN news n ON s.news_id = n.id WHERE s.is_active = 1 ORDER BY s.sort_order LIMIT 5`).all();
+  let sliderItems = [];
+  try { sliderItems = db.prepare(`SELECT s.*, n.title as news_title, n.id as news_id FROM slider s LEFT JOIN news n ON s.news_id = n.id WHERE s.is_active = 1 ORDER BY s.sort_order LIMIT 5`).all(); } catch(e) {}
 
-  // Latest news by category
+  // Latest news by category (limit to top 8 categories to reduce queries)
   const categoryNews = {};
-  const cats = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order').all();
+  let cats = [];
+  try { cats = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order LIMIT 8').all(); } catch(e) {}
   for (const cat of cats) {
-    categoryNews[cat.id] = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.category_id = ? AND n.status = 1 ORDER BY n.published_at DESC LIMIT 6`).all(cat.id);
+    try {
+      categoryNews[cat.id] = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.category_id = ? AND n.status = 1 ORDER BY n.published_at DESC LIMIT 6`).all(cat.id);
+    } catch(e) { categoryNews[cat.id] = []; }
   }
 
   // Latest news (sidebar)
-  const latestNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 ORDER BY n.published_at DESC LIMIT 15`).all();
+  let latestNews = [];
+  try { latestNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 ORDER BY n.published_at DESC LIMIT 15`).all(); } catch(e) {}
 
-  // Featured news
-  const featuredNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.is_featured = 1 AND n.status = 1 ORDER BY n.published_at DESC LIMIT 10`).all();
+  let featuredNews = [];
+  try { featuredNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.is_featured = 1 AND n.status = 1 ORDER BY n.published_at DESC LIMIT 10`).all(); } catch(e) {}
 
-  // Latest videos
-  const videos = db.prepare("SELECT * FROM media WHERE type = 'video' ORDER BY created_at DESC LIMIT 4").all();
+  let videos = [];
+  try { videos = db.prepare("SELECT * FROM media WHERE type = 'video' ORDER BY created_at DESC LIMIT 4").all(); } catch(e) {}
 
-  // Latest galleries
-  const galleries = db.prepare("SELECT * FROM media WHERE type = 'image' ORDER BY created_at DESC LIMIT 4").all();
+  let galleries = [];
+  try { galleries = db.prepare("SELECT * FROM media WHERE type = 'image' ORDER BY created_at DESC LIMIT 4").all(); } catch(e) {}
 
-  // Latest audios
-  const audios = db.prepare("SELECT * FROM media WHERE type = 'audio' ORDER BY created_at DESC LIMIT 4").all();
+  let audios = [];
+  try { audios = db.prepare("SELECT * FROM media WHERE type = 'audio' ORDER BY created_at DESC LIMIT 4").all(); } catch(e) {}
 
-  // Publications
-  const publications = db.prepare("SELECT * FROM media WHERE category = 'منشورات' ORDER BY created_at DESC LIMIT 4").all();
+  let publications = [];
+  try { publications = db.prepare("SELECT * FROM media WHERE category = 'منشورات' ORDER BY created_at DESC LIMIT 4").all(); } catch(e) {}
 
-  // Homepage advertisements
-  const activeAds = db.prepare(`SELECT * FROM advertisements
-    WHERE is_active = 1
-      AND (start_date IS NULL OR start_date = '' OR start_date <= CURRENT_DATE)
-      AND (end_date IS NULL OR end_date = '' OR end_date >= CURRENT_DATE)
-    ORDER BY id DESC`).all();
+  let activeAds = [];
+  try {
+    activeAds = db.prepare(`SELECT * FROM advertisements WHERE is_active = 1 AND (start_date IS NULL OR start_date = '' OR start_date <= CURRENT_DATE) AND (end_date IS NULL OR end_date = '' OR end_date >= CURRENT_DATE) ORDER BY id DESC`).all();
+  } catch(e) {}
   const headerAds = activeAds.filter(ad => ad.position === 'header');
   const contentAds = activeAds.filter(ad => ad.position === 'content');
   const sidebarAds = activeAds.filter(ad => ad.position === 'sidebar');
@@ -66,6 +71,10 @@ router.get('/', (req, res) => {
     sidebarAds,
     footerAds
   });
+  } catch (err) {
+    console.error('Homepage error:', err.message);
+    res.status(500).render('error', { title: 'خطأ', error: 'حدث خطأ في تحميل الصفحة الرئيسية' });
+  }
 });
 
 // Category page
