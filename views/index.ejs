@@ -28,7 +28,7 @@
             <div class="hero-primary-media">
               <% if (lead.image) { %><img src="<%= lead.image %>" alt="<%= lead.title || lead.news_title %>"><% } %>
               <div class="hero-primary-overlay">
-                <span class="eyebrow accent"><%= (lead.category_name || 'الواجهة الرئيسية') %></span>
+                <span class="eyebrow accent"><%= lead.category_name || '' %></span>
                 <h2><%= lead.title || lead.news_title %></h2>
                 <% if (lead.summary) { %><p><%= lead.summary %></p><% } %>
                 <div class="story-meta inverse">
