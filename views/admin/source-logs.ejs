@@ -1,0 +1,73 @@
+<%- include('header') %>
+
+<style>
+.log-header{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:20px}
+.log-header h3{margin:0 0 8px}
+.log-meta{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#64748b}
+.log-meta strong{color:#1e293b}
+.log-table{width:100%;border-collapse:collapse}
+.log-table th{background:#f8fafc;text-align:right;padding:10px 12px;font-size:13px;font-weight:600;color:#475569;border-bottom:2px solid #e5e7eb}
+.log-table td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:13px}
+.log-table tr:hover{background:#f8fafc}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-success{background:#d1fae5;color:#059669}
+.badge-error{background:#fee2e2;color:#dc2626}
+.badge-running{background:#dbeafe;color:#2563eb}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:#3b82f6;text-decoration:none;font-size:14px;margin-bottom:16px}
+.back-link:hover{text-decoration:underline}
+.empty-logs{text-align:center;padding:40px;color:#94a3b8}
+</style>
+
+<a href="/admin/sources" class="back-link">← العودة لمصادر الأخبار</a>
+
+<div class="log-header">
+  <h3>📋 سجل الجلب: <%= source.name %></h3>
+  <div class="log-meta">
+    <span>النوع: <strong><%= source.source_type %></strong></span>
+    <span>الرابط: <strong><%= source.url %></strong></span>
+    <span>الإجمالي: <strong><%= source.total_fetched || 0 %></strong> خبر</span>
+  </div>
+</div>
+
+<% if (logs.length === 0) { %>
+<div class="empty-logs">
+  <div style="font-size:40px;margin-bottom:8px">📭</div>
+  <p>لا توجد سجلات جلب بعد. اضغط "جلب الآن" لبدء أول عملية.</p>
+</div>
+<% } else { %>
+<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+  <table class="log-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>الحالة</th>
+        <th>أخبار جديدة</th>
+        <th>مكررة</th>
+        <th>بدأ</th>
+        <th>انتهى</th>
+        <th>المدة</th>
+        <th>تفاصيل</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% logs.forEach((log, i) => { %>
+      <tr>
+        <td><%= logs.length - i %></td>
+        <td><span class="badge badge-<%= log.status %>"><%= log.status === 'success' ? '✅ نجح' : log.status === 'error' ? '❌ فشل' : '⏳ يعمل' %></span></td>
+        <td style="color:#059669;font-weight:600"><%= log.new_count || 0 %></td>
+        <td style="color:#d97706"><%= log.duplicate_count || 0 %></td>
+        <td><%= new Date(log.started_at).toLocaleString('ar-YE') %></td>
+        <td><%= log.finished_at ? new Date(log.finished_at).toLocaleString('ar-YE') : '-' %></td>
+        <td><%= log.finished_at ? Math.round((new Date(log.finished_at) - new Date(log.started_at)) / 1000) + ' ث' : '-' %></td>
+        <td>
+          <% if (log.error_message) { %><span style="color:#dc2626;font-size:12px"><%= log.error_message.substring(0, 80) %></span><% } %>
+          <% if (log.details) { %><span style="color:#64748b;font-size:12px"><%= log.details.substring(0, 100) %></span><% } %>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<%- include('footer') %>

@@ -1,0 +1,295 @@
+<%- include('header') %>
+
+<style>
+.sources-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.sources-toolbar h3{margin:0}
+.btn-fetch-all{background:#10b981;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:14px;display:flex;align-items:center;gap:6px}
+.btn-fetch-all:hover{background:#059669}
+.btn-fetch-all:disabled{opacity:.5;cursor:wait}
+.source-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:12px;transition:box-shadow .2s}
+.source-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.source-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.source-name{font-weight:700;font-size:16px;color:#1e293b}
+.source-url{color:#64748b;font-size:13px;word-break:break-all;margin-top:2px}
+.source-meta{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+.meta-item{background:#f8fafc;border-radius:6px;padding:8px 10px;font-size:13px}
+.meta-label{color:#94a3b8;font-size:11px;display:block;margin-bottom:2px}
+.meta-value{font-weight:600;color:#334155}
+.badge-type{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase}
+.badge-rss{background:#dbeafe;color:#2563eb}
+.badge-website{background:#fef3c7;color:#d97706}
+.badge-telegram{background:#e0e7ff;color:#6366f1}
+.badge-auto{background:#f1f5f9;color:#64748b}
+.badge-success{background:#d1fae5;color:#059669}
+.badge-error{background:#fee2e2;color:#dc2626}
+.badge-pending{background:#f1f5f9;color:#64748b}
+.source-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.btn-sm{padding:5px 12px;border-radius:5px;font-size:12px;border:none;cursor:pointer;font-family:inherit}
+.btn-primary{background:#3b82f6;color:#fff}.btn-primary:hover{background:#2563eb}
+.btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}
+.btn-secondary{background:#e2e8f0;color:#475569}.btn-secondary:hover{background:#cbd5e1}
+.btn-fetch{background:#10b981;color:#fff}.btn-fetch:hover{background:#059669}
+.btn-fetch:disabled{opacity:.5;cursor:wait}
+.fetch-result{margin-top:8px;padding:8px 12px;border-radius:6px;font-size:13px;display:none}
+.fetch-result.show{display:block}
+.fetch-result.success{background:#d1fae5;color:#065f46}
+.fetch-result.error{background:#fee2e2;color:#991b1b}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;justify-content:center;align-items:center}
+.modal-overlay.active{display:flex}
+.modal-box{background:#fff;border-radius:12px;width:90%;max-width:600px;max-height:90vh;overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{margin:0 0 16px;font-size:18px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:4px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-family:inherit;font-size:14px;box-sizing:border-box}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-check{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:14px}
+.form-check input{width:auto}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.btn-cancel{background:#e2e8f0;color:#475569;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-family:inherit}
+.btn-save{background:#3b82f6;color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-family:inherit}
+
+.source-status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px}
+.dot-success{background:#10b981}.dot-error{background:#ef4444}.dot-pending{background:#94a3b8}
+
+@media(max-width:768px){
+  .form-row{grid-template-columns:1fr}
+  .source-meta{grid-template-columns:1fr 1fr}
+  .modal-box{width:95%;padding:16px}
+}
+</style>
+
+<div class="sources-toolbar">
+  <div>
+    <h3>🌐 مصادر الأخبار الآلية</h3>
+    <p style="color:#64748b;font-size:13px;margin:4px 0 0">إضافة وإدارة مصادر RSS والمواقع وقنوات تيليجرام للجلب التلقائي</p>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="btn-fetch-all" id="fetchAllBtn" onclick="fetchAllSources()">⚡ جلب الكل الآن</button>
+    <button class="btn btn-sm btn-primary" onclick="openAddModal()">＋ إضافة مصدر</button>
+  </div>
+</div>
+
+<div id="globalFetchResult" class="fetch-result"></div>
+
+<% if (sources.length === 0) { %>
+<div style="text-align:center;padding:60px 20px;color:#94a3b8">
+  <div style="font-size:48px;margin-bottom:12px">📡</div>
+  <h3 style="color:#475569">لا توجد مصادر بعد</h3>
+  <p>أضف مصدراً لبدء جلب الأخبار تلقائياً من RSS أو المواقع أو تيليجرام</p>
+</div>
+<% } else { %>
+
+<% sources.forEach(src => { %>
+<div class="source-card" id="source-<%= src.id %>">
+  <div class="source-header">
+    <div>
+      <div class="source-name">
+        <span class="source-status-dot dot-<%= src.last_fetch_status === 'success' ? 'success' : src.last_fetch_status === 'error' ? 'error' : 'pending' %>"></span>
+        <%= src.name %>
+        <span class="badge-type badge-<%= src.source_type %>"><%= src.source_type %></span>
+        <% if (!src.is_active) { %><span class="badge-type badge-pending">معطل</span><% } %>
+        <% if (src.auto_publish) { %><span class="badge-type badge-success">نشر تلقائي</span><% } %>
+      </div>
+      <div class="source-url"><%= src.url %></div>
+    </div>
+  </div>
+
+  <div class="source-meta">
+    <div class="meta-item"><span class="meta-label">آخر جلب</span><span class="meta-value"><%= src.last_fetched_at ? new Date(src.last_fetched_at).toLocaleString('ar-YE') : 'لم يُجلب بعد' %></span></div>
+    <div class="meta-item"><span class="meta-label">الجلب القادم</span><span class="meta-value"><%= src.next_fetch_at ? new Date(src.next_fetch_at).toLocaleString('ar-YE') : '-' %></span></div>
+    <div class="meta-item"><span class="meta-label">أخبار جديدة</span><span class="meta-value" style="color:#059669"><%= src.last_new_count || 0 %></span></div>
+    <div class="meta-item"><span class="meta-label">مكررة</span><span class="meta-value" style="color:#d97706"><%= src.total_duplicates || 0 %></span></div>
+    <div class="meta-item"><span class="meta-label">الإجمالي</span><span class="meta-value"><%= src.total_fetched || 0 %></span></div>
+    <div class="meta-item"><span class="meta-label">الفاصل</span><span class="meta-value"><%= Math.round(src.fetch_interval / 60) %> دقيقة</span></div>
+    <div class="meta-item"><span class="meta-label">التصنيف</span><span class="meta-value"><%= src.category_name || 'تلقائي' %></span></div>
+    <div class="meta-item"><span class="meta-label">الحالة</span><span class="meta-value"><span class="badge-type badge-<%= src.last_fetch_status || 'pending' %>"><%= src.last_fetch_status || 'قيد الانتظار' %></span></span></div>
+  </div>
+
+  <% if (src.last_error) { %>
+  <div style="margin-top:8px;padding:8px 12px;background:#fee2e2;border-radius:6px;font-size:12px;color:#991b1b">
+    ⚠️ آخر خطأ: <%= src.last_error %>
+  </div>
+  <% } %>
+
+  <div class="source-actions">
+    <button class="btn-sm btn-fetch" onclick="fetchSource(<%= src.id %>, this)">⚡ جلب الآن</button>
+    <button class="btn-sm btn-primary" onclick="openEditModal(<%= src.id %>)">✏️ تعديل</button>
+    <a href="/admin/sources/logs/<%= src.id %>" class="btn-sm btn-secondary">📋 السجل</a>
+    <form method="POST" action="/admin/sources/delete/<%= src.id %}" style="display:inline" onsubmit="return confirm('حذف المصدر وكل سجلاته؟')">
+      <button class="btn-sm btn-danger" type="submit">🗑️ حذف</button>
+    </form>
+  </div>
+  <div class="fetch-result" id="result-<%= src.id %>"></div>
+</div>
+<% }); %>
+<% } %>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <h3>إضافة مصدر أخبار جديد</h3>
+    <form method="POST" action="/admin/sources/create" id="addForm">
+      <div class="form-row">
+        <div class="form-group"><label>اسم المصدر</label><input type="text" name="name" required placeholder="مثال: سبأ نيوز"></div>
+        <div class="form-group"><label>نوع المصدر</label>
+          <select name="source_type" id="addType">
+            <option value="auto">اكتشاف تلقائي</option>
+            <option value="rss">RSS / Atom</option>
+            <option value="website">موقع ويب</option>
+            <option value="telegram">تيليجرام</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>الرابط</label><input type="url" name="url" required placeholder="https://..." id="addUrl" oninput="detectType('add')"></div>
+      <div class="form-row">
+        <div class="form-group"><label>التصنيف الافتراضي</label>
+          <select name="category_id"><option value="">-- تلقائي --</option>
+            <% categories.forEach(c => { %><option value="<%= c.id %>"><%= c.name_ar %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group"><label>الفاصل الزمني (دقائق)</label><input type="number" name="fetch_interval" value="15" min="5" step="5"></div>
+      </div>
+      <label class="form-check"><input type="checkbox" name="auto_publish" value="1"> نشر تلقائي (بدون مراجعة)</label>
+      <label class="form-check"><input type="checkbox" name="use_proxy" value="1" onchange="toggleProxy('add')"> استخدام Proxy</label>
+      <div class="form-group" id="addProxyGroup" style="display:none"><label>رابط Proxy</label><input type="text" name="proxy_url" placeholder="https://corsproxy.io/?"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeModal('addModal')">إلغاء</button>
+        <button type="submit" class="btn-save">إضافة</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <h3>تعديل المصدر</h3>
+    <form method="POST" id="editForm">
+      <div class="form-row">
+        <div class="form-group"><label>اسم المصدر</label><input type="text" name="name" id="editName" required></div>
+        <div class="form-group"><label>نوع المصدر</label>
+          <select name="source_type" id="editType">
+            <option value="auto">اكتشاف تلقائي</option>
+            <option value="rss">RSS / Atom</option>
+            <option value="website">موقع ويب</option>
+            <option value="telegram">تيليجرام</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>الرابط</label><input type="url" name="url" id="editUrl" required></div>
+      <div class="form-row">
+        <div class="form-group"><label>التصنيف</label>
+          <select name="category_id" id="editCategory"><option value="">-- تلقائي --</option>
+            <% categories.forEach(c => { %><option value="<%= c.id %>"><%= c.name_ar %></option><% }) %>
+          </select>
+        </div>
+        <div class="form-group"><label>الفاصل الزمني (دقائق)</label><input type="number" name="fetch_interval" id="editInterval" min="5" step="5"></div>
+      </div>
+      <label class="form-check"><input type="checkbox" name="is_active" value="1" id="editActive"> مفعل</label>
+      <label class="form-check"><input type="checkbox" name="auto_publish" value="1" id="editAutoPub"> نشر تلقائي</label>
+      <label class="form-check"><input type="checkbox" name="use_proxy" value="1" id="editProxy" onchange="toggleProxy('edit')"> استخدام Proxy</label>
+      <div class="form-group" id="editProxyGroup" style="display:none"><label>رابط Proxy</label><input type="text" name="proxy_url" id="editProxyUrl"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeModal('editModal')">إلغاء</button>
+        <button type="submit" class="btn-save">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const sourcesData = <%- JSON.stringify(sources) %>;
+
+function openAddModal() { document.getElementById('addModal').classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function openEditModal(id) {
+  const src = sourcesData.find(s => s.id === id);
+  if (!src) return;
+  document.getElementById('editForm').action = '/admin/sources/edit/' + id;
+  document.getElementById('editName').value = src.name;
+  document.getElementById('editUrl').value = src.url;
+  document.getElementById('editType').value = src.source_type;
+  document.getElementById('editCategory').value = src.category_id || '';
+  document.getElementById('editInterval').value = Math.round(src.fetch_interval / 60);
+  document.getElementById('editActive').checked = !!src.is_active;
+  document.getElementById('editAutoPub').checked = !!src.auto_publish;
+  document.getElementById('editProxy').checked = !!src.use_proxy;
+  document.getElementById('editProxyUrl').value = src.proxy_url || '';
+  toggleProxy('edit');
+  document.getElementById('editModal').classList.add('active');
+}
+
+function toggleProxy(prefix) {
+  const checked = document.getElementById(prefix + 'Proxy').checked;
+  document.getElementById(prefix + 'ProxyGroup').style.display = checked ? 'block' : 'none';
+}
+
+function detectType(prefix) {
+  const url = document.getElementById(prefix + 'Url').value;
+  if (!url) return;
+  const sel = document.getElementById(prefix + 'Type');
+  if (url.includes('t.me/') || url.includes('telegram.me/')) sel.value = 'telegram';
+  else if (url.match(/\.(xml|rss|atom)$/i) || url.includes('/rss') || url.includes('/feed') || url.includes('/atom')) sel.value = 'rss';
+}
+
+async function fetchSource(id, btn) {
+  btn.disabled = true;
+  btn.textContent = '⏳ جارٍ الجلب...';
+  const resultDiv = document.getElementById('result-' + id);
+  resultDiv.className = 'fetch-result';
+  resultDiv.style.display = 'none';
+  try {
+    const res = await fetch('/admin/sources/fetch/' + id, { method: 'POST', headers: { 'Accept': 'application/json' } });
+    const data = await res.json();
+    resultDiv.className = 'fetch-result show ' + (data.success ? 'success' : 'error');
+    if (data.success) {
+      resultDiv.innerHTML = '✅ تم الجلب: <strong>' + data.newCount + '</strong> جديدة، <strong>' + data.dupCount + '</strong> مكررة';
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      resultDiv.innerHTML = '❌ خطأ: ' + (data.error || 'غير معروف');
+    }
+  } catch (e) {
+    resultDiv.className = 'fetch-result show error';
+    resultDiv.innerHTML = '❌ خطأ في الاتصال: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = '⚡ جلب الآن';
+}
+
+async function fetchAllSources() {
+  const btn = document.getElementById('fetchAllBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ جارٍ جلب الكل...';
+  const resultDiv = document.getElementById('globalFetchResult');
+  try {
+    const res = await fetch('/admin/sources/fetch-all', { method: 'POST', headers: { 'Accept': 'application/json' } });
+    const data = await res.json();
+    if (data.success) {
+      let total = 0, errors = 0;
+      data.results.forEach(r => { total += (r.newCount || 0); if (r.error) errors++; });
+      resultDiv.className = 'fetch-result show success';
+      resultDiv.innerHTML = '✅ تم جلب الكل: <strong>' + total + '</strong> خبر جديد' + (errors ? '، <strong>' + errors + '</strong> أخطاء' : '');
+      setTimeout(() => location.reload(), 2000);
+    } else {
+      resultDiv.className = 'fetch-result show error';
+      resultDiv.innerHTML = '❌ ' + (data.error || 'خطأ غير معروف');
+    }
+  } catch (e) {
+    resultDiv.className = 'fetch-result show error';
+    resultDiv.innerHTML = '❌ خطأ: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = '⚡ جلب الكل الآن';
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('active'); });
+});
+</script>
+
+<%- include('footer') %>

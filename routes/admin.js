@@ -523,4 +523,93 @@ router.post('/profile', requireAuth, (req, res) => {
   res.render('admin/profile', { title: 'الملف الشخصي', admin: req.session.admin, error: null, success: 'تم تحديث الملف الشخصي بنجاح' });
 });
 
+// ============================================
+// NEWS SOURCES - Auto Fetch System
+// ============================================
+const { detectSourceType, fetchAndSave, fetchAllActive } = require('../services/news-fetcher');
+
+// News Sources list
+router.get('/sources', requireAuth, (req, res) => {
+  const db = getDb();
+  const sources = db.prepare('SELECT ns.*, c.name_ar as category_name FROM news_sources ns LEFT JOIN categories c ON ns.category_id = c.id ORDER BY ns.created_at DESC').all();
+  const categories = db.prepare('SELECT * FROM categories ORDER BY sort_order').all();
+  res.render('admin/sources', { title: 'مصادر الأخبار', admin: req.session.admin, sources, categories });
+});
+
+// Add source
+router.post('/sources/create', requireAuth, (req, res) => {
+  const db = getDb();
+  let { name, url, source_type, category_id, fetch_interval, use_proxy, proxy_url, auto_publish } = req.body;
+  if (!name || !url) return res.redirect('/admin/sources');
+  source_type = source_type || 'auto';
+  if (source_type === 'auto') source_type = detectSourceType(url);
+  fetch_interval = parseInt(fetch_interval) || 900;
+  db.prepare(`INSERT INTO news_sources (name, url, source_type, category_id, fetch_interval, use_proxy, proxy_url, auto_publish, next_fetch_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP + INTERVAL '1 second' * ?)`).run(
+    name, url, source_type, category_id || null, fetch_interval,
+    use_proxy ? 1 : 0, proxy_url || null, auto_publish ? 1 : 0, fetch_interval
+  );
+  res.redirect('/admin/sources');
+});
+
+// Edit source
+router.post('/sources/edit/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  let { name, url, source_type, category_id, fetch_interval, is_active, use_proxy, proxy_url, auto_publish } = req.body;
+  source_type = source_type || 'auto';
+  if (source_type === 'auto') source_type = detectSourceType(url);
+  fetch_interval = parseInt(fetch_interval) || 900;
+  db.prepare(`UPDATE news_sources SET name=?, url=?, source_type=?, category_id=?, fetch_interval=?, is_active=?, use_proxy=?, proxy_url=?, auto_publish=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`).run(
+    name, url, source_type, category_id || null, fetch_interval,
+    is_active ? 1 : 0, use_proxy ? 1 : 0, proxy_url || null, auto_publish ? 1 : 0, req.params.id
+  );
+  res.redirect('/admin/sources');
+});
+
+// Delete source
+router.post('/sources/delete/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  db.prepare('DELETE FROM fetch_logs WHERE source_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM news_sources WHERE id = ?').run(req.params.id);
+  res.redirect('/admin/sources');
+});
+
+// Fetch Now (single source)
+router.post('/sources/fetch/:id', requireAuth, async (req, res) => {
+  const db = getDb();
+  try {
+    const result = await fetchAndSave(db, parseInt(req.params.id));
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Fetch All
+router.post('/sources/fetch-all', requireAuth, async (req, res) => {
+  const db = getDb();
+  try {
+    const results = await fetchAllActive(db);
+    res.json({ success: true, results });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Fetch logs for a source
+router.get('/sources/logs/:id', requireAuth, (req, res) => {
+  const db = getDb();
+  const source = db.prepare('SELECT * FROM news_sources WHERE id = ?').get(req.params.id);
+  if (!source) return res.redirect('/admin/sources');
+  const logs = db.prepare('SELECT * FROM fetch_logs WHERE source_id = ? ORDER BY started_at DESC LIMIT 50').all(req.params.id);
+  res.render('admin/source-logs', { title: `سجل جلب: ${source.name}`, admin: req.session.admin, source, logs });
+});
+
+// Detect source type API
+router.get('/sources/detect', requireAuth, (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.json({ type: 'unknown' });
+  const type = detectSourceType(url);
+  res.json({ type });
+});
+
 module.exports = router;
