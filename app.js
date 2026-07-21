@@ -81,15 +81,20 @@ app.use((req, res, next) => {
     // Get auto عاجl news from category
     let autoBreaking = [];
     try {
-      // Get all news with category slug 'breaking'
-      const urgentNews = db.prepare("SELECT n.id, n.title, n.published_at FROM news n WHERE n.category_id IN (SELECT id FROM categories WHERE slug = 'breaking') AND n.status = 1 ORDER BY n.published_at DESC LIMIT 10").all();
-      autoBreaking = urgentNews.map(n => ({
-        id: n.id,
-        text: n.title,
-        link: '/news/' + n.id,
-        sort_order: 999,
-        created_at: n.published_at
-      }));
+      // Step 1: Find عاجl category
+      const urgentCat = db.prepare("SELECT id FROM categories WHERE slug = 'breaking' LIMIT 1").get();
+      if (urgentCat) {
+        // Step 2: Get news from that category
+        const catId = Number(urgentCat.id) || 16;
+        const news = db.prepare("SELECT id, title, published_at FROM news WHERE category_id = " + catId + " AND status = 1 ORDER BY published_at DESC LIMIT 10").all();
+        autoBreaking = news.map(n => ({
+          id: n.id,
+          text: n.title,
+          link: '/news/' + n.id,
+          sort_order: 999,
+          created_at: n.published_at
+        }));
+      }
     } catch(e) {}
     // Combine and deduplicate, limit to 10
     const allBreaking = [...manualBreaking, ...autoBreaking];
