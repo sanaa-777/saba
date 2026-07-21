@@ -32,7 +32,7 @@
   </div>
   <div class="stat-card">
     <div class="stat-icon orange">⏳</div>
-    <div class="stat-info"><h3><%= stats.pendingComments %></h3><p>تعليقات معلقة</p></div>
+    <div class="stat-info"><h3><%= stats.pendingComments %></h3><p>معلقة</p></div>
   </div>
   <div class="stat-card">
     <div class="stat-icon purple">📊</div>
@@ -64,41 +64,43 @@
     <a href="/admin/news" class="btn btn-sm btn-secondary">عرض الكل</a>
   </div>
   <div class="admin-card-body" style="padding:0;">
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>العنوان</th>
-          <th>التصنيف</th>
-          <th>الحالة</th>
-          <th>المشاهدات</th>
-          <th>التاريخ</th>
-          <th>إجراءات</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% recentNews.forEach(item => { %>
-        <tr>
-          <td><%= item.id %></td>
-          <td><%= item.title.substring(0, 50) %>...</td>
-          <td><%= item.category_name || '-' %></td>
-          <td>
-            <% if (item.status === 1) { %>
-              <span class="badge badge-success">منشور</span>
-            <% } else { %>
-              <span class="badge badge-warning">مسودة</span>
-            <% } %>
-          </td>
-          <td><%= item.views %></td>
-          <td><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></td>
-          <td class="actions">
-            <a href="/admin/news/edit/<%= item.id %>" class="btn btn-sm btn-primary">تعديل</a>
-            <a href="/news/<%= item.id %>" class="btn btn-sm btn-secondary" target="_blank">عرض</a>
-          </td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>العنوان</th>
+            <th>التصنيف</th>
+            <th>الحالة</th>
+            <th>المشاهدات</th>
+            <th>التاريخ</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% recentNews.forEach(item => { %>
+          <tr>
+            <td><%= item.id %></td>
+            <td><%= item.title.length > 45 ? item.title.substring(0, 45) + '...' : item.title %></td>
+            <td><%= item.category_name || '-' %></td>
+            <td>
+              <% if (item.status === 1) { %>
+                <span class="badge badge-success">منشور</span>
+              <% } else { %>
+                <span class="badge badge-warning">مسودة</span>
+              <% } %>
+            </td>
+            <td><%= item.views.toLocaleString() %></td>
+            <td><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></td>
+            <td class="actions">
+              <a href="/admin/news/edit/<%= item.id %>" class="btn btn-sm btn-primary">تعديل</a>
+              <a href="/news/<%= item.id %>" class="btn btn-sm btn-secondary" target="_blank">عرض</a>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 

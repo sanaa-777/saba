@@ -251,4 +251,86 @@ router.get('/settings', (req, res) => {
   res.json({ success: true, data: settings });
 });
 
+// ============================================
+// ADMIN API ENDPOINTS (JSON responses for AJAX)
+// ============================================
+
+const { requireAuth } = require('../middleware/auth');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+function saveImageToDb(file) {
+  if (!file) return null;
+  const db = getDb();
+  const base64 = file.buffer.toString('base64');
+  const result = db.prepare('INSERT INTO images (filename, mime_type, data, size) VALUES (?, ?, ?, ?)').run(
+    file.originalname, file.mimetype, base64, file.size
+  );
+  return '/api/images/' + result.lastInsertRowid;
+}
+
+// POST /api/v1/admin/news/create
+router.post('/admin/news/create', requireAuth, upload.single('image'), (req, res) => {
+  try {
+    const db = getDb();
+    const { title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags } = req.body;
+    if (!title || !content) return res.status(400).json({ success: false, message: 'العنوان والمحتوى مطلوبان' });
+    const image = saveImageToDb(req.file);
+    const slug = title.replace(/\s+/g, '-').substring(0, 80);
+    const publishedAt = status === '1' || status === 1 ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
+    const result = db.prepare(`INSERT INTO news (title, summary, content, image, category_id, source, is_breaking, is_slider, is_featured, status, published_at, created_at, updated_at, meta_title, meta_description, slug) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?)`).run(
+      title, summary || '', content, image, category_id || null, source || 'أوتر', is_breaking ? 1 : 0, is_slider ? 1 : 0, is_featured ? 1 : 0, status ? parseInt(status) : 1, publishedAt, meta_title || '', meta_description || '', slug
+    );
+    if (tags) {
+      const tagIds = Array.isArray(tags) ? tags.map(Number) : [parseInt(tags)];
+      const insertTag = db.prepare('INSERT OR IGNORE INTO news_tags (news_id, tag_id) VALUES (?, ?)');
+      tagIds.forEach(tid => insertTag.run(result.lastInsertRowid, tid));
+    }
+    res.json({ success: true, message: 'تم نشر الخبر بنجاح', id: result.lastInsertRowid });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
+  }
+});
+
+// POST /api/v1/admin/news/edit/:id
+router.post('/admin/news/edit/:id', requireAuth, upload.single('image'), (req, res) => {
+  try {
+    const db = getDb();
+    const { title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags, keep_image } = req.body;
+    if (!title || !content) return res.status(400).json({ success: false, message: 'العنوان والمحتوى مطلوبان' });
+    const existing = db.prepare('SELECT image FROM news WHERE id = ?').get(req.params.id);
+    if (!existing) return res.status(404).json({ success: false, message: 'الخبر غير موجود' });
+    let image = existing.image;
+    if (req.file) image = saveImageToDb(req.file);
+    else if (!keep_image) image = null;
+    const slug = title.replace(/\s+/g, '-').substring(0, 80);
+    const publishedAt = status === '1' || status === 1 ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
+    db.prepare(`UPDATE news SET title=?, summary=?, content=?, image=?, category_id=?, source=?, is_breaking=?, is_slider=?, is_featured=?, status=?, published_at=COALESCE(?, published_at), updated_at=CURRENT_TIMESTAMP, meta_title=?, meta_description=?, slug=? WHERE id=?`).run(
+      title, summary || '', content, image, category_id || null, source || 'أوتر', is_breaking ? 1 : 0, is_slider ? 1 : 0, is_featured ? 1 : 0, status ? parseInt(status) : 1, publishedAt, meta_title || '', meta_description || '', slug, req.params.id
+    );
+    db.prepare('DELETE FROM news_tags WHERE news_id = ?').run(req.params.id);
+    if (tags) {
+      const tagIds = Array.isArray(tags) ? tags.map(Number) : [parseInt(tags)];
+      const insertTag = db.prepare('INSERT OR IGNORE INTO news_tags (news_id, tag_id) VALUES (?, ?)');
+      tagIds.forEach(tid => insertTag.run(req.params.id, tid));
+    }
+    res.json({ success: true, message: 'تم حفظ التعديلات بنجاح' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
+  }
+});
+
+// POST /api/v1/admin/news/delete/:id
+router.post('/admin/news/delete/:id', requireAuth, (req, res) => {
+  try {
+    const db = getDb();
+    db.prepare('DELETE FROM news_tags WHERE news_id = ?').run(req.params.id);
+    db.prepare('DELETE FROM slider WHERE news_id = ?').run(req.params.id);
+    db.prepare('DELETE FROM news WHERE id = ?').run(req.params.id);
+    res.json({ success: true, message: 'تم حذف الخبر' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
+  }
+});
+
 module.exports = router;

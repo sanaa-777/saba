@@ -6,12 +6,12 @@
     <a href="/admin/news/create" class="btn btn-primary">+ إضافة خبر</a>
   </div>
   <div class="filters-bar">
-    <select onchange="window.location.href='?status='+this.value">
+    <select onchange="window.location.href='?status='+this.value+'&category=<%= filters.category || '' %>'">
       <option value="">جميع الحالات</option>
       <option value="1" <% if (filters.status === '1') { %>selected<% } %>>منشور</option>
       <option value="0" <% if (filters.status === '0') { %>selected<% } %>>مسودة</option>
     </select>
-    <select onchange="window.location.href='?category='+this.value">
+    <select onchange="window.location.href='?category='+this.value+'&status=<%= filters.status || '' %>'">
       <option value="">جميع التصنيفات</option>
       <% categories.forEach(function(cat) { %>
         <option value="<%= cat.id %>" <% if (String(filters.category) === String(cat.id)) { %>selected<% } %>><%= cat.name_ar %></option>
@@ -19,66 +19,60 @@
     </select>
     <span style="margin-right:auto;color:#888;font-size:13px;"><%= pagination.total %> خبر</span>
   </div>
-  <div class="admin-card-body" style="padding:0;overflow-x:auto;">
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>#</th><th>صورة</th><th>العنوان</th><th>التصنيف</th>
-          <th>عاجل</th><th>سلايدر</th><th>الحالة</th><th>المشاهدات</th><th>إجراءات</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% news.forEach(function(item) { %>
-        <tr>
-          <td><%= item.id %></td>
-          <td>
-            <% if (item.image) { %>
-              <img src="<%= item.image %>" class="thumb">
-            <% } else { %>
-              -
-            <% } %>
-          </td>
-          <td><%= item.title.substring(0, 45) %>...</td>
-          <td><%= item.category_name || '-' %></td>
-          <td>
-            <% if (item.is_breaking) { %>
-              <span class="badge badge-danger">عاجل</span>
-            <% } else { %>
-              -
-            <% } %>
-          </td>
-          <td>
-            <% if (item.is_slider) { %>
-              <span class="badge badge-info">سلايدر</span>
-            <% } else { %>
-              -
-            <% } %>
-          </td>
-          <td>
-            <% if (item.status === 1) { %>
-              <span class="badge badge-success">منشور</span>
-            <% } else { %>
-              <span class="badge badge-warning">مسودة</span>
-            <% } %>
-          </td>
-          <td><%= item.views %></td>
-          <td class="actions">
-            <a href="/admin/news/edit/<%= item.id %>" class="btn btn-sm btn-primary">تعديل</a>
-            <form method="POST" action="/admin/news/delete/<%= item.id %>" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من حذف هذا الخبر؟')">
-              <button class="btn btn-sm btn-danger">حذف</button>
-            </form>
-          </td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
+  <div class="admin-card-body" style="padding:0;">
+    <div class="table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>#</th><th>صورة</th><th>العنوان</th><th>التصنيف</th>
+            <th>عاجل</th><th>الحالة</th><th>المشاهدات</th><th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% news.forEach(function(item) { %>
+          <tr id="news-row-<%= item.id %>">
+            <td><%= item.id %></td>
+            <td>
+              <% if (item.image) { %>
+                <img src="<%= item.image %>" class="thumb" loading="lazy">
+              <% } else { %>
+                <span style="color:#ccc;">—</span>
+              <% } %>
+            </td>
+            <td><%= item.title.length > 40 ? item.title.substring(0, 40) + '...' : item.title %></td>
+            <td><%= item.category_name || '-' %></td>
+            <td>
+              <% if (item.is_breaking) { %>
+                <span class="badge badge-danger">عاجل</span>
+              <% } else { %>
+                <span style="color:#ccc;">—</span>
+              <% } %>
+            </td>
+            <td>
+              <% if (item.status === 1) { %>
+                <span class="badge badge-success">منشور</span>
+              <% } else { %>
+                <span class="badge badge-warning">مسودة</span>
+              <% } %>
+            </td>
+            <td><%= item.views.toLocaleString() %></td>
+            <td class="actions">
+              <a href="/admin/news/edit/<%= item.id %>" class="btn btn-sm btn-primary">تعديل</a>
+              <a href="/news/<%= item.id %>" class="btn btn-sm btn-secondary" target="_blank">عرض</a>
+              <button class="btn btn-sm btn-danger" onclick="deleteNews(<%= item.id %>)">حذف</button>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
   </div>
   <% if (pagination.totalPages > 1) { %>
   <div class="admin-pagination">
     <% if (pagination.page > 1) { %>
       <a href="?page=<%= pagination.page - 1 %>&status=<%= filters.status || '' %>&category=<%= filters.category || '' %>">السابق</a>
     <% } %>
-    <% for (var i = 1; i <= pagination.totalPages; i++) { %>
+    <% for (var i = Math.max(1, pagination.page - 2); i <= Math.min(pagination.totalPages, pagination.page + 2); i++) { %>
       <a href="?page=<%= i %>&status=<%= filters.status || '' %>&category=<%= filters.category || '' %>" <% if (i === pagination.page) { %>class="active"<% } %>><%= i %></a>
     <% } %>
     <% if (pagination.page < pagination.totalPages) { %>
@@ -87,5 +81,27 @@
   </div>
   <% } %>
 </div>
+
+<script>
+async function deleteNews(id) {
+  if (!confirm('هل أنت متأكد من حذف هذا الخبر؟')) return;
+  try {
+    const res = await fetch('/api/v1/admin/news/delete/' + id, { method: 'POST' });
+    const result = await res.json();
+    if (result.success) {
+      const row = document.getElementById('news-row-' + id);
+      if (row) {
+        row.style.transition = 'opacity 0.3s';
+        row.style.opacity = '0';
+        setTimeout(() => row.remove(), 300);
+      }
+    } else {
+      alert(result.message || 'خطأ في الحذف');
+    }
+  } catch (err) {
+    alert('خطأ في الاتصال');
+  }
+}
+</script>
 
 <%- include('footer') %>

@@ -1,12 +1,22 @@
 <%- include('header') %>
 
+<style>
+.status-msg{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px;display:none;align-items:center;gap:8px}
+.status-msg.success{display:flex;background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9}
+.status-msg.error{display:flex;background:#ffebee;color:#c62828;border:1px solid #ffcdd2}
+.btn:disabled{opacity:0.6;cursor:not-allowed;pointer-events:none}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+
 <div class="admin-card">
   <div class="admin-card-header">
     <h3><%= article ? 'تعديل خبر' : 'إضافة خبر جديد' %></h3>
     <a href="/admin/news" class="btn btn-secondary">← العودة</a>
   </div>
   <div class="admin-card-body">
-    <form method="POST" action="<%= article ? '/admin/news/edit/' + article.id : '/admin/news/create' %>" enctype="multipart/form-data">
+    <div id="statusMsg" class="status-msg"></div>
+    <form id="newsForm" method="POST" action="<%= article ? '/admin/news/edit/' + article.id : '/admin/news/create' %>" enctype="multipart/form-data">
       <div class="form-row">
         <div class="form-group">
           <label>العنوان *</label>
@@ -43,10 +53,10 @@
       <div class="form-row">
         <div class="form-group">
           <label>الصورة الرئيسية</label>
-          <input type="file" name="image" accept="image/*">
+          <input type="file" name="image" accept="image/*" id="imageInput">
           <% if (article && article.image) { %>
-            <div style="margin-top:8px;"><img src="<%= article.image %>" style="max-width:200px;border-radius:6px;"></div>
-            <label class="form-check" style="margin-top:8px;"><input type="checkbox" name="keep_image" value="1" checked> الاحتفاظ بالصورة الحالية</label>
+            <div style="margin-top:8px;"><img src="<%= article.image %>" style="max-width:200px;border-radius:6px;" id="currentImage"></div>
+            <label class="form-check" style="margin-top:8px;"><input type="checkbox" name="keep_image" value="1" checked id="keepImage"> الاحتفاظ بالصورة الحالية</label>
           <% } %>
         </div>
       </div>
@@ -94,11 +104,68 @@
         </div>
       </div>
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary"><%= article ? 'حفظ التعديلات' : 'نشر الخبر' %></button>
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          <span id="btnText"><%= article ? 'حفظ التعديلات' : 'نشر الخبر' %></span>
+          <span id="btnSpinner" style="display:none"><span class="spinner"></span> جاري الحفظ...</span>
+        </button>
         <a href="/admin/news" class="btn btn-secondary">إلغاء</a>
       </div>
     </form>
   </div>
 </div>
+
+<script>
+document.getElementById('newsForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const btn = document.getElementById('submitBtn');
+  const btnText = document.getElementById('btnText');
+  const btnSpinner = document.getElementById('btnSpinner');
+  const statusMsg = document.getElementById('statusMsg');
+  
+  // Disable button + show loading
+  btn.disabled = true;
+  btnText.style.display = 'none';
+  btnSpinner.style.display = 'inline-flex';
+  statusMsg.style.display = 'none';
+  
+  const formData = new FormData(this);
+  
+  try {
+    const response = await fetch(this.action, {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      statusMsg.className = 'status-msg success';
+      statusMsg.textContent = '✅ ' + result.message;
+      statusMsg.style.display = 'flex';
+      
+      // If creating new, redirect after 1.5s
+      if (!this.action.includes('/edit/')) {
+        setTimeout(() => { window.location.href = '/admin/news'; }, 1500);
+      } else {
+        // For edit, scroll to top to show success message
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } else {
+      statusMsg.className = 'status-msg error';
+      statusMsg.textContent = '❌ ' + (result.message || 'حدث خطأ');
+      statusMsg.style.display = 'flex';
+    }
+  } catch (err) {
+    statusMsg.className = 'status-msg error';
+    statusMsg.textContent = '❌ خطأ في الاتصال: ' + err.message;
+    statusMsg.style.display = 'flex';
+  } finally {
+    btn.disabled = false;
+    btnText.style.display = 'inline';
+    btnSpinner.style.display = 'none';
+  }
+});
+</script>
 
 <%- include('footer') %>
