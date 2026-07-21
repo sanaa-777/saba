@@ -369,3 +369,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+/* ============================================
+   Video & YouTube Auto-Embed
+   ============================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  // Auto-embed YouTube links in article content
+  document.querySelectorAll('.article-content a, .article-content p').forEach(el => {
+    const text = el.textContent || el.href || '';
+    const ytMatch = text.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (ytMatch) {
+      const videoId = ytMatch[1];
+      const embed = document.createElement('div');
+      embed.className = 'video-embed';
+      embed.innerHTML = '<iframe src="https://www.youtube.com/embed/' + videoId + '" allowfullscreen loading="lazy"></iframe>';
+      el.parentNode.replaceChild(embed, el);
+    }
+  });
+
+  // Handle video elements with custom play button
+  document.querySelectorAll('.video-container').forEach(container => {
+    const video = container.querySelector('video');
+    const btn = container.querySelector('.video-play-btn');
+    if (video && btn) {
+      btn.addEventListener('click', () => {
+        video.play();
+        btn.style.display = 'none';
+      });
+      video.addEventListener('pause', () => { btn.style.display = 'flex'; });
+      video.addEventListener('ended', () => { btn.style.display = 'flex'; });
+    }
+  });
+
+  // Handle broken images - hide them gracefully
+  document.querySelectorAll('img').forEach(img => {
+    img.addEventListener('error', function() {
+      this.style.display = 'none';
+      // If parent is only child, hide parent too
+      if (this.parentNode && this.parentNode.children.length === 1) {
+        if (this.parentNode.tagName === 'A') {
+          this.parentNode.style.display = 'none';
+        }
+      }
+    });
+  });
+
+  // Lazy load images with IntersectionObserver
+  if ('IntersectionObserver' in window) {
+    const imgObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          if (img.dataset.src) {
+            img.src = img.dataset.src;
+            img.removeAttribute('data-src');
+          }
+          imgObserver.unobserve(img);
+        }
+      });
+    }, { rootMargin: '200px' });
+
+    document.querySelectorAll('img[data-src]').forEach(img => imgObserver.observe(img));
+  }
+});

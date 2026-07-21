@@ -12,7 +12,7 @@
         <article class="hero-primary">
           <a href="/news/<%= lead.news_id || lead.id %>">
             <div class="hero-primary-media">
-              <img src="<%= lead.image || '/images/placeholder.jpg' %>" alt="<%= lead.title || lead.news_title %>">
+              <img src="<%= lead.image %>" alt="<%= lead.title || lead.news_title %>">
               <div class="hero-primary-overlay">
                 <span class="eyebrow accent"><%= (lead.category_name || 'الواجهة الرئيسية') %></span>
                 <h2><%= lead.title || lead.news_title %></h2>
@@ -30,7 +30,7 @@
           <% secondaryStories.forEach(item => { %>
             <article class="hero-secondary-card">
               <a class="hero-secondary-card-media" href="/news/<%= item.news_id || item.id %>">
-                <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title || item.news_title %>" loading="lazy">
+                <img src="<%= item.image %>" alt="<%= item.title || item.news_title %>" loading="lazy">
               </a>
               <div class="hero-secondary-card-content">
                 <span class="eyebrow"><%= item.category_name || 'أخبار' %></span>

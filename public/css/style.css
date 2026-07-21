@@ -1904,3 +1904,95 @@ select:focus {
 [data-theme="dark"] .theme-icon-sun{display:inline-flex}
 :root:not([data-theme="dark"]) .theme-icon-sun{display:none}
 :root:not([data-theme="dark"]) .theme-icon-moon{display:inline-flex}
+
+/* ═══ Handle broken images gracefully ═══ */
+img[src=""], img:not([src]), img[src="null"], img[src="undefined"] {
+  display: none !important;
+}
+img {
+  background: var(--bg, #f1f5f9);
+}
+.story-card-media img,
+.latest-card img,
+.hero-primary-media img,
+.hero-secondary-card-media img {
+  min-height: 120px;
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+}
+/* No-image cards get text-only style */
+.no-image .story-card-body,
+.no-image .latest-card-body {
+  padding: 16px;
+}
+
+/* ═══ Video Player ═══ */
+.video-container {
+  position: relative;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 16/9;
+}
+.video-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.video-play-btn {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 64px; height: 64px;
+  background: rgba(0,0,0,.7);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .2s;
+  z-index: 2;
+}
+.video-play-btn:hover {
+  background: rgba(220,38,38,.9);
+  transform: translate(-50%, -50%) scale(1.1);
+}
+.video-play-btn svg {
+  color: #fff;
+  margin-right: -3px;
+}
+/* Video card in news list */
+.media-card.video-card {
+  cursor: pointer;
+}
+.media-card.video-card .play-btn {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px; height: 48px;
+  background: rgba(0,0,0,.6);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.media-card.video-card:hover .play-btn {
+  background: rgba(220,38,38,.8);
+}
+/* YouTube embed responsive */
+.video-embed {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  max-width: 100%;
+}
+.video-embed iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}

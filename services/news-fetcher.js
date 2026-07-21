@@ -272,13 +272,34 @@ async function fetchArticleDetail(url, proxyUrl) {
       (typeof jsonLd.image === 'string' ? jsonLd.image : Array.isArray(jsonLd.image) ? jsonLd.image[0] : jsonLd.image.url) :
       ogImage || $('article img, .article img, .content img').first().attr('src') || null;
 
+    // Video extraction (YouTube, mp4, etc.)
+    let videoUrl = null;
+    let videoThumbnail = null;
+    // YouTube
+    const ytMatch = (url + ' ' + content).match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (ytMatch) {
+      videoUrl = 'https://www.youtube.com/embed/' + ytMatch[1];
+      videoThumbnail = 'https://img.youtube.com/vi/' + ytMatch[1] + '/hqdefault.jpg';
+    }
+    // Video tags
+    const videoEl = $('video source, video').first();
+    if (videoEl.length) {
+      videoUrl = videoEl.attr('src') || videoEl.find('source').attr('src') || null;
+    }
+    // og:video
+    if (!videoUrl) {
+      videoUrl = $('meta[property="og:video"]').attr('content') || null;
+    }
+
     return {
       title: ogTitle || (jsonLd && jsonLd.headline) || '',
       content: content || ogDesc || '',
       summary: ogDesc || (jsonLd && jsonLd.description) || '',
-      image,
+      image: image || videoThumbnail,
       author,
-      published_at: datePublished || new Date().toISOString()
+      published_at: datePublished || new Date().toISOString(),
+      videoUrl,
+      videoThumbnail
     };
   } catch (err) {
     return null;
