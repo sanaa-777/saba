@@ -126,6 +126,7 @@
             <a href="/news/<%= item.id %>"><img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy"></a>
             <% } %>
             <div class="urgent-card-body">
+              <span class="cat-badge urgent-cat-badge">عاجل</span>
               <span class="urgent-time"><%= timeAgo(item.published_at) %></span>
               <h4><a href="/news/<%= item.id %>"><%= item.title %></a></h4>
             </div>
