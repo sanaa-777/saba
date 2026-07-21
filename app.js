@@ -78,20 +78,17 @@ app.use((req, res, next) => {
   try {
     // Get manual breaking news
     const manualBreaking = db.prepare("SELECT id, text, link, sort_order, created_at FROM breaking_news WHERE is_active = 1").all();
-    // Get auto عاجl news from category
-    let autoBreaking = [];
+    // Auto-sync: add recent عاجl news to breaking_news if not already there
     try {
-      // Use categories already loaded
       const urgentCat = (res.locals.categories || []).find(c => c.slug === 'breaking');
       if (urgentCat) {
-        const news = db.prepare('SELECT id, title, published_at FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 10').all(urgentCat.id);
-        autoBreaking = news.map(n => ({
-          id: n.id,
-          text: n.title,
-          link: '/news/' + n.id,
-          sort_order: 999,
-          created_at: n.published_at
-        }));
+        const recentUrgent = db.prepare('SELECT id, title FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 10').all(urgentCat.id);
+        for (const n of recentUrgent) {
+          const exists = db.prepare('SELECT id FROM breaking_news WHERE link = ?').get('/news/' + n.id);
+          if (!exists) {
+            db.prepare('INSERT INTO breaking_news (text, link, is_active, sort_order) VALUES (?, ?, 1, 999)').run(n.title, '/news/' + n.id);
+          }
+        }
       }
     } catch(e) {}
     // Combine and deduplicate, limit to 10
