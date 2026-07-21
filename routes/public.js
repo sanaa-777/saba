@@ -39,7 +39,7 @@ router.get('/', (req, res) => {
   const publications = db.prepare("SELECT * FROM media WHERE category = 'منشورات' ORDER BY created_at DESC LIMIT 4").all();
 
   res.render('index', {
-    title: res.locals.settings.site_name || 'وكالة سبأ للأنباء',
+    title: res.locals.settings.site_name || 'أوتر',
     breakingNews,
     sliderItems,
     categoryNews,
@@ -246,10 +246,10 @@ router.get('/files', (req, res) => {
 // RSS feed
 router.get('/rss', (req, res) => {
   const db = getDb();
-  const siteName = res.locals.settings.site_name || 'وكالة سبأ للأنباء';
+  const siteName = res.locals.settings.site_name || 'أوتر';
   const feed = new RSS({
     title: siteName,
-    description: res.locals.settings.site_description || 'وكالة الأنباء اليمنية سبأ',
+    description: res.locals.settings.site_description || 'أوتر - المصدر الأول للأخبار',
     feed_url: `${req.protocol}://${req.get('host')}/rss`,
     site_url: `${req.protocol}://${req.get('host')}`,
     language: 'ar',

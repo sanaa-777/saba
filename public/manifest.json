@@ -1,7 +1,7 @@
 {
-  "name": "وكالة سبأ للأنباء",
-  "short_name": "سبأ",
-  "description": "وكالة الأنباء اليمنية سبأ - المصدر الأول للأخبار في اليمن",
+  "name": "أوتر",
+  "short_name": "أوتر",
+  "description": "أوتر - المصدر الأول للأخبار",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a237e",

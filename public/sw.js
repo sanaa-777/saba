@@ -1,4 +1,4 @@
-const CACHE_NAME = 'saba-news-v1';
+const CACHE_NAME = 'awtar-v1';
 const STATIC_ASSETS = [
   '/',
   '/css/style.css',

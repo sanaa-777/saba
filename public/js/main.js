@@ -1,5 +1,5 @@
 /* ============================================
-   SABA News - Main JavaScript
+   Awtar - Main JavaScript
    ============================================ */
 
 document.addEventListener('DOMContentLoaded', function() {

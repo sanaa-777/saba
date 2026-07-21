@@ -1,7 +1,7 @@
 {
-  "name": "saba-news",
+  "name": "awtar",
   "version": "1.0.0",
-  "description": "SABA News Agency Website Clone - وكالة سبأ للأنباء",
+  "description": "Awtar News Website - أوتر",
   "main": "app.js",
   "scripts": {
     "start": "node start.js",

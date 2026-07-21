@@ -1,6 +1,6 @@
-# SABA News Agency Clone - وكالة سبأ للأنباء
+# Awtar - أوتر
 
-Complete news agency website clone built with Node.js, Express, SQLite, and EJS templates.
+Complete news website built with Node.js, Express, SQLite, and EJS templates.
 
 ## Features
 
@@ -49,7 +49,7 @@ Access: `http://localhost:3000/admin`
 ## Project Structure
 
 ```
-saba-news/
+awtar/
 ├── app.js              # Express app setup
 ├── start.js            # Entry point (init DB + start server)
 ├── package.json
@@ -79,7 +79,7 @@ saba-news/
 │   ├── sw.js           # Service worker (PWA)
 │   └── manifest.json   # PWA manifest
 └── db/
-    └── saba.db         # SQLite database (auto-created)
+    └── awtar.db        # SQLite database (auto-created)
 ```
 
 ## Routes

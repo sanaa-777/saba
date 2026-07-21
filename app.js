@@ -25,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cookieParser());
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'saba-news-secret-key-2024',
+  secret: process.env.SESSION_SECRET || 'awtar-secret-key-2024',
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: 24 * 60 * 60 * 1000 }
@@ -127,7 +127,7 @@ function broadcastBreakingNews(data) {
 
 // Start server
 server.listen(PORT, () => {
-  console.log(`SABA News running on http://localhost:${PORT}`);
+  console.log(`Awtar running on http://localhost:${PORT}`);
   console.log(`Socket.IO enabled for real-time updates`);
 });
 
