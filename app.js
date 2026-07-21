@@ -100,25 +100,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Auto-fetch scheduler (lightweight check on each request, runs at most once per interval)
-let lastAutoFetchCheck = 0;
-const AUTO_FETCH_COOLDOWN = 60000; // check every 60s max
-app.use(async (req, res, next) => {
-  if (!isVercel || req.path.startsWith('/admin') || req.path.startsWith('/api') || req.path.startsWith('/css') || req.path.startsWith('/js') || req.path.startsWith('/images')) return next();
-  const now = Date.now();
-  if (now - lastAutoFetchCheck < AUTO_FETCH_COOLDOWN) return next();
-  lastAutoFetchCheck = now;
-  try {
-    const db = getDb();
-    const due = db.prepare("SELECT id FROM news_sources WHERE is_active = 1 AND next_fetch_at <= CURRENT_TIMESTAMP LIMIT 1").get();
-    if (due) {
-      const { fetchAndSave } = require('./services/news-fetcher');
-      fetchAndSave(db, due.id).catch(() => {}); // fire and forget
-    }
-  } catch (e) { /* ignore scheduler errors */ }
-  next();
-});
-
 // Routes
 const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');

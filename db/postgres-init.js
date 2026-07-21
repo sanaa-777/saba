@@ -375,26 +375,6 @@ function initDatabase() {
   const count = pgdb.prepare('SELECT COUNT(*) as cnt FROM categories').get();
   if (!count || !count.cnt) {
     seedPostgres(pgdb);
-  } else {
-    // Seed news sources if table is empty (existing DB upgrade)
-    const srcCount = pgdb.prepare('SELECT COUNT(*) as cnt FROM news_sources').get();
-    if (!srcCount || !srcCount.cnt) {
-      const { seedData } = require('./seed-data');
-      // Only seed sources for existing DBs
-      const insertSource = pgdb.prepare(`INSERT INTO news_sources (name, url, source_type, category_id, is_active, fetch_interval, auto_publish, next_fetch_at) VALUES (?, ?, ?, ?, 1, ?, ?, CURRENT_TIMESTAMP + INTERVAL '1 second' * ?)`);
-      const sources = [
-        ['سبأ نيوز (RSS)', 'https://www.saba.ye/ar/rss.xml', 'rss', 1, 900, 1, 900],
-        ['وكالة الأنباء اليمنية (RSS)', 'https://www.saba.ye/ar/rss', 'rss', 1, 900, 1, 900],
-        ['المسيرة نت (RSS)', 'https://www.almassirah.net/rss', 'rss', 1, 1200, 1, 1200],
-        ['العربية نت (RSS)', 'https://www.alarabiya.net/feed/rss2', 'rss', 2, 1200, 1, 1200],
-        ['半岛 نت (RSS)', 'https://www.aljazeera.net/aljazeerarss', 'rss', 2, 1200, 1, 1200],
-        ['مأرب برس (موقع)', 'https://maribpress.net', 'website', 1, 1800, 0, 1800],
-        ['نيوزيمن (موقع)', 'https://newyemen.net', 'website', 1, 1800, 0, 1800],
-        ['تيليجرام سبأ', 'https://t.me/yemensaba', 'telegram', 1, 600, 1, 600],
-        ['تيليجرام المسيرة', 'https://t.me/ElMaseerah', 'telegram', 1, 600, 1, 600]
-      ];
-      for (const s of sources) { insertSource.run(...s); }
-    }
   }
 
   initialized = true;
