@@ -999,6 +999,7 @@ img[loading="lazy"] {
 }
 
 /* Print styles */
+/* Print Styles */
 @media print {
   .top-bar, .site-header, .main-nav, .breaking-news-ticker,
   .sidebar, .site-footer, .social-sharing, .article-nav,
