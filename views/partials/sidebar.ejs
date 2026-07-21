@@ -1,4 +1,18 @@
 <aside class="sidebar">
+  <%
+  function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return 'الآن';
+    if (diff < 3600) return 'قبل ' + Math.floor(diff / 60) + ' دقيقة';
+    if (diff < 86400) return 'قبل ' + Math.floor(diff / 3600) + ' ساعة';
+    if (diff < 172800) return 'قبل يوم';
+    if (diff < 604800) return 'قبل ' + Math.floor(diff / 86400) + ' أيام';
+    return date.toLocaleDateString('ar-YE');
+  }
+  %>
   <% const latestItems = (typeof latestNews !== 'undefined' && latestNews) ? latestNews : []; %>
   <% const pollData = typeof activePoll !== 'undefined' ? activePoll : null; %>
   <% const pollOptions = typeof activePollOptions !== 'undefined' && activePollOptions ? activePollOptions : []; %>
@@ -18,7 +32,7 @@
               <span class="news-number"><%= index + 1 %></span>
               <div class="news-info">
                 <a href="/news/<%= item.id %>"><%= item.title %></a>
-                <span class="news-date"><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
+                <span class="news-date"><%= timeAgo(item.published_at) %></span>
               </div>
             </li>
           <% }) %>
@@ -36,7 +50,7 @@
               <span class="news-number"><%= index + 1 %></span>
               <div class="news-info">
                 <a href="/news/<%= item.id %>"><%= item.title %></a>
-                <span class="news-date"><%= item.views || 0 %> <%= t('views') %></span>
+                <span class="news-date"><%= timeAgo(item.published_at) %></span>
               </div>
             </li>
           <% }) %>
