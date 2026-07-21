@@ -102,10 +102,12 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
           <span>عاجل</span>
         </a>
-        <a href="<%= session && session.admin ? '/admin' : '/admin/login' %>" class="header-login-link">
+        <% if (session && session.admin) { %>
+        <a href="/admin" class="header-login-link">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          <span><%= session && session.admin ? 'لوحة التحكم' : 'دخول' %></span>
+          <span>لوحة التحكم</span>
         </a>
+        <% } %>
         <button class="header-icon-btn theme-toggle" id="themeToggle" aria-label="الوضع الداكن">
           <span class="theme-icon-moon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
@@ -220,10 +222,12 @@
     </ul>
     <div class="mobile-panel-divider"></div>
     <div class="mobile-panel-footer">
-      <a href="<%= session && session.admin ? '/admin' : '/admin/login' %>" class="mobile-panel-admin">
+      <% if (session && session.admin) { %>
+      <a href="/admin" class="mobile-panel-admin">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <%= session && session.admin ? 'لوحة التحكم' : 'تسجيل الدخول' %>
+        لوحة التحكم
       </a>
+      <% } %>
       <div class="mobile-panel-social">
         <a href="<%= settings.facebook || '#' %>" target="_blank" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3h-3.1V8.2c0-.9.3-1.5 1.5-1.5h1.7V4c-.3 0-1.3-.1-2.5-.1-2.4 0-4 1.5-4 4.2V10H7.5v3h2.6v8h3.4z"/></svg></a>
         <a href="<%= settings.twitter || '#' %>" target="_blank" aria-label="X"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.4L1 2h6.5l4.4 5.8L18.9 2zm-1.1 18h1.7L6.6 3.9H4.8L17.8 20z"/></svg></a>
