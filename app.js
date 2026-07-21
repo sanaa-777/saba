@@ -139,6 +139,17 @@ app.get('/api/new-news-count', (req, res) => {
   res.json({ count });
 });
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  try {
+    const db = getDb();
+    const result = db.prepare('SELECT 1 as test').get();
+    res.json({ status: 'ok', db: result });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: err.message, code: err.code });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).render('404', { title: res.locals.t ? res.locals.t('page_not_found') : 'الصفحة غير موجودة' });
