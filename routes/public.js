@@ -38,6 +38,17 @@ router.get('/', (req, res) => {
   // Publications
   const publications = db.prepare("SELECT * FROM media WHERE category = 'منشورات' ORDER BY created_at DESC LIMIT 4").all();
 
+  // Homepage advertisements
+  const activeAds = db.prepare(`SELECT * FROM advertisements
+    WHERE is_active = 1
+      AND (start_date IS NULL OR start_date = '' OR start_date <= CURRENT_DATE)
+      AND (end_date IS NULL OR end_date = '' OR end_date >= CURRENT_DATE)
+    ORDER BY id DESC`).all();
+  const headerAds = activeAds.filter(ad => ad.position === 'header');
+  const contentAds = activeAds.filter(ad => ad.position === 'content');
+  const sidebarAds = activeAds.filter(ad => ad.position === 'sidebar');
+  const footerAds = activeAds.filter(ad => ad.position === 'footer');
+
   res.render('index', {
     title: res.locals.settings.site_name || 'أوتر',
     breakingNews,
@@ -49,7 +60,11 @@ router.get('/', (req, res) => {
     videos,
     galleries,
     audios,
-    publications
+    publications,
+    headerAds,
+    contentAds,
+    sidebarAds,
+    footerAds
   });
 });
 

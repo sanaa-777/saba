@@ -69,6 +69,31 @@
         </div>
       </aside>
     </section>
+    <% if (sidebarAds && sidebarAds.length > 0) { const ad = sidebarAds[0]; %>
+    <section class="home-ad-block sidebar-ad">
+      <% if (ad.code) { %>
+        <div class="home-ad-inner"><%- ad.code %></div>
+      <% } else { %>
+        <a class="home-ad-inner" href="<%= ad.link || '#' %>" <%= ad.link ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+          <% if (ad.image) { %><img src="<%= ad.image %>" alt="<%= ad.name %>" loading="lazy"><% } %>
+          <div class="home-ad-caption"><span>إعلان جانبي</span><strong><%= ad.name %></strong></div>
+        </a>
+      <% } %>
+    </section>
+    <% } %>
+    <% } %>
+
+    <% if (headerAds && headerAds.length > 0) { const ad = headerAds[0]; %>
+    <section class="home-ad-block">
+      <% if (ad.code) { %>
+        <div class="home-ad-inner"><%- ad.code %></div>
+      <% } else { %>
+        <a class="home-ad-inner" href="<%= ad.link || '#' %>" <%= ad.link ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+          <% if (ad.image) { %><img src="<%= ad.image %>" alt="<%= ad.name %>" loading="lazy"><% } %>
+          <div class="home-ad-caption"><span>إعلان</span><strong><%= ad.name %></strong></div>
+        </a>
+      <% } %>
+    </section>
     <% } %>
 
     <% if (featuredNews && featuredNews.length > 0) { %>
@@ -124,6 +149,19 @@
           </article>
         <% }) %>
       </div>
+    </section>
+    <% } %>
+
+    <% if (contentAds && contentAds.length > 0) { const ad = contentAds[0]; %>
+    <section class="home-ad-block content-ad">
+      <% if (ad.code) { %>
+        <div class="home-ad-inner"><%- ad.code %></div>
+      <% } else { %>
+        <a class="home-ad-inner" href="<%= ad.link || '#' %>" <%= ad.link ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+          <% if (ad.image) { %><img src="<%= ad.image %>" alt="<%= ad.name %>" loading="lazy"><% } %>
+          <div class="home-ad-caption"><span>إعلان</span><strong><%= ad.name %></strong></div>
+        </a>
+      <% } %>
     </section>
     <% } %>
 

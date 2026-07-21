@@ -87,6 +87,19 @@ if (!isVercel) {
 
 app.set('io', io);
 
+// Disable HTTP caching for dynamic pages and APIs to avoid stale content after admin edits/deletes
+app.use((req, res, next) => {
+  const staticPrefixes = ['/css/', '/js/', '/images/', '/manifest.json', '/favicon', '/robots.txt'];
+  const isStatic = staticPrefixes.some(prefix => req.path.startsWith(prefix));
+  if (!isStatic) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Surrogate-Control', 'no-store');
+  }
+  next();
+});
+
 // Routes
 const publicRoutes = require('./routes/public');
 const adminRoutes = require('./routes/admin');
