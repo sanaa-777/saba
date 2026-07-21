@@ -170,11 +170,15 @@ router.get('/search', (req, res) => {
 
   const sql = `SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id ${where} ${orderBy} LIMIT ? OFFSET ?`;
   const results = db.prepare(sql).all(...params, perPage, offset);
+  const categories = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order').all();
+  const latestNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 ORDER BY n.published_at DESC LIMIT 10`).all();
 
   res.render('search', {
     title: 'البحث',
     results,
     query: req.query,
+    categories,
+    latestNews,
     pagination: { page: currentPage, totalPages, total }
   });
 });

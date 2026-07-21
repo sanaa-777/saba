@@ -1,461 +1,360 @@
-/* ============================================
-   Awtar - Main JavaScript
-   ============================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  const root = document.documentElement;
+  const body = document.body;
 
-document.addEventListener('DOMContentLoaded', function() {
+  const $ = (selector, scope = document) => scope.querySelector(selector);
+  const $$ = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
 
-  // ============================================
-  // Language Switcher
-  // ============================================
-  const langToggle = document.getElementById('langToggle');
-  const langDropdown = document.getElementById('langDropdown');
+  /* ============================================
+     Theme mode
+     ============================================ */
+  const savedTheme = localStorage.getItem('awtar-theme');
+  const preferredDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const applyTheme = (theme) => {
+    if (theme === 'dark') {
+      root.setAttribute('data-theme', 'dark');
+    } else {
+      root.removeAttribute('data-theme');
+    }
+  };
+  applyTheme(savedTheme || (preferredDark ? 'dark' : 'light'));
+
+  const themeToggle = $('#themeToggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const nextTheme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('awtar-theme', nextTheme);
+      applyTheme(nextTheme);
+    });
+  }
+
+  /* ============================================
+     Language switcher
+     ============================================ */
+  const langToggle = $('#langToggle');
+  const langDropdown = $('#langDropdown');
   if (langToggle && langDropdown) {
-    langToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
+    langToggle.addEventListener('click', (event) => {
+      event.stopPropagation();
       langDropdown.classList.toggle('open');
     });
     document.addEventListener('click', () => langDropdown.classList.remove('open'));
   }
 
-  // ============================================
-  // Comment Form
-  // ============================================
-  const commentForm = document.getElementById('commentForm');
-  if (commentForm) {
-    commentForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const msg = document.getElementById('commentMessage');
-      const formData = new FormData(commentForm);
-      const data = Object.fromEntries(formData);
-      
-      try {
-        const res = await fetch('/api/comments/add', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        const result = await res.json();
-        msg.style.display = 'block';
-        msg.textContent = result.message;
-        msg.className = 'comment-message ' + (result.success ? 'success' : 'error');
-        if (result.success) commentForm.reset();
-      } catch (err) {
-        msg.style.display = 'block';
-        msg.textContent = 'حدث خطأ';
-        msg.className = 'comment-message error';
-      }
-    });
-  }
+  /* ============================================
+     Mobile navigation
+     ============================================ */
+  const mobileNav = $('#mobileNav');
+  const mobileNavOverlay = $('#mobileNavOverlay');
+  const mobileMenuBtn = $('#mobileMenuBtn');
+  const mobileNavClose = $('#mobileNavClose');
 
-  // ============================================
-  // Poll Voting
-  // ============================================
-  document.querySelectorAll('.poll-vote-btn').forEach(btn => {
-    btn.addEventListener('click', async function() {
-      const pollId = this.dataset.poll;
-      const optionId = this.dataset.option;
-      
-      try {
-        const res = await fetch('/api/polls/vote', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ poll_id: pollId, option_id: optionId })
-        });
-        const result = await res.json();
-        
-        if (result.success) {
-          // Update UI
-          const widget = document.getElementById('pollWidget');
-          if (widget) {
-            const options = widget.querySelectorAll('.poll-option');
-            options.forEach((opt, i) => {
-              if (result.options[i]) {
-                const pct = result.totalVotes > 0 ? Math.round(result.options[i].votes / result.totalVotes * 100) : 0;
-                opt.querySelector('.poll-bar-fill').style.width = pct + '%';
-                opt.querySelector('.poll-percent').textContent = pct + '% (' + result.options[i].votes + ')';
-                opt.querySelector('.poll-vote-btn').classList.add('voted');
-                opt.querySelector('.poll-vote-btn').disabled = true;
-              }
-            });
-            document.getElementById('pollTotalVotes').textContent = result.totalVotes;
-          }
-        } else {
-          alert(result.message);
-        }
-      } catch (err) {
-        alert('حدث خطأ');
-      }
-    });
-  });
+  const openNav = () => {
+    if (!mobileNav) return;
+    mobileNav.classList.add('open');
+    mobileNavOverlay?.classList.add('open');
+    body.classList.add('nav-open');
+  };
 
-  // ============================================
-  // Newsletter Form
-  // ============================================
-  const newsletterForm = document.getElementById('newsletterForm');
-  if (newsletterForm) {
-    newsletterForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const msg = document.getElementById('newsletterMessage');
-      const email = newsletterForm.querySelector('input[name="email"]').value;
-      
-      try {
-        const res = await fetch('/api/newsletter/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
-        const result = await res.json();
-        if (msg) {
-          msg.style.display = 'block';
-          msg.textContent = result.message;
-          msg.className = 'newsletter-message ' + (result.success ? 'success' : 'error');
-        }
-        if (result.success) newsletterForm.reset();
-      } catch (err) {
-        if (msg) {
-          msg.style.display = 'block';
-          msg.textContent = 'حدث خطأ';
-          msg.className = 'newsletter-message error';
-        }
-      }
-    });
-  }
+  const closeNav = () => {
+    mobileNav?.classList.remove('open');
+    mobileNavOverlay?.classList.remove('open');
+    body.classList.remove('nav-open');
+  };
 
-  // ============================================
-  // Socket.IO - Real-time Breaking News
-  // ============================================
-  if (typeof io !== 'undefined') {
-    const socket = io();
-    socket.on('breaking-news', (data) => {
-      const ticker = document.querySelector('.ticker-track');
-      if (ticker && data.text) {
-        const item = document.createElement('a');
-        item.href = data.link || '#';
-        item.className = 'ticker-item';
-        item.textContent = data.text;
-        ticker.prepend(item);
-      }
-    });
+  mobileMenuBtn?.addEventListener('click', openNav);
+  mobileNavClose?.addEventListener('click', closeNav);
+  mobileNavOverlay?.addEventListener('click', closeNav);
+  $$('#mobileNav a').forEach((link) => link.addEventListener('click', closeNav));
 
-    // New news counter
-    socket.on('new-news', (data) => {
-      const counter = document.querySelector('.new-news-count');
-      if (counter) {
-        counter.textContent = data.count;
-        counter.style.display = 'inline-block';
-      }
-    });
-  }
+  /* ============================================
+     Date display
+     ============================================ */
+  const updateDates = () => {
+    const gregorianEl = $('.date-gregorian');
+    const hijriEl = $('.date-hijri');
+    const now = new Date();
 
-  // ============================================
-  // Mobile Navigation
-  // ============================================
-  const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-  const mobileNav = document.getElementById('mobileNav');
-  const mobileNavOverlay = document.getElementById('mobileNavOverlay');
-  const mobileNavClose = document.querySelector('.mobile-nav-close');
-
-  function openMobileNav() {
-    if (mobileNav) mobileNav.classList.add('open');
-    if (mobileNavOverlay) mobileNavOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeMobileNav() {
-    if (mobileNav) mobileNav.classList.remove('open');
-    if (mobileNavOverlay) mobileNavOverlay.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-
-  if (mobileMenuToggle) mobileMenuToggle.addEventListener('click', openMobileNav);
-  if (mobileNavClose) mobileNavClose.addEventListener('click', closeMobileNav);
-  if (mobileNavOverlay) mobileNavOverlay.addEventListener('click', closeMobileNav);
-
-  // ============================================
-  // Sidebar Tabs
-  // ============================================
-  const tabBtns = document.querySelectorAll('.tab-btn');
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-      const tabId = this.getAttribute('data-tab');
-      const parent = this.closest('.sidebar-widget');
-      if (!parent) return;
-      parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      this.classList.add('active');
-      const content = parent.querySelector('#tab-' + tabId);
-      if (content) content.classList.add('active');
-    });
-  });
-
-  // ============================================
-  // Main Slider
-  // ============================================
-  const slides = document.querySelectorAll('.slide');
-  const dots = document.querySelectorAll('.dot');
-  const thumbnails = document.querySelectorAll('.thumbnail');
-  const prevBtn = document.querySelector('.slider-prev');
-  const nextBtn = document.querySelector('.slider-next');
-  let currentSlide = 0;
-  let slideInterval;
-
-  function goToSlide(index) {
-    if (slides.length === 0) return;
-    slides.forEach(s => s.classList.remove('active'));
-    dots.forEach(d => d.classList.remove('active'));
-    thumbnails.forEach(t => t.classList.remove('active'));
-    currentSlide = ((index % slides.length) + slides.length) % slides.length;
-    if (slides[currentSlide]) slides[currentSlide].classList.add('active');
-    if (dots[currentSlide]) dots[currentSlide].classList.add('active');
-    if (thumbnails[currentSlide]) thumbnails[currentSlide].classList.add('active');
-  }
-
-  function nextSlide() { goToSlide(currentSlide + 1); }
-  function prevSlide() { goToSlide(currentSlide - 1); }
-
-  function startSlider() {
-    if (slides.length > 1) {
-      slideInterval = setInterval(nextSlide, 5000);
+    if (gregorianEl) {
+      gregorianEl.textContent = now.toLocaleDateString('ar-YE', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
     }
-  }
 
-  function stopSlider() {
-    clearInterval(slideInterval);
-  }
+    if (hijriEl) {
+      try {
+        hijriEl.textContent = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        }).format(now);
+      } catch (error) {
+        hijriEl.textContent = '';
+      }
+    }
+  };
+  updateDates();
 
-  if (prevBtn) {
-    prevBtn.addEventListener('click', () => { stopSlider(); prevSlide(); startSlider(); });
-  }
-  if (nextBtn) {
-    nextBtn.addEventListener('click', () => { stopSlider(); nextSlide(); startSlider(); });
-  }
+  /* ============================================
+     Sidebar tabs
+     ============================================ */
+  $$('.sidebar-widget').forEach((widget) => {
+    const tabs = $$('.tab-btn', widget);
+    if (!tabs.length) return;
 
-  dots.forEach((dot, i) => {
-    dot.addEventListener('click', () => { stopSlider(); goToSlide(i); startSlider(); });
-  });
-
-  thumbnails.forEach((thumb, i) => {
-    thumb.addEventListener('click', () => { stopSlider(); goToSlide(i); startSlider(); });
-  });
-
-  startSlider();
-
-  // ============================================
-  // Breaking News Ticker Pause on Hover
-  // ============================================
-  const tickerTrack = document.querySelector('.ticker-track');
-  if (tickerTrack) {
-    tickerTrack.addEventListener('mouseenter', () => {
-      tickerTrack.style.animationPlayState = 'paused';
-    });
-    tickerTrack.addEventListener('mouseleave', () => {
-      tickerTrack.style.animationPlayState = 'running';
-    });
-  }
-
-  // ============================================
-  // Lazy Loading Images
-  // ============================================
-  if ('IntersectionObserver' in window) {
-    const lazyImages = document.querySelectorAll('img[loading="lazy"]');
-    const imageObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const img = entry.target;
-          if (img.dataset.src) {
-            img.src = img.dataset.src;
-            img.removeAttribute('data-src');
-          }
-          imageObserver.unobserve(img);
-        }
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const tabId = tab.dataset.tab;
+        tabs.forEach((item) => item.classList.remove('active'));
+        $$('.tab-content', widget).forEach((panel) => panel.classList.remove('active'));
+        tab.classList.add('active');
+        $(`#tab-${tabId}`, widget)?.classList.add('active');
       });
     });
-    lazyImages.forEach(img => imageObserver.observe(img));
-  }
-
-  // ============================================
-  // View Counter (track article views)
-  // ============================================
-  const articlePage = document.querySelector('.article-page');
-  if (articlePage) {
-    const articleId = window.location.pathname.split('/').pop();
-    const viewedKey = 'viewed_' + articleId;
-    if (!sessionStorage.getItem(viewedKey)) {
-      sessionStorage.setItem(viewedKey, '1');
-    }
-  }
-
-  // ============================================
-  // Smooth scroll to top
-  // ============================================
-  const scrollTopBtn = document.createElement('button');
-  scrollTopBtn.innerHTML = '↑';
-  scrollTopBtn.className = 'scroll-top-btn';
-  scrollTopBtn.style.cssText = `
-    position: fixed; bottom: 30px; left: 30px;
-    width: 45px; height: 45px; border-radius: 50%;
-    background: var(--primary, #1a237e); color: #fff;
-    border: none; font-size: 20px; cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    opacity: 0; visibility: hidden; transition: all 0.3s;
-    z-index: 999; display: flex; align-items: center; justify-content: center;
-  `;
-  document.body.appendChild(scrollTopBtn);
-
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 300) {
-      scrollTopBtn.style.opacity = '1';
-      scrollTopBtn.style.visibility = 'visible';
-    } else {
-      scrollTopBtn.style.opacity = '0';
-      scrollTopBtn.style.visibility = 'hidden';
-    }
   });
 
+  /* ============================================
+     Smooth scroll top button
+     ============================================ */
+  const scrollTopBtn = document.createElement('button');
+  scrollTopBtn.className = 'scroll-top-btn';
+  scrollTopBtn.setAttribute('aria-label', 'العودة إلى الأعلى');
+  scrollTopBtn.innerHTML = `
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 19V5"></path>
+      <path d="m5 12 7-7 7 7"></path>
+    </svg>
+  `;
+  body.appendChild(scrollTopBtn);
+
+  const toggleScrollTop = () => {
+    scrollTopBtn.classList.toggle('visible', window.scrollY > 340);
+  };
+  toggleScrollTop();
+  window.addEventListener('scroll', toggleScrollTop, { passive: true });
   scrollTopBtn.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  // ============================================
-  // Date display (Hijri + Gregorian)
-  // ============================================
-  function updateDates() {
-    const gregorianEl = document.querySelector('.date-gregorian');
-    const hijriEl = document.querySelector('.date-hijri');
-    if (gregorianEl) {
-      const now = new Date();
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      gregorianEl.textContent = now.toLocaleDateString('ar-YE', options);
-    }
-    if (hijriEl) {
+  /* ============================================
+     Comment form
+     ============================================ */
+  const commentForm = $('#commentForm');
+  if (commentForm) {
+    commentForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const message = $('#commentMessage');
+      const submitBtn = $('button[type="submit"]', commentForm);
+      const formData = new FormData(commentForm);
+      const payload = Object.fromEntries(formData.entries());
+
+      submitBtn?.setAttribute('disabled', 'disabled');
+      if (message) {
+        message.style.display = 'none';
+        message.textContent = '';
+      }
+
       try {
-        const now = new Date();
-        const hijriDate = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
-          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-        }).format(now);
-        hijriEl.textContent = hijriDate;
-      } catch (e) {
-        if (hijriEl) hijriEl.textContent = '';
+        const response = await fetch('/api/comments/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (message) {
+          message.style.display = 'block';
+          message.textContent = result.message || 'تم إرسال التعليق.';
+          message.className = `comment-message ${result.success ? 'success' : 'error'}`;
+        }
+        if (result.success) commentForm.reset();
+      } catch (error) {
+        if (message) {
+          message.style.display = 'block';
+          message.textContent = 'تعذر إرسال التعليق حالياً.';
+          message.className = 'comment-message error';
+        }
+      } finally {
+        submitBtn?.removeAttribute('disabled');
       }
+    });
+  }
+
+  /* ============================================
+     Newsletter forms
+     ============================================ */
+  const bindNewsletterForm = (form) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const emailInput = $('input[name="email"]', form);
+      const message = form.parentElement?.querySelector('.newsletter-message') || $('#newsletterMessage');
+      const submitBtn = $('button[type="submit"]', form);
+      const email = emailInput?.value?.trim();
+      if (!email) return;
+
+      submitBtn?.setAttribute('disabled', 'disabled');
+      try {
+        const response = await fetch('/api/newsletter/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const result = await response.json();
+        if (message) {
+          message.style.display = 'block';
+          message.textContent = result.message || 'تم استلام طلب الاشتراك.';
+          message.className = `newsletter-message ${result.success ? 'success' : 'error'}`;
+        }
+        if (result.success) form.reset();
+      } catch (error) {
+        if (message) {
+          message.style.display = 'block';
+          message.textContent = 'تعذر تنفيذ الاشتراك حالياً.';
+          message.className = 'newsletter-message error';
+        }
+      } finally {
+        submitBtn?.removeAttribute('disabled');
+      }
+    });
+  };
+  $$('.newsletter-form').forEach(bindNewsletterForm);
+
+  /* ============================================
+     Poll voting
+     ============================================ */
+  $$('.poll-vote-btn').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const pollId = button.dataset.poll;
+      const optionId = button.dataset.option;
+      const widget = $('#pollWidget');
+      if (!pollId || !optionId || !widget) return;
+
+      $$('.poll-vote-btn', widget).forEach((btn) => btn.setAttribute('disabled', 'disabled'));
+
+      try {
+        const response = await fetch('/api/polls/vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ poll_id: pollId, option_id: optionId })
+        });
+        const result = await response.json();
+
+        if (!result.success) {
+          alert(result.message || 'تعذر تسجيل التصويت.');
+          $$('.poll-vote-btn', widget).forEach((btn) => btn.removeAttribute('disabled'));
+          return;
+        }
+
+        const options = Array.isArray(result.options) ? result.options : [];
+        const totalVotes = result.totalVotes || 0;
+        $$('.poll-option', widget).forEach((optionEl, index) => {
+          const option = options[index];
+          if (!option) return;
+          const percentage = totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0;
+          const fill = $('.poll-bar-fill', optionEl);
+          const text = $('.poll-percent', optionEl);
+          fill && (fill.style.width = `${percentage}%`);
+          text && (text.textContent = `${percentage}% (${option.votes})`);
+          const voteBtn = $('.poll-vote-btn', optionEl);
+          voteBtn?.classList.add('voted');
+          voteBtn?.setAttribute('disabled', 'disabled');
+        });
+        const totalEl = $('#pollTotalVotes');
+        if (totalEl) totalEl.textContent = String(totalVotes);
+      } catch (error) {
+        alert('حدث خطأ أثناء تسجيل التصويت.');
+        $$('.poll-vote-btn', widget).forEach((btn) => btn.removeAttribute('disabled'));
+      }
+    });
+  });
+
+  /* ============================================
+     Share / print actions
+     ============================================ */
+  $('.share-btn.print')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    window.print();
+  });
+
+  /* ============================================
+     Simple reveal animation
+     ============================================ */
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12 });
+
+    $$('.story-card, .news-list-item, .sidebar-widget, .cat-section, .media-card, .article-page, .section-panel').forEach((element) => {
+      element.style.opacity = '0';
+      element.style.transform = 'translateY(12px)';
+      element.style.transition = 'opacity 420ms ease, transform 420ms ease';
+      observer.observe(element);
+    });
+  }
+
+  /* ============================================
+     Generic media modal helpers
+     ============================================ */
+  const videoModal = $('#videoModal');
+  const imageModal = $('#imageModal');
+
+  const closeModal = (modal) => {
+    if (!modal) return;
+    modal.classList.remove('open');
+    body.classList.remove('modal-open');
+    const video = $('video', modal);
+    if (video) {
+      video.pause();
+      const source = $('source', video);
+      if (source) source.src = '';
+      video.load();
     }
-  }
-  updateDates();
+    const image = $('img', modal);
+    if (image) image.src = '';
+  };
 
-  // ============================================
-  // Print article
-  // ============================================
-  const printBtn = document.querySelector('.share-btn.print');
-  if (printBtn) {
-    printBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      window.print();
-    });
-  }
+  window.openVideoModal = (src, title = '') => {
+    if (!videoModal) return;
+    const video = $('video', videoModal);
+    const source = $('source', video);
+    const titleEl = $('.media-modal-title', videoModal) || $('#globalVideoTitle') || $('#videoTitle');
+    if (source) source.src = src;
+    if (video) video.load();
+    if (titleEl) titleEl.textContent = title;
+    videoModal.classList.add('open');
+    body.classList.add('modal-open');
+  };
 
-  // ============================================
-  // Newsletter form
-  // ============================================
-  const newsletterForm = document.querySelector('.newsletter-form');
-  if (newsletterForm) {
-    newsletterForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const email = newsletterForm.querySelector('input[type="email"]');
-      if (email && email.value) {
-        alert('شكراً لاشتراكك في النشرة البريدية!');
-        email.value = '';
-      }
-    });
-  }
+  window.closeVideoModal = () => closeModal(videoModal);
 
-  // ============================================
-  // Search form enhancements
-  // ============================================
-  const searchInput = document.querySelector('.header-search input');
-  if (searchInput) {
-    searchInput.addEventListener('focus', () => {
-      searchInput.parentElement.style.borderColor = 'var(--primary, #1a237e)';
-    });
-    searchInput.addEventListener('blur', () => {
-      searchInput.parentElement.style.borderColor = '';
-    });
-  }
+  window.openImageModal = (src, title = '') => {
+    if (!imageModal) return;
+    const image = $('img', imageModal);
+    const titleEl = $('.media-modal-title', imageModal) || $('#globalModalTitle') || $('#modalTitle');
+    if (image) image.src = src;
+    if (titleEl) titleEl.textContent = title;
+    imageModal.classList.add('open');
+    body.classList.add('modal-open');
+  };
 
-  // ============================================
-  // Keyboard navigation for slider
-  // ============================================
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft') { stopSlider(); nextSlide(); startSlider(); }
-    if (e.key === 'ArrowRight') { stopSlider(); prevSlide(); startSlider(); }
+  window.closeImageModal = () => closeModal(imageModal);
+
+  [videoModal, imageModal].forEach((modal) => {
+    if (!modal) return;
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) closeModal(modal);
+    });
+    $('.media-modal-close', modal)?.addEventListener('click', () => closeModal(modal));
   });
 
-  // ============================================
-  // Touch swipe for slider
-  // ============================================
-  const sliderContainer = document.querySelector('.slider-container');
-  if (sliderContainer) {
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    sliderContainer.addEventListener('touchstart', (e) => {
-      touchStartX = e.changedTouches[0].screenX;
-    }, { passive: true });
-
-    sliderContainer.addEventListener('touchend', (e) => {
-      touchEndX = e.changedTouches[0].screenX;
-      const diff = touchStartX - touchEndX;
-      if (Math.abs(diff) > 50) {
-        stopSlider();
-        if (diff > 0) nextSlide();
-        else prevSlide();
-        startSlider();
-      }
-    }, { passive: true });
-  }
-
-  // ============================================
-  // Auto-hide breaking news on scroll
-  // ============================================
-  const ticker = document.querySelector('.breaking-news-ticker');
-  if (ticker) {
-    let lastScroll = 0;
-    window.addEventListener('scroll', () => {
-      const currentScroll = window.scrollY;
-      if (currentScroll > 200) {
-        ticker.style.transform = 'translateY(-100%)';
-        ticker.style.transition = 'transform 0.3s ease';
-      } else {
-        ticker.style.transform = 'translateY(0)';
-      }
-      lastScroll = currentScroll;
-    });
-  }
-
-  // ============================================
-  // Active nav link
-  // ============================================
-  const currentPath = window.location.pathname;
-  document.querySelectorAll('.nav-link').forEach(link => {
-    if (link.getAttribute('href') === currentPath) {
-      link.classList.add('active');
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeModal(videoModal);
+      closeModal(imageModal);
+      closeNav();
+      langDropdown?.classList.remove('open');
     }
   });
-
-  // ============================================
-  // Fade in animations
-  // ============================================
-  const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
-  const fadeObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('fade-in');
-        fadeObserver.unobserve(entry.target);
-      }
-    });
-  }, observerOptions);
-
-  document.querySelectorAll('.section-block, .news-card, .featured-card').forEach(el => {
-    el.style.opacity = '0';
-    fadeObserver.observe(el);
-  });
-
 });

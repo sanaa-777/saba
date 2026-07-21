@@ -2,8 +2,11 @@
 
 <div class="admin-card">
   <div class="admin-card-header">
-    <h3>إدارة الأخبار</h3>
-    <a href="/admin/news/create" class="btn btn-primary">+ إضافة خبر</a>
+    <div>
+      <h3>إدارة الأخبار</h3>
+      <p class="admin-card-subtitle">عرض منظم للأرشيف التحريري مع فلاتر سريعة وإجراءات مباشرة.</p>
+    </div>
+    <a href="/admin/news/create" class="btn btn-primary">إضافة خبر</a>
   </div>
   <div class="filters-bar">
     <select onchange="window.location.href='?status='+this.value+'&category=<%= filters.category || '' %>'">
@@ -17,15 +20,14 @@
         <option value="<%= cat.id %>" <% if (String(filters.category) === String(cat.id)) { %>selected<% } %>><%= cat.name_ar %></option>
       <% }); %>
     </select>
-    <span style="margin-right:auto;color:#888;font-size:13px;"><%= pagination.total %> خبر</span>
+    <span class="filters-summary"><%= pagination.total %> خبر</span>
   </div>
   <div class="admin-card-body" style="padding:0;">
     <div class="table-wrapper">
       <table class="admin-table">
         <thead>
           <tr>
-            <th>#</th><th>صورة</th><th>العنوان</th><th>التصنيف</th>
-            <th>عاجل</th><th>الحالة</th><th>المشاهدات</th><th>إجراءات</th>
+            <th>#</th><th>صورة</th><th>العنوان</th><th>التصنيف</th><th>عاجل</th><th>الحالة</th><th>المشاهدات</th><th>إجراءات</th>
           </tr>
         </thead>
         <tbody>
@@ -34,27 +36,15 @@
             <td><%= item.id %></td>
             <td>
               <% if (item.image) { %>
-                <img src="<%= item.image %>" class="thumb" loading="lazy">
+                <img src="<%= item.image %>" class="thumb" loading="lazy" alt="<%= item.title %>">
               <% } else { %>
-                <span style="color:#ccc;">—</span>
+                <span class="muted-cell">—</span>
               <% } %>
             </td>
-            <td><%= item.title.length > 40 ? item.title.substring(0, 40) + '...' : item.title %></td>
+            <td><%= item.title.length > 48 ? item.title.substring(0, 48) + '…' : item.title %></td>
             <td><%= item.category_name || '-' %></td>
-            <td>
-              <% if (item.is_breaking) { %>
-                <span class="badge badge-danger">عاجل</span>
-              <% } else { %>
-                <span style="color:#ccc;">—</span>
-              <% } %>
-            </td>
-            <td>
-              <% if (item.status === 1) { %>
-                <span class="badge badge-success">منشور</span>
-              <% } else { %>
-                <span class="badge badge-warning">مسودة</span>
-              <% } %>
-            </td>
+            <td><% if (item.is_breaking) { %><span class="badge badge-danger">عاجل</span><% } else { %><span class="muted-cell">—</span><% } %></td>
+            <td><span class="badge <%= item.status === 1 ? 'badge-success' : 'badge-warning' %>"><%= item.status === 1 ? 'منشور' : 'مسودة' %></span></td>
             <td><%= item.views.toLocaleString() %></td>
             <td class="actions">
               <a href="/admin/news/edit/<%= item.id %>" class="btn btn-sm btn-primary">تعديل</a>
@@ -69,15 +59,11 @@
   </div>
   <% if (pagination.totalPages > 1) { %>
   <div class="admin-pagination">
-    <% if (pagination.page > 1) { %>
-      <a href="?page=<%= pagination.page - 1 %>&status=<%= filters.status || '' %>&category=<%= filters.category || '' %>">السابق</a>
-    <% } %>
+    <% if (pagination.page > 1) { %><a href="?page=<%= pagination.page - 1 %>&status=<%= filters.status || '' %>&category=<%= filters.category || '' %>">السابق</a><% } %>
     <% for (var i = Math.max(1, pagination.page - 2); i <= Math.min(pagination.totalPages, pagination.page + 2); i++) { %>
       <a href="?page=<%= i %>&status=<%= filters.status || '' %>&category=<%= filters.category || '' %>" <% if (i === pagination.page) { %>class="active"<% } %>><%= i %></a>
     <% } %>
-    <% if (pagination.page < pagination.totalPages) { %>
-      <a href="?page=<%= pagination.page + 1 %>&status=<%= filters.status || '' %>&category=<%= filters.category || '' %>">التالي</a>
-    <% } %>
+    <% if (pagination.page < pagination.totalPages) { %><a href="?page=<%= pagination.page + 1 %>&status=<%= filters.status || '' %>&category=<%= filters.category || '' %>">التالي</a><% } %>
   </div>
   <% } %>
 </div>

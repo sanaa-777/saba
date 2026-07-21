@@ -1,130 +1,192 @@
-<!-- Top Bar -->
+<%
+  const isHome = currentPath === '/';
+  const mainCategories = (categories || []).slice(0, 8);
+  const moreCategories = (categories || []).slice(8);
+  const quickLinks = [
+    { href: '/videos', label: 'فيديو', icon: 'video' },
+    { href: '/galleries', label: 'صور', icon: 'image' },
+    { href: '/audios', label: 'صوتيات', icon: 'audio' },
+    { href: '/publications', label: 'منشورات', icon: 'file' },
+    { href: '/subscribe', label: 'اشترك', icon: 'mail' }
+  ];
+  function navActive(href) {
+    return currentPath === href ? 'active' : '';
+  }
+%>
+
 <div class="top-bar">
   <div class="container">
     <div class="top-bar-right">
       <span class="date-gregorian"></span>
-      <span class="date-separator">|</span>
+      <span class="date-separator">•</span>
       <span class="date-hijri"></span>
     </div>
     <div class="top-bar-left">
-      <a href="<%= settings.facebook || '#' %>" target="_blank" class="social-icon" aria-label="Facebook">FB</a>
-      <a href="<%= settings.twitter || '#' %>" target="_blank" class="social-icon" aria-label="Twitter">X</a>
-      <a href="<%= settings.youtube || '#' %>" target="_blank" class="social-icon" aria-label="YouTube">YT</a>
-      <a href="<%= settings.telegram || '#' %>" target="_blank" class="social-icon" aria-label="Telegram">TG</a>
-      <a href="/rss" class="social-icon" aria-label="RSS">RSS</a>
+      <a href="/rss" class="top-link">RSS</a>
+      <a href="/archive" class="top-link">الأرشيف</a>
+      <a href="<%= settings.facebook || '#' %>" target="_blank" rel="noopener" class="social-icon" aria-label="Facebook">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3h-3.1V8.2c0-.9.3-1.5 1.5-1.5h1.7V4c-.3 0-1.3-.1-2.5-.1-2.4 0-4 1.5-4 4.2V10H7.5v3h2.6v8h3.4z"/></svg>
+      </a>
+      <a href="<%= settings.twitter || '#' %>" target="_blank" rel="noopener" class="social-icon" aria-label="X">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.4L1 2h6.5l4.4 5.8L18.9 2zm-1.1 18h1.7L6.6 3.9H4.8L17.8 20z"/></svg>
+      </a>
+      <a href="<%= settings.youtube || '#' %>" target="_blank" rel="noopener" class="social-icon" aria-label="YouTube">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.7 15.5V8.5L15.8 12l-6.1 3.5z"/></svg>
+      </a>
+      <a href="<%= settings.telegram || '#' %>" target="_blank" rel="noopener" class="social-icon" aria-label="Telegram">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9.8 15.6 9.4 21c.6 0 .9-.3 1.3-.6l3-2.9 6.1 4.5c1.1.6 1.8.3 2.1-1l3.8-17.7h0c.4-1.8-.6-2.5-1.7-2.1L1.8 9.5c-1.7.7-1.7 1.7-.3 2.1l5.7 1.8L20.4 5c.6-.4 1.2-.2.7.2"/></svg>
+      </a>
     </div>
   </div>
 </div>
 
-<!-- Site Header -->
 <header class="site-header">
   <div class="container">
     <div class="header-inner">
-      <!-- Mobile Menu Toggle -->
-      <button class="mobile-menu-toggle" id="mobileMenuBtn" aria-label="القائمة">
-        <span></span><span></span><span></span>
-      </button>
-      
-      <div class="logo">
-        <a href="/">
-          <img src="/images/logo.png" alt="أوتر" class="logo-img" width="50" height="50">
-          <div class="logo-text">
-            <h1>أوتر</h1>
-            <span>Awtar</span>
-          </div>
-        </a>
-      </div>
-      
-      <div class="header-search">
-        <form action="/search" method="GET">
-          <input type="text" name="q" placeholder="<%= t('search_placeholder') %>" aria-label="<%= t('search') %>">
-          <button type="submit" aria-label="<%= t('search') %>">🔍</button>
-        </form>
-      </div>
-      
-      <!-- Language Switcher -->
-      <div class="lang-switcher" id="langSwitcher">
-        <button class="lang-btn" id="langToggle" aria-label="تغيير اللغة">
-          🌐 <span><%= lang.toUpperCase() %></span> ▾
+      <div class="brand-wrap">
+        <button class="mobile-menu-toggle" id="mobileMenuBtn" aria-label="فتح القائمة">
+          <span></span>
         </button>
-        <div class="lang-dropdown" id="langDropdown">
-          <a href="?lang=ar" class="<%= lang === 'ar' ? 'active' : '' %>">🇸🇦 العربية</a>
-          <a href="?lang=en" class="<%= lang === 'en' ? 'active' : '' %>">🇬🇧 English</a>
-          <a href="?lang=fr" class="<%= lang === 'fr' ? 'active' : '' %>">🇫🇷 Français</a>
-          <a href="?lang=es" class="<%= lang === 'es' ? 'active' : '' %>">🇪🇸 Español</a>
-          <a href="?lang=de" class="<%= lang === 'de' ? 'active' : '' %>">🇩🇪 Deutsch</a>
-          <a href="?lang=fa" class="<%= lang === 'fa' ? 'active' : '' %>">🇮🇷 فارسی</a>
+        <div class="logo">
+          <a href="/">
+            <img src="<%= settings.site_logo || '/images/logo.png' %>" alt="<%= settings.site_name || 'أوتر' %>" class="logo-img" width="54" height="54">
+            <div class="logo-text">
+              <h1><%= settings.site_name || 'أوتر' %></h1>
+              <span>premium news</span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="editorial-badge">
+          <span class="live-dot"></span>
+          <span>تغطية مستمرة <strong>للأخبار المحلية والعربية والدولية</strong></span>
+        </div>
+        <div class="header-search">
+          <form action="/search" method="GET">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+            <input type="text" name="q" placeholder="ابحث في الأخبار والتغطيات والملفات" aria-label="البحث">
+            <button type="submit" aria-label="تنفيذ البحث">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <a href="/subscribe" class="header-live-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          <span>عاجل</span>
+        </a>
+        <a href="<%= session && session.admin ? '/admin' : '/admin/login' %>" class="header-login-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          <span><%= session && session.admin ? 'لوحة التحكم' : 'دخول' %></span>
+        </a>
+        <button class="header-icon-btn theme-toggle" id="themeToggle" aria-label="الوضع الداكن">
+          <span class="theme-icon-moon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+          </span>
+          <span class="theme-icon-sun">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
+          </span>
+        </button>
+        <div class="lang-switcher" id="langSwitcher">
+          <button class="lang-btn" id="langToggle" aria-label="تغيير اللغة">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"></path></svg>
+            <span><%= (lang || 'ar').toUpperCase() %></span>
+          </button>
+          <div class="lang-dropdown" id="langDropdown">
+            <a href="?lang=ar" class="<%= lang === 'ar' ? 'active' : '' %>"><span>العربية</span><span>AR</span></a>
+            <a href="?lang=en" class="<%= lang === 'en' ? 'active' : '' %>"><span>English</span><span>EN</span></a>
+            <a href="?lang=fr" class="<%= lang === 'fr' ? 'active' : '' %>"><span>Français</span><span>FR</span></a>
+            <a href="?lang=es" class="<%= lang === 'es' ? 'active' : '' %>"><span>Español</span><span>ES</span></a>
+            <a href="?lang=de" class="<%= lang === 'de' ? 'active' : '' %>"><span>Deutsch</span><span>DE</span></a>
+            <a href="?lang=fa" class="<%= lang === 'fa' ? 'active' : '' %>"><span>فارسی</span><span>FA</span></a>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </header>
 
-<!-- Main Navigation -->
 <nav class="main-nav" id="mainNav">
-  <div class="container">
+  <div class="container nav-shell">
     <ul class="nav-list">
-      <li class="nav-item"><a href="/" class="nav-link active">الرئيسية</a></li>
-      <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
-        <% categories.slice(0, 10).forEach(cat => { %>
-          <li class="nav-item">
-            <a href="/category/<%= cat.id %>" class="nav-link"><%= cat.name_ar %></a>
-          </li>
-        <% }); %>
-      <% } %>
+      <li class="nav-item"><a href="/" class="nav-link <%= navActive('/') %>">الرئيسية</a></li>
+      <% mainCategories.forEach(cat => { %>
+        <li class="nav-item"><a href="/category/<%= cat.id %>" class="nav-link <%= currentPath === '/category/' + cat.id ? 'active' : '' %>"><%= cat.name_ar %></a></li>
+      <% }); %>
       <li class="nav-item nav-dropdown">
-        <a href="#" class="nav-link">المزيد ▾</a>
+        <a href="#" class="nav-link">المزيد</a>
         <ul class="nav-dropdown-menu">
-          <li><a href="/videos">📹 فيديو</a></li>
-          <li><a href="/galleries">🖼️ صور</a></li>
-          <li><a href="/audios">🎧 صوتيات</a></li>
-          <li><a href="/caricatures">✏️ كاريكاتير</a></li>
-          <li><a href="/publications">📄 منشورات</a></li>
-          <li><a href="/files">📁 ملفات</a></li>
-          <li><a href="/services">🆓 خدمات مجانية</a></li>
-          <li><a href="/subscribe">📧 اشتراك</a></li>
+          <% moreCategories.forEach(cat => { %>
+            <li><a href="/category/<%= cat.id %>"><%= cat.name_ar %></a></li>
+          <% }); %>
+          <li><a href="/videos">مكتبة الفيديو</a></li>
+          <li><a href="/galleries">معرض الصور</a></li>
+          <li><a href="/audios">المكتبة الصوتية</a></li>
+          <li><a href="/caricatures">كاريكاتير</a></li>
+          <li><a href="/files">ملفات</a></li>
         </ul>
       </li>
     </ul>
+    <div class="nav-utility">صحافة عربية رقمية سريعة ومنظمة</div>
   </div>
 </nav>
 
-<!-- Mobile Navigation -->
+<% if (breakingNews && breakingNews.length > 0) { %>
+<section class="container">
+  <div class="breaking-ticker" aria-label="شريط الأخبار العاجلة">
+    <span class="ticker-label">
+      <span class="kicker-dot"></span>
+      عاجل
+    </span>
+    <div class="ticker-marquee">
+      <div class="ticker-scroll">
+        <% breakingNews.forEach(item => { %>
+          <a href="<%= item.link || '#' %>"><%= item.text %></a>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+</section>
+<% } %>
+
 <div class="mobile-nav" id="mobileNav">
   <div class="mobile-nav-header">
-    <div class="mobile-nav-logo">أوتر</div>
-    <button class="mobile-nav-close" id="mobileNavClose" aria-label="إغلاق">✕</button>
+    <div class="mobile-nav-logo"><%= settings.site_name || 'أوتر' %></div>
+    <button class="mobile-nav-close" id="mobileNavClose" aria-label="إغلاق القائمة">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+    </button>
   </div>
   <div class="mobile-nav-search">
     <form action="/search" method="GET">
-      <input type="text" name="q" placeholder="ابحث...">
-      <button type="submit">🔍</button>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+      <input type="text" name="q" placeholder="ابحث في الموقع">
+      <button type="submit" aria-label="بحث">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+      </button>
     </form>
   </div>
-  <ul class="mobile-nav-list">
-    <li><a href="/">🏠 الرئيسية</a></li>
-    <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
-      <% categories.forEach(cat => { %>
-        <li><a href="/category/<%= cat.id %>"><%= cat.name_ar %></a></li>
+  <div class="mobile-nav-scroll">
+    <ul class="mobile-nav-list">
+      <li><a href="/" class="<%= navActive('/') %>"><span>الرئيسية</span><span>↗</span></a></li>
+      <% (categories || []).forEach(cat => { %>
+        <li><a href="/category/<%= cat.id %>" class="<%= currentPath === '/category/' + cat.id ? 'active' : '' %>"><span><%= cat.name_ar %></span><span>↗</span></a></li>
       <% }); %>
-    <% } %>
-    <li class="mobile-nav-divider"></li>
-    <li><a href="/videos">📹 فيديو</a></li>
-    <li><a href="/galleries">🖼️ صور</a></li>
-    <li><a href="/audios">🎧 صوتيات</a></li>
-    <li><a href="/caricatures">✏️ كاريكاتير</a></li>
-    <li><a href="/publications">📄 منشورات</a></li>
-    <li><a href="/files">📁 ملفات</a></li>
-    <li><a href="/services">🆓 خدمات مجانية</a></li>
-    <li><a href="/subscribe">📧 اشتراك</a></li>
-    <li class="mobile-nav-divider"></li>
-    <li><a href="/about">ℹ️ من نحن</a></li>
-    <li><a href="/contact">📬 اتصل بنا</a></li>
-  </ul>
-  <div class="mobile-nav-lang">
-    <a href="?lang=ar" class="<%= lang === 'ar' ? 'active' : '' %>">🇸🇦 عربي</a>
-    <a href="?lang=en" class="<%= lang === 'en' ? 'active' : '' %>">🇬🇧 EN</a>
-    <a href="?lang=fr" class="<%= lang === 'fr' ? 'active' : '' %>">🇫🇷 FR</a>
+      <li class="mobile-nav-divider"></li>
+      <% quickLinks.forEach(link => { %>
+        <li><a href="<%= link.href %>"><span><%= link.label %></span><span>↗</span></a></li>
+      <% }); %>
+      <li><a href="/about"><span>من نحن</span><span>↗</span></a></li>
+      <li><a href="/contact"><span>اتصل بنا</span><span>↗</span></a></li>
+    </ul>
+    <div class="mobile-nav-lang">
+      <a href="?lang=ar" class="<%= lang === 'ar' ? 'active' : '' %>">AR</a>
+      <a href="?lang=en" class="<%= lang === 'en' ? 'active' : '' %>">EN</a>
+      <a href="?lang=fr" class="<%= lang === 'fr' ? 'active' : '' %>">FR</a>
+    </div>
   </div>
 </div>
 <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>

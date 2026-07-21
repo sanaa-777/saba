@@ -3,169 +3,136 @@
 
 <main class="main-content">
   <div class="container">
-    <!-- Breadcrumbs -->
     <nav class="breadcrumbs">
       <a href="/">الرئيسية</a>
       <span class="separator">/</span>
       <a href="/category/<%= article.cat_id %>"><%= article.category_name %></a>
       <span class="separator">/</span>
-      <span class="current"><%= article.title.substring(0, 50) %>...</span>
+      <span class="current"><%= article.title.length > 70 ? article.title.substring(0, 70) + '…' : article.title %></span>
     </nav>
 
     <div class="content-grid">
       <div class="content-area">
         <article class="article-page">
-          <!-- Article Header -->
           <header class="article-header">
             <span class="article-category"><%= article.category_name %></span>
             <h1 class="article-title"><%= article.title %></h1>
             <div class="article-meta">
-              <span class="meta-date">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
                 <%= new Date(article.published_at).toLocaleDateString('ar-YE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %>
               </span>
-              <span class="meta-time">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
                 <%= new Date(article.published_at).toLocaleTimeString('ar-YE', { hour: '2-digit', minute: '2-digit' }) %>
               </span>
-              <span class="meta-views">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                 <%= article.views %> مشاهدة
               </span>
               <% if (article.source) { %>
-              <span class="meta-source">المصدر: <%= article.source %></span>
+              <span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 0 4 24V4.5A2.5 2.5 0 0 1 6.5 2Z"></path></svg>
+                <%= article.source %>
+              </span>
               <% } %>
             </div>
           </header>
 
-          <!-- Article Image -->
           <% if (article.image) { %>
           <div class="article-image">
-            <img src="<%= article.image %>" alt="<%= article.title %>" loading="lazy">
+            <img src="<%= article.image %>" alt="<%= article.title %>">
           </div>
           <% } %>
 
-          <!-- Article Summary -->
           <% if (article.summary) { %>
           <div class="article-summary">
             <p><%= article.summary %></p>
           </div>
           <% } %>
 
-          <!-- Article Content -->
-          <div class="article-content">
-            <%- article.content %>
-          </div>
+          <div class="article-content"><%- article.content %></div>
 
-          <!-- Tags -->
-          <% if (typeof tags !== 'undefined' && tags.length > 0) { %>
+          <% if (tags && tags.length > 0) { %>
           <div class="article-tags">
             <span class="tags-label"><%= t('tags') %>:</span>
             <% tags.forEach(tag => { %>
               <a href="/tag/<%= tag.slug %>" class="tag-link">#<%= tag.name %></a>
-            <% }); %>
+            <% }) %>
           </div>
           <% } %>
 
-          <!-- Social Sharing -->
           <div class="social-sharing">
-            <span><%= t('share') %>:</span>
-            <a href="https://www.facebook.com/sharer/sharer.php?u=<%= encodeURIComponent(currentPath) %>" target="_blank" class="share-btn facebook" aria-label="Facebook">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            </a>
-            <a href="https://twitter.com/intent/tweet?url=<%= encodeURIComponent(currentPath) %>&text=<%= encodeURIComponent(article.title) %>" target="_blank" class="share-btn twitter" aria-label="X">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            </a>
-            <a href="https://wa.me/?text=<%= encodeURIComponent(article.title + ' ' + currentPath) %>" target="_blank" class="share-btn whatsapp" aria-label="WhatsApp">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            </a>
-            <a href="https://t.me/share/url?url=<%= encodeURIComponent(currentPath) %>&text=<%= encodeURIComponent(article.title) %>" target="_blank" class="share-btn telegram" aria-label="Telegram">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-            </a>
-            <a href="mailto:?subject=<%= encodeURIComponent(article.title) %>&body=<%= encodeURIComponent(currentPath) %>" class="share-btn email" aria-label="Email">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </a>
-            <button onclick="window.print()" class="share-btn print" aria-label="Print">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            </button>
+            <span><%= t('share') %></span>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=<%= encodeURIComponent(currentPath) %>" target="_blank" rel="noopener" class="share-btn" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3h-3.1V8.2c0-.9.3-1.5 1.5-1.5h1.7V4c-.3 0-1.3-.1-2.5-.1-2.4 0-4 1.5-4 4.2V10H7.5v3h2.6v8h3.4z"/></svg></a>
+            <a href="https://twitter.com/intent/tweet?url=<%= encodeURIComponent(currentPath) %>&text=<%= encodeURIComponent(article.title) %>" target="_blank" rel="noopener" class="share-btn" aria-label="X"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.4L1 2h6.5l4.4 5.8L18.9 2zm-1.1 18h1.7L6.6 3.9H4.8L17.8 20z"/></svg></a>
+            <a href="https://wa.me/?text=<%= encodeURIComponent(article.title + ' ' + currentPath) %>" target="_blank" rel="noopener" class="share-btn" aria-label="WhatsApp"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5A11.9 11.9 0 0 0 12.1 0C5.5 0 .2 5.3.2 11.9c0 2.1.5 4.1 1.5 5.9L0 24l6.3-1.7a11.9 11.9 0 0 0 5.7 1.4h.1c6.6 0 11.9-5.3 11.9-11.9 0-3.2-1.2-6.2-3.5-8.3Zm-8.4 18.2h-.1a9.8 9.8 0 0 1-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4a9.9 9.9 0 0 1-1.5-5.2C2.2 6.4 6.7 2 12.1 2c2.6 0 5.1 1 7 2.9a9.7 9.7 0 0 1 2.9 7c0 5.4-4.4 9.8-9.9 9.8Zm5.4-7.3c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.4.1-.6.1-.1.3-.3.5-.5.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.1-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1.1 1-1.1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2.1-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3Z"/></svg></a>
+            <a href="https://t.me/share/url?url=<%= encodeURIComponent(currentPath) %>&text=<%= encodeURIComponent(article.title) %>" target="_blank" rel="noopener" class="share-btn" aria-label="Telegram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9.8 15.6 9.4 21c.6 0 .9-.3 1.3-.6l3-2.9 6.1 4.5c1.1.6 1.8.3 2.1-1l3.8-17.7h0c.4-1.8-.6-2.5-1.7-2.1L1.8 9.5c-1.7.7-1.7 1.7-.3 2.1l5.7 1.8L20.4 5c.6-.4 1.2-.2.7.2"/></svg></a>
+            <a href="mailto:?subject=<%= encodeURIComponent(article.title) %>&body=<%= encodeURIComponent(currentPath) %>" class="share-btn" aria-label="Email"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><path d="m22 6-10 7L2 6"></path></svg></a>
+            <button class="share-btn print" aria-label="Print"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 14h12v8H6z"></path></svg></button>
           </div>
 
-          <!-- Comments Section -->
           <section class="comments-section">
             <h3><%= t('comments') %> (<%= commentCount %>)</h3>
-            
-            <!-- Comment Form -->
             <form class="comment-form" id="commentForm">
               <input type="hidden" name="news_id" value="<%= article.id %>">
               <div class="form-row">
-                <div class="form-group">
-                  <input type="text" name="author_name" placeholder="<%= t('your_name') %>" required>
-                </div>
-                <div class="form-group">
-                  <input type="email" name="author_email" placeholder="<%= t('email') %> (اختياري)">
-                </div>
+                <div class="form-group"><input type="text" name="author_name" placeholder="<%= t('your_name') %>" required></div>
+                <div class="form-group"><input type="email" name="author_email" placeholder="<%= t('email') %> (اختياري)"></div>
               </div>
-              <div class="form-group">
-                <textarea name="content" placeholder="<%= t('your_comment') %>" rows="4" required></textarea>
-              </div>
+              <div class="form-group"><textarea name="content" placeholder="<%= t('your_comment') %>" rows="5" required></textarea></div>
               <button type="submit" class="btn btn-primary"><%= t('submit_comment') %></button>
               <div class="comment-message" id="commentMessage" style="display:none;"></div>
             </form>
 
-            <!-- Comments List -->
             <div class="comments-list" id="commentsList">
               <% if (comments.length > 0) { %>
                 <% comments.forEach(comment => { %>
-                <div class="comment-item">
-                  <div class="comment-header">
-                    <span class="comment-author"><%= comment.author_name %></span>
-                    <span class="comment-date"><%= new Date(comment.created_at).toLocaleDateString('ar-YE') %></span>
+                  <div class="comment-item">
+                    <div class="comment-header">
+                      <span class="comment-author"><%= comment.author_name %></span>
+                      <span class="comment-date"><%= new Date(comment.created_at).toLocaleDateString('ar-YE') %></span>
+                    </div>
+                    <div class="comment-body"><p><%= comment.content %></p></div>
                   </div>
-                  <div class="comment-body">
-                    <p><%= comment.content %></p>
-                  </div>
-                </div>
-                <% }); %>
+                <% }) %>
               <% } else { %>
-                <p class="no-comments">لا توجد تعليقات بعد. كن أول من يعلّق!</p>
+                <p class="no-comments">لا توجد تعليقات بعد. كن أول من يعلّق.</p>
               <% } %>
             </div>
           </section>
 
-          <!-- Prev/Next Navigation -->
           <div class="article-nav">
             <% if (prevArticle) { %>
             <a href="/news/<%= prevArticle.id %>" class="nav-prev">
               <span>الخبر السابق</span>
-              <h4><%= prevArticle.title.substring(0, 60) %>...</h4>
+              <h4><%= prevArticle.title.length > 80 ? prevArticle.title.substring(0, 80) + '…' : prevArticle.title %></h4>
             </a>
             <% } %>
             <% if (nextArticle) { %>
             <a href="/news/<%= nextArticle.id %>" class="nav-next">
               <span>الخبر التالي</span>
-              <h4><%= nextArticle.title.substring(0, 60) %>...</h4>
+              <h4><%= nextArticle.title.length > 80 ? nextArticle.title.substring(0, 80) + '…' : nextArticle.title %></h4>
             </a>
             <% } %>
           </div>
 
-          <!-- Related News -->
-          <% if (typeof relatedNews !== 'undefined' && relatedNews.length > 0) { %>
+          <% if (relatedNews && relatedNews.length > 0) { %>
           <section class="related-news">
             <h3>أخبار ذات صلة</h3>
             <div class="related-grid">
               <% relatedNews.forEach(item => { %>
                 <article class="related-card">
                   <div class="card-image">
-                    <a href="/news/<%= item.id %>">
-                      <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
-                    </a>
+                    <a href="/news/<%= item.id %>"><img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy"></a>
                   </div>
                   <div class="card-content">
+                    <span class="eyebrow"><%= item.category_name || article.category_name %></span>
                     <h4><a href="/news/<%= item.id %>"><%= item.title %></a></h4>
                     <span class="card-date"><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
                   </div>
                 </article>
-              <% }); %>
+              <% }) %>
             </div>
           </section>
           <% } %>

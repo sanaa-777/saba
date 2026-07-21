@@ -8,29 +8,35 @@
       <span class="separator">/</span>
       <span class="current">معرض الصور</span>
     </nav>
+
+    <section class="page-hero">
+      <span class="eyebrow">محتوى بصري</span>
+      <h1 class="page-title">معرض الصور</h1>
+      <p>لقطات وصور خبرية ضمن شبكة بصرية نظيفة تدعم القراءة السريعة على الهاتف وسطح المكتب.</p>
+    </section>
+
     <div class="content-grid">
       <div class="content-area">
         <section class="section-block">
-          <div class="section-header section-header-gallery">
-            <h2>📷 معرض الصور</h2>
-          </div>
+          <div class="section-header"><div><h2>أحدث الصور</h2><p>تجربة عرض بصري محسنة مع تكبير مباشر.</p></div></div>
           <% if (galleries.length > 0) { %>
-          <div class="media-grid">
-            <% galleries.forEach(gallery => { %>
-              <div class="media-card" onclick="openImageModal('<%= gallery.file_path %>', '<%= gallery.title %>')">
-                <div class="media-card-image">
-                  <img src="<%= gallery.file_path %>" alt="<%= gallery.title %>" loading="lazy">
-                </div>
-                <div class="media-card-body">
-                  <h3><a href="javascript:void(0)"><%= gallery.title %></a></h3>
-                  <p><%= gallery.description || '' %></p>
-                  <span class="card-date"><%= new Date(gallery.created_at).toLocaleDateString('ar-YE') %></span>
-                </div>
-              </div>
-            <% }); %>
-          </div>
+            <div class="media-grid">
+              <% galleries.forEach(gallery => { %>
+                <article class="media-card" onclick="openImageModal('<%= gallery.file_path %>', '<%= gallery.title %>')">
+                  <div class="media-card-image">
+                    <img src="<%= gallery.file_path %>" alt="<%= gallery.title %>" loading="lazy">
+                  </div>
+                  <div class="media-card-body">
+                    <span class="eyebrow">صورة</span>
+                    <h3><a href="javascript:void(0)"><%= gallery.title %></a></h3>
+                    <% if (gallery.description) { %><p><%= gallery.description %></p><% } %>
+                    <span class="card-date"><%= new Date(gallery.created_at).toLocaleDateString('ar-YE') %></span>
+                  </div>
+                </article>
+              <% }) %>
+            </div>
           <% } else { %>
-          <div class="no-results"><p>لا توجد صور حالياً</p></div>
+            <div class="no-results"><p>لا توجد صور حالياً.</p></div>
           <% } %>
         </section>
       </div>
@@ -38,31 +44,5 @@
     </div>
   </div>
 </main>
-
-<!-- Image Modal / Lightbox -->
-<div id="imageModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:10000;align-items:center;justify-content:center;flex-direction:column;">
-  <button onclick="closeImageModal()" style="position:absolute;top:20px;left:20px;background:none;border:none;color:#fff;font-size:30px;cursor:pointer;z-index:10001;">✕</button>
-  <img id="modalImage" src="" alt="" style="max-width:90%;max-height:80vh;border-radius:8px;box-shadow:0 4px 30px rgba(0,0,0,0.5);"/>
-  <h3 id="modalTitle" style="color:#fff;text-align:center;margin-top:15px;font-family:'Tajawal',sans-serif;font-size:18px;"></h3>
-</div>
-
-<script>
-function openImageModal(src, title) {
-  document.getElementById('modalImage').src = src;
-  document.getElementById('modalTitle').textContent = title;
-  document.getElementById('imageModal').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
-function closeImageModal() {
-  document.getElementById('imageModal').style.display = 'none';
-  document.body.style.overflow = '';
-}
-document.getElementById('imageModal').addEventListener('click', function(e) {
-  if (e.target === this) closeImageModal();
-});
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeImageModal();
-});
-</script>
 
 <%- include('../partials/footer') %>

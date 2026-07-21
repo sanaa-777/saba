@@ -3,69 +3,115 @@
 
 <main class="main-content">
   <div class="container">
-    <!-- Breadcrumbs -->
     <nav class="breadcrumbs">
       <a href="/">الرئيسية</a>
       <span class="separator">/</span>
       <span class="current"><%= category.name_ar %></span>
     </nav>
 
+    <section class="page-hero">
+      <span class="eyebrow"><%= category.name_ar %></span>
+      <h1 class="page-title">تغطية <%= category.name_ar %></h1>
+      <p>صفحة تصنيف منظّمة بعرض تحريري واضح، مع إبراز القصة الأهم ثم قائمة الأخبار الداعمة والأرشيف الكامل.</p>
+    </section>
+
     <div class="content-grid">
       <div class="content-area">
-        <section class="section-block">
-          <div class="section-header">
-            <h2><%= category.name_ar %></h2>
-            <span class="news-count"><%= pagination.total %> خبر</span>
-          </div>
+        <% if (news.length > 0) { %>
+          <section class="section-block">
+            <div class="section-header">
+              <div>
+                <h2>ملف اليوم</h2>
+                <p><%= pagination.total %> خبر ضمن هذا التصنيف.</p>
+              </div>
+              <span class="news-count">الصفحة <%= pagination.page %> من <%= pagination.totalPages || 1 %></span>
+            </div>
 
-          <% if (news.length > 0) { %>
-          <div class="news-list">
-            <% news.forEach(item => { %>
-              <article class="news-list-item">
-                <div class="list-item-image">
-                  <a href="/news/<%= item.id %>">
-                    <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
-                  </a>
-                </div>
-                <div class="list-item-content">
-                  <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
-                  <p><%= item.summary %></p>
-                  <div class="card-meta">
-                    <span class="card-date">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                      <%= new Date(item.published_at).toLocaleDateString('ar-YE') %>
-                    </span>
-                    <span class="card-views">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      <%= item.views %> مشاهدة
-                    </span>
+            <div class="featured-listing">
+              <article class="lead-card">
+                <a class="lead-card-media" href="/news/<%= news[0].id %>">
+                  <img src="<%= news[0].image || '/images/placeholder.jpg' %>" alt="<%= news[0].title %>">
+                </a>
+                <div class="lead-card-body">
+                  <span class="eyebrow"><%= category.name_ar %></span>
+                  <h2><a href="/news/<%= news[0].id %>"><%= news[0].title %></a></h2>
+                  <% if (news[0].summary) { %><p><%= news[0].summary %></p><% } %>
+                  <div class="story-meta">
+                    <span><%= new Date(news[0].published_at).toLocaleDateString('ar-YE') %></span>
+                    <span><%= news[0].views %> مشاهدة</span>
+                    <span><%= news[0].source || settings.site_name || 'أوتر' %></span>
                   </div>
                 </div>
               </article>
-            <% }); %>
-          </div>
 
-          <!-- Pagination -->
-          <% if (pagination.totalPages > 1) { %>
-          <div class="pagination">
-            <% if (pagination.page > 1) { %>
-              <a href="?page=<%= pagination.page - 1 %>" class="page-link">السابق</a>
-            <% } %>
-            <% for (let i = 1; i <= pagination.totalPages; i++) { %>
-              <a href="?page=<%= i %>" class="page-link <%= i === pagination.page ? 'active' : '' %>"><%= i %></a>
-            <% } %>
-            <% if (pagination.page < pagination.totalPages) { %>
-              <a href="?page=<%= pagination.page + 1 %>" class="page-link">التالي</a>
-            <% } %>
-          </div>
-          <% } %>
+              <div class="compact-stack">
+                <% news.slice(1, 5).forEach(item => { %>
+                  <article class="story-card-horizontal">
+                    <a class="story-card-media" href="/news/<%= item.id %>">
+                      <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
+                    </a>
+                    <div class="story-card-body">
+                      <span class="eyebrow"><%= item.category_name || category.name_ar %></span>
+                      <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
+                      <% if (item.summary) { %><p><%= item.summary %></p><% } %>
+                      <div class="story-meta">
+                        <span><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
+                        <span><%= item.views %> مشاهدة</span>
+                      </div>
+                    </div>
+                  </article>
+                <% }) %>
+              </div>
+            </div>
+          </section>
 
-          <% } else { %>
-          <div class="no-results">
-            <p>لا توجد أخبار في هذا التصنيف حالياً</p>
-          </div>
-          <% } %>
-        </section>
+          <section class="section-block">
+            <div class="section-header">
+              <div>
+                <h2>كل الأخبار</h2>
+                <p>قائمة كاملة قابلة للتصفح مع ترتيب زمني واضح.</p>
+              </div>
+            </div>
+
+            <div class="news-list">
+              <% news.forEach(item => { %>
+                <article class="news-list-item">
+                  <div class="list-item-image">
+                    <a href="/news/<%= item.id %>">
+                      <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
+                    </a>
+                  </div>
+                  <div class="list-item-content">
+                    <span class="eyebrow"><%= item.category_name || category.name_ar %></span>
+                    <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
+                    <% if (item.summary) { %><p><%= item.summary %></p><% } %>
+                    <div class="card-meta">
+                      <span><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
+                      <span><%= item.views %> مشاهدة</span>
+                      <span><%= item.source || settings.site_name || 'أوتر' %></span>
+                    </div>
+                  </div>
+                </article>
+              <% }) %>
+            </div>
+
+            <% if (pagination.totalPages > 1) { %>
+            <div class="pagination">
+              <% if (pagination.page > 1) { %>
+                <a href="?page=<%= pagination.page - 1 %>" class="page-link">السابق</a>
+              <% } %>
+              <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+                <a href="?page=<%= i %>" class="page-link <%= i === pagination.page ? 'active' : '' %>"><%= i %></a>
+              <% } %>
+              <% if (pagination.page < pagination.totalPages) { %>
+                <a href="?page=<%= pagination.page + 1 %>" class="page-link">التالي</a>
+              <% } %>
+            </div>
+            <% } %>
+          </section>
+        <% } else { %>
+          <div class="no-results"><p>لا توجد أخبار في هذا التصنيف حالياً.</p></div>
+        <% } %>
       </div>
 
       <%- include('partials/sidebar') %>

@@ -1,63 +1,45 @@
 <%- include('header') %>
 
-<!-- Stats -->
-<div class="stats-grid">
-  <div class="stat-card">
-    <div class="stat-icon blue">📰</div>
-    <div class="stat-info"><h3><%= stats.totalNews %></h3><p>إجمالي الأخبار</p></div>
+<div class="admin-overview-card">
+  <div>
+    <span class="admin-kicker">نظرة عامة</span>
+    <h2>مركز قيادة غرفة الأخبار</h2>
+    <p>متابعة سريعة لحالة النشر، الأداء، والتفاعل من واجهة أكثر وضوحاً وتنظيماً.</p>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon green">✅</div>
-    <div class="stat-info"><h3><%= stats.publishedNews %></h3><p>منشورة</p></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon orange">📝</div>
-    <div class="stat-info"><h3><%= stats.draftNews %></h3><p>مسودة</p></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon purple">👁️</div>
-    <div class="stat-info"><h3><%= stats.totalViews.toLocaleString() %></h3><p>إجمالي المشاهدات</p></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon teal">📂</div>
-    <div class="stat-info"><h3><%= stats.totalCategories %></h3><p>التصنيفات</p></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon red">⚡</div>
-    <div class="stat-info"><h3><%= stats.breakingNews %></h3><p>أخبار عاجلة</p></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon blue">💬</div>
-    <div class="stat-info"><h3><%= stats.totalComments %></h3><p>تعليقات</p></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon orange">⏳</div>
-    <div class="stat-info"><h3><%= stats.pendingComments %></h3><p>معلقة</p></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon purple">📊</div>
-    <div class="stat-info"><h3><%= stats.totalPolls %></h3><p>استطلاعات</p></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon teal">📧</div>
-    <div class="stat-info"><h3><%= stats.totalSubscribers %></h3><p>مشتركين</p></div>
+  <div class="content-metrics">
+    <div><strong><%= stats.totalNews %></strong><span>إجمالي الأخبار</span></div>
+    <div><strong><%= stats.totalViews.toLocaleString() %></strong><span>المشاهدات</span></div>
+    <div><strong><%= stats.totalSubscribers %></strong><span>المشتركون</span></div>
   </div>
 </div>
 
-<!-- Quick Actions -->
+<div class="stats-grid">
+  <div class="stat-card"><div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 0 4 24V4.5A2.5 2.5 0 0 1 6.5 2Z"></path></svg></div><div class="stat-info"><h3><%= stats.totalNews %></h3><p>إجمالي الأخبار</p></div></div>
+  <div class="stat-card"><div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"></path></svg></div><div class="stat-info"><h3><%= stats.publishedNews %></h3><p>منشورة</p></div></div>
+  <div class="stat-card"><div class="stat-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></div><div class="stat-info"><h3><%= stats.draftNews %></h3><p>مسودات</p></div></div>
+  <div class="stat-card"><div class="stat-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></div><div class="stat-info"><h3><%= stats.totalViews.toLocaleString() %></h3><p>إجمالي المشاهدات</p></div></div>
+  <div class="stat-card"><div class="stat-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18"></path><path d="M6 3h12l3 4v14H3V7l3-4Z"></path></svg></div><div class="stat-info"><h3><%= stats.totalCategories %></h3><p>التصنيفات</p></div></div>
+  <div class="stat-card"><div class="stat-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m13 2-9 14h7l-1 6 9-14h-7l1-6Z"></path></svg></div><div class="stat-info"><h3><%= stats.breakingNews %></h3><p>الأخبار العاجلة</p></div></div>
+  <div class="stat-card"><div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div><div class="stat-info"><h3><%= stats.totalComments %></h3><p>التعليقات</p></div></div>
+  <div class="stat-card"><div class="stat-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg></div><div class="stat-info"><h3><%= stats.pendingComments %></h3><p>قيد المراجعة</p></div></div>
+  <div class="stat-card"><div class="stat-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg></div><div class="stat-info"><h3><%= stats.totalPolls %></h3><p>الاستطلاعات</p></div></div>
+  <div class="stat-card"><div class="stat-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><path d="m22 6-10 7L2 6"></path></svg></div><div class="stat-info"><h3><%= stats.totalSubscribers %></h3><p>مشتركو البريد</p></div></div>
+</div>
+
 <div class="admin-card">
   <div class="admin-card-header">
     <h3>إجراءات سريعة</h3>
   </div>
-  <div class="admin-card-body" style="display:flex;gap:10px;flex-wrap:wrap;">
-    <a href="/admin/news/create" class="btn btn-primary">+ إضافة خبر جديد</a>
-    <a href="/admin/breaking" class="btn btn-danger">إدارة الأخبار العاجلة</a>
-    <a href="/admin/slider" class="btn btn-success">إدارة السلايدر</a>
-    <a href="/admin/media" class="btn btn-secondary">إدارة الوسائط</a>
+  <div class="admin-card-body">
+    <div class="quick-actions-grid">
+      <a href="/admin/news/create" class="quick-action-card"><strong>إضافة خبر</strong><span>إنشاء مادة جديدة بسرعة</span></a>
+      <a href="/admin/breaking" class="quick-action-card"><strong>الأخبار العاجلة</strong><span>إدارة الشريط والتنبيهات</span></a>
+      <a href="/admin/slider" class="quick-action-card"><strong>السلايدر</strong><span>ضبط القصص الرئيسية</span></a>
+      <a href="/admin/media" class="quick-action-card"><strong>الوسائط</strong><span>رفع وإدارة الصور والفيديو</span></a>
+    </div>
   </div>
 </div>
 
-<!-- Recent News -->
 <div class="admin-card">
   <div class="admin-card-header">
     <h3>آخر الأخبار</h3>
@@ -67,29 +49,15 @@
     <div class="table-wrapper">
       <table class="admin-table">
         <thead>
-          <tr>
-            <th>#</th>
-            <th>العنوان</th>
-            <th>التصنيف</th>
-            <th>الحالة</th>
-            <th>المشاهدات</th>
-            <th>التاريخ</th>
-            <th>إجراءات</th>
-          </tr>
+          <tr><th>#</th><th>العنوان</th><th>التصنيف</th><th>الحالة</th><th>المشاهدات</th><th>التاريخ</th><th>إجراءات</th></tr>
         </thead>
         <tbody>
           <% recentNews.forEach(item => { %>
           <tr>
             <td><%= item.id %></td>
-            <td><%= item.title.length > 45 ? item.title.substring(0, 45) + '...' : item.title %></td>
+            <td><%= item.title.length > 55 ? item.title.substring(0, 55) + '…' : item.title %></td>
             <td><%= item.category_name || '-' %></td>
-            <td>
-              <% if (item.status === 1) { %>
-                <span class="badge badge-success">منشور</span>
-              <% } else { %>
-                <span class="badge badge-warning">مسودة</span>
-              <% } %>
-            </td>
+            <td><span class="badge <%= item.status === 1 ? 'badge-success' : 'badge-warning' %>"><%= item.status === 1 ? 'منشور' : 'مسودة' %></span></td>
             <td><%= item.views.toLocaleString() %></td>
             <td><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></td>
             <td class="actions">

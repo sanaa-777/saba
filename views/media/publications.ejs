@@ -8,29 +8,35 @@
       <span class="separator">/</span>
       <span class="current">إصداراتنا</span>
     </nav>
+
+    <section class="page-hero">
+      <span class="eyebrow">أرشيف التحرير</span>
+      <h1 class="page-title">إصدارات أوتر</h1>
+      <p>صفحة مرجعية تجمع المنشورات والإصدارات ضمن واجهة واضحة قابلة للتصفح والقراءة.</p>
+    </section>
+
     <div class="content-grid">
       <div class="content-area">
         <section class="section-block">
-          <div class="section-header" style="border-color: #1a237e;">
-            <h2 style="color: #1a237e;">📄 إصداراتنا</h2>
-          </div>
+          <div class="section-header"><div><h2>أحدث الإصدارات</h2><p>منشورات وأعداد مرئية ضمن عرض أنيق سريع.</p></div></div>
           <% if (typeof publications !== 'undefined' && publications.length > 0) { %>
-          <div class="media-grid">
-            <% publications.forEach(item => { %>
-              <div class="media-card" onclick="openImageModal('<%= item.file_path %>', '<%= item.title %>')">
-                <div class="media-card-image">
-                  <img src="<%= item.file_path %>" alt="<%= item.title %>" loading="lazy">
-                </div>
-                <div class="media-card-body">
-                  <h3><a href="javascript:void(0)"><%= item.title %></a></h3>
-                  <p><%= item.description || '' %></p>
-                  <span class="card-date"><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></span>
-                </div>
-              </div>
-            <% }); %>
-          </div>
+            <div class="media-grid">
+              <% publications.forEach(item => { %>
+                <article class="media-card" onclick="openImageModal('<%= item.file_path %>', '<%= item.title %>')">
+                  <div class="media-card-image">
+                    <img src="<%= item.file_path %>" alt="<%= item.title %>" loading="lazy">
+                  </div>
+                  <div class="media-card-body">
+                    <span class="eyebrow">إصدار</span>
+                    <h3><a href="javascript:void(0)"><%= item.title %></a></h3>
+                    <% if (item.description) { %><p><%= item.description %></p><% } %>
+                    <span class="card-date"><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></span>
+                  </div>
+                </article>
+              <% }); %>
+            </div>
           <% } else { %>
-          <div class="no-results"><p>لا توجد إصدارات حالياً</p></div>
+            <div class="no-results"><p>لا توجد إصدارات حالياً.</p></div>
           <% } %>
         </section>
       </div>

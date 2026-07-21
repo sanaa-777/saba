@@ -1,96 +1,101 @@
 <aside class="sidebar">
-  <!-- Latest News Tabs -->
+  <% const latestItems = (typeof latestNews !== 'undefined' && latestNews) ? latestNews : []; %>
+  <% const pollData = typeof activePoll !== 'undefined' ? activePoll : null; %>
+  <% const pollOptions = typeof activePollOptions !== 'undefined' && activePollOptions ? activePollOptions : []; %>
+  <% const pollVotesTotal = typeof activePollTotalVotes !== 'undefined' ? activePollTotalVotes : 0; %>
+
   <div class="sidebar-widget">
     <div class="widget-tabs">
       <button class="tab-btn active" data-tab="latest"><%= t('latest_news') %></button>
       <button class="tab-btn" data-tab="most-read"><%= t('most_read') %></button>
     </div>
+
     <div class="tab-content active" id="tab-latest">
       <ul class="sidebar-news-list">
-        <% if (typeof latestNews !== 'undefined') { %>
-          <% latestNews.slice(0, 10).forEach((item, i) => { %>
+        <% if (latestItems.length) { %>
+          <% latestItems.slice(0, 8).forEach((item, index) => { %>
             <li>
-              <span class="news-number"><%= i + 1 %></span>
+              <span class="news-number"><%= index + 1 %></span>
               <div class="news-info">
                 <a href="/news/<%= item.id %>"><%= item.title %></a>
                 <span class="news-date"><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
               </div>
             </li>
-          <% }); %>
+          <% }) %>
+        <% } else { %>
+          <li><div class="news-info"><span class="news-date">لا توجد بيانات حالياً</span></div></li>
         <% } %>
       </ul>
     </div>
+
     <div class="tab-content" id="tab-most-read">
       <ul class="sidebar-news-list">
-        <% if (typeof latestNews !== 'undefined') { %>
-          <% latestNews.sort((a, b) => b.views - a.views).slice(0, 10).forEach((item, i) => { %>
+        <% if (latestItems.length) { %>
+          <% latestItems.slice().sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 8).forEach((item, index) => { %>
             <li>
-              <span class="news-number"><%= i + 1 %></span>
+              <span class="news-number"><%= index + 1 %></span>
               <div class="news-info">
                 <a href="/news/<%= item.id %>"><%= item.title %></a>
-                <span class="news-date"><%= item.views %> <%= t('views') %></span>
+                <span class="news-date"><%= item.views || 0 %> <%= t('views') %></span>
               </div>
             </li>
-          <% }); %>
+          <% }) %>
+        <% } else { %>
+          <li><div class="news-info"><span class="news-date">لا توجد بيانات حالياً</span></div></li>
         <% } %>
       </ul>
     </div>
   </div>
 
-  <!-- Poll Widget -->
-  <% if (typeof activePoll !== 'undefined' && activePoll) { %>
+  <% if (pollData) { %>
   <div class="sidebar-widget poll-widget">
     <h3 class="widget-title"><%= t('polls') %></h3>
     <div class="poll-question" id="pollWidget">
-      <p class="poll-text"><%= activePoll.question %></p>
+      <p class="poll-text"><%= pollData.question %></p>
       <div class="poll-options" id="pollOptions">
-        <% activePollOptions.forEach(option => { %>
-        <div class="poll-option">
-          <button class="poll-vote-btn" data-poll="<%= activePoll.id %>" data-option="<%= option.id %>">
-            <%= option.option_text %>
-          </button>
-          <div class="poll-bar">
-            <div class="poll-bar-fill" style="width: <%= activePollTotalVotes > 0 ? Math.round(option.votes / activePollTotalVotes * 100) : 0 %>%"></div>
+        <% pollOptions.forEach(option => { %>
+          <div class="poll-option">
+            <button class="poll-vote-btn" data-poll="<%= pollData.id %>" data-option="<%= option.id %>"><%= option.option_text %></button>
+            <div class="poll-bar">
+              <div class="poll-bar-fill" style="width:<%= pollVotesTotal > 0 ? Math.round((option.votes / pollVotesTotal) * 100) : 0 %>%"></div>
+            </div>
+            <span class="poll-percent"><%= pollVotesTotal > 0 ? Math.round((option.votes / pollVotesTotal) * 100) : 0 %>% (<%= option.votes %>)</span>
           </div>
-          <span class="poll-percent"><%= activePollTotalVotes > 0 ? Math.round(option.votes / activePollTotalVotes * 100) : 0 %>% (<%= option.votes %>)</span>
-        </div>
-        <% }); %>
+        <% }) %>
       </div>
-      <p class="poll-total"><%= t('total_votes') %>: <span id="pollTotalVotes"><%= activePollTotalVotes %></span></p>
+      <p class="poll-total"><%= t('total_votes') %>: <span id="pollTotalVotes"><%= pollVotesTotal %></span></p>
     </div>
   </div>
   <% } %>
 
-  <!-- Social Media Widget -->
   <div class="sidebar-widget">
     <h3 class="widget-title"><%= t('follow_us') %></h3>
     <div class="social-follow">
-      <a href="<%= settings.facebook || '#' %>" target="_blank" class="social-btn facebook">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-        فيسبوك
+      <a href="<%= settings.facebook || '#' %>" target="_blank" rel="noopener" class="social-btn facebook">
+        <span>فيسبوك</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3h-3.1V8.2c0-.9.3-1.5 1.5-1.5h1.7V4c-.3 0-1.3-.1-2.5-.1-2.4 0-4 1.5-4 4.2V10H7.5v3h2.6v8h3.4z"/></svg>
       </a>
-      <a href="<%= settings.twitter || '#' %>" target="_blank" class="social-btn twitter">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-        تويتر
+      <a href="<%= settings.twitter || '#' %>" target="_blank" rel="noopener" class="social-btn twitter">
+        <span>إكس</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.4L1 2h6.5l4.4 5.8L18.9 2zm-1.1 18h1.7L6.6 3.9H4.8L17.8 20z"/></svg>
       </a>
-      <a href="<%= settings.telegram || '#' %>" target="_blank" class="social-btn telegram">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-        تلغرام
+      <a href="<%= settings.telegram || '#' %>" target="_blank" rel="noopener" class="social-btn telegram">
+        <span>تيليجرام</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9.8 15.6 9.4 21c.6 0 .9-.3 1.3-.6l3-2.9 6.1 4.5c1.1.6 1.8.3 2.1-1l3.8-17.7h0c.4-1.8-.6-2.5-1.7-2.1L1.8 9.5c-1.7.7-1.7 1.7-.3 2.1l5.7 1.8L20.4 5c.6-.4 1.2-.2.7.2"/></svg>
       </a>
-      <a href="<%= settings.youtube || '#' %>" target="_blank" class="social-btn youtube">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-        يوتيوب
+      <a href="<%= settings.youtube || '#' %>" target="_blank" rel="noopener" class="social-btn youtube">
+        <span>يوتيوب</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.7 15.5V8.5L15.8 12l-6.1 3.5z"/></svg>
       </a>
     </div>
   </div>
 
-  <!-- Newsletter Widget -->
   <div class="sidebar-widget newsletter-widget">
     <h3 class="widget-title"><%= t('newsletter') %></h3>
     <p><%= t('newsletter_desc') %></p>
     <form class="newsletter-form" id="newsletterForm">
       <input type="email" name="email" placeholder="<%= t('email') %>" required>
-      <button type="submit"><%= t('subscribe') %></button>
+      <button type="submit" class="btn btn-primary"><%= t('subscribe') %></button>
     </form>
     <div class="newsletter-message" id="newsletterMessage" style="display:none;"></div>
   </div>

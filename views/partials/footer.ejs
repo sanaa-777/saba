@@ -1,137 +1,99 @@
-<!-- Footer -->
 <footer class="site-footer">
   <div class="container">
     <div class="footer-grid">
       <div class="footer-col">
-        <h3>أوتر</h3>
-        <p>أوتر - المصدر الأول للأخبار. نعمل على نقل الحقيقة والمعلومات الدقيقة إلى القراء في كل مكان.</p>
+        <h3><%= settings.site_name || 'أوتر' %></h3>
+        <p>منصة أخبار عربية بهوية تحريرية حديثة، تركّز على التنظيم، السرعة، وسهولة القراءة عبر الهاتف وسطح المكتب.</p>
         <div class="footer-social">
-          <a href="<%= settings.facebook || '#' %>" target="_blank" aria-label="Facebook">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-          </a>
-          <a href="<%= settings.twitter || '#' %>" target="_blank" aria-label="Twitter">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          </a>
-          <a href="<%= settings.youtube || '#' %>" target="_blank" aria-label="YouTube">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-          </a>
-          <a href="<%= settings.telegram || '#' %>" target="_blank" aria-label="Telegram">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-          </a>
+          <a href="<%= settings.facebook || '#' %>" target="_blank" rel="noopener" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3h-3.1V8.2c0-.9.3-1.5 1.5-1.5h1.7V4c-.3 0-1.3-.1-2.5-.1-2.4 0-4 1.5-4 4.2V10H7.5v3h2.6v8h3.4z"/></svg></a>
+          <a href="<%= settings.twitter || '#' %>" target="_blank" rel="noopener" aria-label="X"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.4L1 2h6.5l4.4 5.8L18.9 2zm-1.1 18h1.7L6.6 3.9H4.8L17.8 20z"/></svg></a>
+          <a href="<%= settings.youtube || '#' %>" target="_blank" rel="noopener" aria-label="YouTube"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.7 15.5V8.5L15.8 12l-6.1 3.5z"/></svg></a>
+          <a href="<%= settings.telegram || '#' %>" target="_blank" rel="noopener" aria-label="Telegram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9.8 15.6 9.4 21c.6 0 .9-.3 1.3-.6l3-2.9 6.1 4.5c1.1.6 1.8.3 2.1-1l3.8-17.7h0c.4-1.8-.6-2.5-1.7-2.1L1.8 9.5c-1.7.7-1.7 1.7-.3 2.1l5.7 1.8L20.4 5c.6-.4 1.2-.2.7.2"/></svg></a>
         </div>
       </div>
+
       <div class="footer-col">
-        <h3>أقسام الموقع</h3>
+        <h3>أقسام رئيسية</h3>
         <ul class="footer-links">
-          <% if (typeof categories !== 'undefined') { %>
-            <% categories.slice(0, 10).forEach(cat => { %>
-              <li><a href="/category/<%= cat.id %>"><%= cat.name_ar %></a></li>
-            <% }); %>
-          <% } %>
+          <% (categories || []).slice(0, 8).forEach(cat => { %>
+            <li><a href="/category/<%= cat.id %>"><%= cat.name_ar %></a></li>
+          <% }) %>
         </ul>
       </div>
+
       <div class="footer-col">
-        <h3>خدماتنا</h3>
+        <h3>روابط سريعة</h3>
         <ul class="footer-links">
-          <li><a href="/videos">الفيديوهات</a></li>
+          <li><a href="/videos">مكتبة الفيديو</a></li>
           <li><a href="/galleries">معرض الصور</a></li>
           <li><a href="/audios">المكتبة الصوتية</a></li>
-          <li><a href="/caricatures">كاريكاتير</a></li>
-          <li><a href="/publications">المنشورات</a></li>
-          <li><a href="/files">ملفات وتحقيقات</a></li>
-          <li><a href="/services">الخدمات المجانية</a></li>
+          <li><a href="/search">البحث المتقدم</a></li>
           <li><a href="/subscribe">الاشتراك</a></li>
-          <li><a href="/rss">التغذية RSS</a></li>
+          <li><a href="/services">الخدمات</a></li>
+          <li><a href="/sitemap.xml">خريطة الموقع</a></li>
         </ul>
       </div>
+
       <div class="footer-col">
-        <h3>تواصل معنا</h3>
+        <h3>تواصل</h3>
         <ul class="footer-contact">
           <li>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><path d="m22 6-10 7L2 6"></path></svg>
             <span><%= settings.contact_email || 'info@awtar.com' %></span>
           </li>
           <li>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            <span><%= settings.contact_phone || '+967-1-234567' %></span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3.09 4.18 2 2 0 0 1 5.06 2h3a2 2 0 0 1 2 1.72c.12.9.37 1.79.73 2.62a2 2 0 0 1-.45 2.11L9.1 9.91a16 16 0 0 0 5 5l1.46-1.24a2 2 0 0 1 2.11-.45c.83.36 1.72.61 2.62.73A2 2 0 0 1 22 16.92z"></path></svg>
+            <span dir="ltr"><%= settings.contact_phone || '+967-1-234567' %></span>
           </li>
           <li>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-7-11a7 7 0 0 1 14 0c0 6.65-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
             <span><%= settings.contact_address || 'صنعاء، الجمهورية اليمنية' %></span>
           </li>
         </ul>
       </div>
     </div>
+
     <div class="footer-bottom">
-      <p>&copy; <%= new Date().getFullYear() %> <%= settings.site_name || 'أوتر' %> - جميع الحقوق محفوظة</p>
+      <p>© <%= new Date().getFullYear() %> <%= settings.site_name || 'أوتر' %>. جميع الحقوق محفوظة.</p>
       <div class="footer-bottom-links">
         <a href="/about">من نحن</a>
         <a href="/contact">اتصل بنا</a>
         <a href="/privacy">الخصوصية</a>
         <a href="/terms">الشروط</a>
-        <a href="/sitemap.xml">خريطة الموقع</a>
         <a href="/rss">RSS</a>
       </div>
     </div>
   </div>
 </footer>
 
-<script src="/js/main.js"></script>
+<div class="media-modal" id="videoModal">
+  <div class="media-modal-dialog">
+    <button class="media-modal-close" type="button" aria-label="إغلاق الفيديو">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+    </button>
+    <video controls preload="metadata">
+      <source src="" type="video/mp4">
+      المتصفح لا يدعم تشغيل الفيديو.
+    </video>
+    <div class="media-modal-title" id="globalVideoTitle"></div>
+  </div>
+</div>
+
+<div class="media-modal" id="imageModal">
+  <div class="media-modal-dialog">
+    <button class="media-modal-close" type="button" aria-label="إغلاق الصورة">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+    </button>
+    <img id="globalModalImage" src="" alt="معاينة الصورة">
+    <div class="media-modal-title" id="globalModalTitle"></div>
+  </div>
+</div>
+
+<script src="/js/main.js?v=4" defer></script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
-</script>
-
-<!-- Video Modal (global) -->
-<div id="videoModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:10000;align-items:center;justify-content:center;">
-  <div style="position:relative;width:90%;max-width:900px;">
-    <button onclick="closeVideoModal()" style="position:absolute;top:-40px;left:0;background:none;border:none;color:#fff;font-size:30px;cursor:pointer;">✕</button>
-    <video id="globalVideoPlayer" controls style="width:100%;border-radius:12px;">
-      <source src="" type="video/mp4">
-    </video>
-    <h3 id="globalVideoTitle" style="color:#fff;text-align:center;margin-top:10px;font-family:'Tajawal',sans-serif;"></h3>
-  </div>
-</div>
-
-<!-- Image Modal (global) -->
-<div id="imageModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:10000;align-items:center;justify-content:center;flex-direction:column;">
-  <button onclick="closeImageModal()" style="position:absolute;top:20px;left:20px;background:none;border:none;color:#fff;font-size:30px;cursor:pointer;z-index:10001;">✕</button>
-  <img id="globalModalImage" src="" alt="" style="max-width:90%;max-height:80vh;border-radius:8px;box-shadow:0 4px 30px rgba(0,0,0,0.5);"/>
-  <h3 id="globalModalTitle" style="color:#fff;text-align:center;margin-top:15px;font-family:'Tajawal',sans-serif;font-size:18px;"></h3>
-</div>
-
-<script>
-function openVideoModal(src, title) {
-  var modal = document.getElementById('videoModal');
-  var player = document.getElementById('globalVideoPlayer');
-  var titleEl = document.getElementById('globalVideoTitle');
-  player.querySelector('source').src = src;
-  player.load();
-  titleEl.textContent = title;
-  modal.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
-function closeVideoModal() {
-  var modal = document.getElementById('videoModal');
-  var player = document.getElementById('globalVideoPlayer');
-  player.pause();
-  modal.style.display = 'none';
-  document.body.style.overflow = '';
-}
-function openImageModal(src, title) {
-  document.getElementById('globalModalImage').src = src;
-  document.getElementById('globalModalTitle').textContent = title;
-  document.getElementById('imageModal').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-}
-function closeImageModal() {
-  document.getElementById('imageModal').style.display = 'none';
-  document.body.style.overflow = '';
-}
-document.getElementById('videoModal').addEventListener('click', function(e) { if (e.target === this) closeVideoModal(); });
-document.getElementById('imageModal').addEventListener('click', function(e) { if (e.target === this) closeImageModal(); });
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { closeVideoModal(); closeImageModal(); } });
 </script>
 </body>
 </html>

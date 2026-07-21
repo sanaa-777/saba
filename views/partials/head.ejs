@@ -1,72 +1,101 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<%
+  const siteName = settings.site_name || 'أوتر';
+  const siteDescription = settings.site_description || 'أوتر - منصة أخبار عربية حديثة';
+  const siteBase = settings.site_url || 'https://awtar-news.vercel.app';
+  const pageUrl = `${siteBase}${currentPath || '/'}`;
+  const pageTitle = `${title} | ${siteName}`;
+  const pageImage = (typeof article !== 'undefined' && article && article.image) ? article.image : (settings.site_logo || '/images/logo.png');
+  const pageDescription = (typeof article !== 'undefined' && article)
+    ? (article.meta_description || article.summary || siteDescription)
+    : siteDescription;
+%>
+<html lang="<%= lang || 'ar' %>" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %> | <%= settings.site_name || 'أوتر' %></title>
-  <meta name="description" content="<%= typeof article !== 'undefined' && article ? article.meta_description || article.summary : settings.site_description || 'أوتر - المصدر الأول للأخبار' %>">
-  <meta name="keywords" content="<%= settings.site_keywords || 'أوتر, أخبار, اليمن' %>">
-  <meta name="author" content="<%= settings.site_name || 'أوتر' %>">
-  <% if (typeof article !== 'undefined' && article) { %>
-  <meta property="og:title" content="<%= article.title %>">
-  <meta property="og:description" content="<%= article.summary %>">
-  <meta property="og:image" content="<%= article.image %>">
-  <meta property="og:type" content="article">
-  <meta property="og:url" content="<%= currentPath %>">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="<%= article.title %>">
-  <meta name="twitter:description" content="<%= article.summary %>">
-  <meta name="twitter:image" content="<%= article.image %>">
-  <% } else { %>
-  <meta property="og:title" content="<%= title %> | <%= settings.site_name || 'أوتر' %>">
-  <meta property="og:description" content="<%= settings.site_description || 'أوتر - المصدر الأول للأخبار' %>">
-  <meta property="og:type" content="website">
-  <% } %>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title><%= pageTitle %></title>
+  <meta name="description" content="<%= pageDescription %>">
+  <meta name="keywords" content="<%= settings.site_keywords || 'أوتر, أخبار, اليمن, أخبار عربية' %>">
+  <meta name="author" content="<%= siteName %>">
+  <meta name="theme-color" content="#0f3b82">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="canonical" href="<%= pageUrl %>">
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="<%= settings.site_favicon || '/images/favicon.ico' %>">
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
-  <link rel="stylesheet" href="/css/responsive.css">
-  <link rel="stylesheet" href="/css/slider.css">
-  <script src="/socket.io/socket.io.js"></script>
-  <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss">
-  <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
-  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
-  <meta name="theme-color" content="#1a237e">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="/css/style.css?v=4">
+  <link rel="stylesheet" href="/css/responsive.css?v=4">
+  <link rel="stylesheet" href="/css/slider.css?v=4">
+
+  <meta property="og:site_name" content="<%= siteName %>">
+  <meta property="og:title" content="<%= (typeof article !== 'undefined' && article) ? article.title : pageTitle %>">
+  <meta property="og:description" content="<%= pageDescription %>">
+  <meta property="og:image" content="<%= pageImage %>">
+  <meta property="og:url" content="<%= pageUrl %>">
+  <meta property="og:type" content="<%= (typeof article !== 'undefined' && article) ? 'article' : 'website' %>">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<%= (typeof article !== 'undefined' && article) ? article.title : pageTitle %>">
+  <meta name="twitter:description" content="<%= pageDescription %>">
+  <meta name="twitter:image" content="<%= pageImage %>">
+
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('awtar-theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "NewsMediaOrganization",
-    "name": "<%= settings.site_name || 'أوتر' %>",
-    "url": "/",
+    "name": "<%= siteName %>",
+    "url": "<%= siteBase %>",
     "logo": "<%= settings.site_logo || '/images/logo.png' %>",
+    "sameAs": [
+      "<%= settings.facebook || '' %>",
+      "<%= settings.twitter || '' %>",
+      "<%= settings.youtube || '' %>",
+      "<%= settings.telegram || '' %>"
+    ],
     "contactPoint": {
       "@type": "ContactPoint",
       "telephone": "<%= settings.contact_phone || '' %>",
-      "contactType": "customer service"
+      "contactType": "customer service",
+      "email": "<%= settings.contact_email || '' %>"
     }
   }
   </script>
+
   <% if (typeof article !== 'undefined' && article) { %>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
     "headline": "<%= article.title %>",
-    "description": "<%= article.summary %>",
-    "image": "<%= article.image %>",
+    "description": "<%= article.summary || pageDescription %>",
+    "image": ["<%= article.image || pageImage %>"],
     "datePublished": "<%= article.published_at %>",
-    "dateModified": "<%= article.updated_at %>",
+    "dateModified": "<%= article.updated_at || article.published_at %>",
     "author": {
       "@type": "Organization",
-      "name": "<%= settings.site_name || 'أوتر' %>"
+      "name": "<%= siteName %>"
     },
     "publisher": {
       "@type": "Organization",
-      "name": "<%= settings.site_name || 'أوتر' %>",
+      "name": "<%= siteName %>",
       "logo": {
         "@type": "ImageObject",
         "url": "<%= settings.site_logo || '/images/logo.png' %>"
@@ -74,10 +103,10 @@
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": "/news/<%= article.id %>"
+      "@id": "<%= pageUrl %>"
     }
   }
   </script>
   <% } %>
 </head>
-<body>
+<body class="site-shell">

@@ -1,18 +1,12 @@
 <%- include('header') %>
 
-<style>
-.status-msg{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px;display:none;align-items:center;gap:8px}
-.status-msg.success{display:flex;background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9}
-.status-msg.error{display:flex;background:#ffebee;color:#c62828;border:1px solid #ffcdd2}
-.btn:disabled{opacity:0.6;cursor:not-allowed;pointer-events:none}
-.spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-</style>
-
 <div class="admin-card">
   <div class="admin-card-header">
-    <h3><%= article ? 'تعديل خبر' : 'إضافة خبر جديد' %></h3>
-    <a href="/admin/news" class="btn btn-secondary">← العودة</a>
+    <div>
+      <h3><%= article ? 'تعديل خبر' : 'إضافة خبر جديد' %></h3>
+      <p class="admin-card-subtitle">واجهة تحرير مصقولة تحافظ على الوظائف الحالية وتسهّل إدخال البيانات.</p>
+    </div>
+    <a href="/admin/news" class="btn btn-secondary">العودة</a>
   </div>
   <div class="admin-card-body">
     <div id="statusMsg" class="status-msg"></div>
@@ -32,7 +26,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>المحتوى *</label>
-          <textarea name="content" rows="12" required><%= article ? article.content : '' %></textarea>
+          <textarea name="content" rows="14" required><%= article ? article.content : '' %></textarea>
         </div>
       </div>
       <div class="form-row">
@@ -55,34 +49,28 @@
           <label>الصورة الرئيسية</label>
           <input type="file" name="image" accept="image/*,video/*,audio/*" id="imageInput">
           <% if (article && article.image) { %>
-            <div style="margin-top:8px;"><img src="<%= article.image %>" style="max-width:200px;border-radius:6px;" id="currentImage"></div>
-            <label class="form-check" style="margin-top:8px;"><input type="checkbox" name="keep_image" value="1" checked id="keepImage"> الاحتفاظ بالصورة الحالية</label>
+            <div class="current-media-preview"><img src="<%= article.image %>" id="currentImage" alt="الصورة الحالية"></div>
+            <label class="form-check"><input type="checkbox" name="keep_image" value="1" checked id="keepImage"> الاحتفاظ بالصورة الحالية</label>
           <% } %>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>الوسوم</label>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;padding:10px;background:#f9f9f9;border-radius:6px;">
+          <div class="tag-selection-grid">
             <% tags.forEach(tag => { %>
-              <label class="form-check">
+              <label class="form-check tag-check">
                 <input type="checkbox" name="tags" value="<%= tag.id %>" <%= article && articleTags && articleTags.includes(tag.id) ? 'checked' : '' %>>
-                <%= tag.name %>
+                <span><%= tag.name %></span>
               </label>
             <% }); %>
           </div>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-check"><input type="checkbox" name="is_breaking" value="1" <%= article && article.is_breaking ? 'checked' : '' %>> خبر عاجل</label>
-        </div>
-        <div class="form-group">
-          <label class="form-check"><input type="checkbox" name="is_slider" value="1" <%= article && article.is_slider ? 'checked' : '' %>> إظهار في السلايدر</label>
-        </div>
-        <div class="form-group">
-          <label class="form-check"><input type="checkbox" name="is_featured" value="1" <%= article && article.is_featured ? 'checked' : '' %>> خبر مميز</label>
-        </div>
+      <div class="form-row feature-flags">
+        <div class="form-group"><label class="form-check"><input type="checkbox" name="is_breaking" value="1" <%= article && article.is_breaking ? 'checked' : '' %>> خبر عاجل</label></div>
+        <div class="form-group"><label class="form-check"><input type="checkbox" name="is_slider" value="1" <%= article && article.is_slider ? 'checked' : '' %>> إظهار في السلايدر</label></div>
+        <div class="form-group"><label class="form-check"><input type="checkbox" name="is_featured" value="1" <%= article && article.is_featured ? 'checked' : '' %>> خبر مميز</label></div>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -104,10 +92,7 @@
         </div>
       </div>
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary" id="submitBtn">
-          <span id="btnText"><%= article ? 'حفظ التعديلات' : 'نشر الخبر' %></span>
-          <span id="btnSpinner" style="display:none"><span class="spinner"></span> جاري الحفظ...</span>
-        </button>
+        <button type="submit" class="btn btn-primary" id="submitBtn"><span id="btnText"><%= article ? 'حفظ التعديلات' : 'نشر الخبر' %></span><span id="btnSpinner" style="display:none"><span class="spinner"></span> جاري الحفظ...</span></button>
         <a href="/admin/news" class="btn btn-secondary">إلغاء</a>
       </div>
     </form>
@@ -117,49 +102,35 @@
 <script>
 document.getElementById('newsForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  
   const btn = document.getElementById('submitBtn');
   const btnText = document.getElementById('btnText');
   const btnSpinner = document.getElementById('btnSpinner');
   const statusMsg = document.getElementById('statusMsg');
-  
-  // Disable button + show loading
   btn.disabled = true;
   btnText.style.display = 'none';
   btnSpinner.style.display = 'inline-flex';
   statusMsg.style.display = 'none';
-  
   const formData = new FormData(this);
-  
   try {
-    const response = await fetch(this.action, {
-      method: 'POST',
-      body: formData,
-      credentials: 'same-origin'
-    });
-    
+    const response = await fetch(this.action, { method: 'POST', body: formData, credentials: 'same-origin' });
     const result = await response.json();
-    
     if (result.success) {
       statusMsg.className = 'status-msg success';
-      statusMsg.textContent = '✅ ' + result.message;
+      statusMsg.textContent = result.message;
       statusMsg.style.display = 'flex';
-      
-      // If creating new, redirect after 1.5s
       if (!this.action.includes('/edit/')) {
-        setTimeout(() => { window.location.href = '/admin/news'; }, 1500);
+        setTimeout(() => { window.location.href = '/admin/news'; }, 1200);
       } else {
-        // For edit, scroll to top to show success message
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } else {
       statusMsg.className = 'status-msg error';
-      statusMsg.textContent = '❌ ' + (result.message || 'حدث خطأ');
+      statusMsg.textContent = result.message || 'حدث خطأ';
       statusMsg.style.display = 'flex';
     }
   } catch (err) {
     statusMsg.className = 'status-msg error';
-    statusMsg.textContent = '❌ خطأ في الاتصال: ' + err.message;
+    statusMsg.textContent = 'خطأ في الاتصال: ' + err.message;
     statusMsg.style.display = 'flex';
   } finally {
     btn.disabled = false;

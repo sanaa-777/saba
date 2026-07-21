@@ -1,143 +1,234 @@
 <%- include('partials/head') %>
 <%- include('partials/header') %>
 
-<!-- Breaking News Ticker -->
-<% if (typeof breakingNews !== 'undefined' && breakingNews.length > 0) { %>
-<div class="breaking-ticker">
-  <span class="ticker-label">⚡ عاجل</span>
-  <div class="ticker-scroll">
-    <% breakingNews.forEach(item => { %>
-      <a href="<%= item.link || '#' %>"><%= item.text %></a>
-    <% }); %>
-  </div>
-</div>
-<% } %>
-
 <main class="home-page">
   <div class="container">
+    <% const lead = sliderItems && sliderItems.length ? sliderItems[0] : (featuredNews && featuredNews.length ? featuredNews[0] : latestNews[0]); %>
+    <% const secondaryStories = sliderItems && sliderItems.length > 1 ? sliderItems.slice(1, 5) : latestNews.slice(1, 5); %>
 
-    <!-- ===== HERO SECTION ===== -->
-    <% if (typeof sliderItems !== 'undefined' && sliderItems.length > 0) { %>
-    <section class="hero-block">
-      <!-- Main Story -->
-      <div class="hero-main">
-        <a href="/news/<%= sliderItems[0].news_id %>">
-          <img src="<%= sliderItems[0].image || '/images/placeholder.jpg' %>" alt="<%= sliderItems[0].title %>">
-          <div class="hero-overlay">
-            <h2><%= sliderItems[0].title %></h2>
-            <p><%= sliderItems[0].summary %></p>
-          </div>
-        </a>
+    <% if (lead) { %>
+    <section class="home-top-grid">
+      <div class="hero-cluster">
+        <article class="hero-primary">
+          <a href="/news/<%= lead.news_id || lead.id %>">
+            <div class="hero-primary-media">
+              <img src="<%= lead.image || '/images/placeholder.jpg' %>" alt="<%= lead.title || lead.news_title %>">
+              <div class="hero-primary-overlay">
+                <span class="eyebrow accent"><%= (lead.category_name || 'الواجهة الرئيسية') %></span>
+                <h2><%= lead.title || lead.news_title %></h2>
+                <% if (lead.summary) { %><p><%= lead.summary %></p><% } %>
+                <div class="story-meta inverse">
+                  <span><%= new Date((lead.published_at || Date.now())).toLocaleDateString('ar-YE') %></span>
+                  <span><%= lead.source || settings.site_name || 'أوتر' %></span>
+                </div>
+              </div>
+            </div>
+          </a>
+        </article>
+
+        <div class="hero-secondary-list">
+          <% secondaryStories.forEach(item => { %>
+            <article class="hero-secondary-card">
+              <a class="hero-secondary-card-media" href="/news/<%= item.news_id || item.id %>">
+                <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title || item.news_title %>" loading="lazy">
+              </a>
+              <div class="hero-secondary-card-content">
+                <span class="eyebrow"><%= item.category_name || 'أخبار' %></span>
+                <h3><a href="/news/<%= item.news_id || item.id %>"><%= item.title || item.news_title %></a></h3>
+                <div class="story-meta">
+                  <span><%= new Date((item.published_at || Date.now())).toLocaleDateString('ar-YE') %></span>
+                </div>
+              </div>
+            </article>
+          <% }) %>
+        </div>
       </div>
-      <!-- Side Stories -->
-      <div class="hero-side">
-        <% sliderItems.slice(1, 5).forEach(item => { %>
-        <a href="/news/<%= item.news_id %>" class="hero-side-item">
-          <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>">
-          <h3><%= item.title %></h3>
-        </a>
-        <% }); %>
+
+      <aside class="latest-rail">
+        <div class="latest-rail-header">
+          <div>
+            <h3>غرفة الأخبار</h3>
+            <p>تحديثات سريعة مرتبة حسب التوقيت والأهمية.</p>
+          </div>
+          <span class="live-dot"></span>
+        </div>
+        <div class="latest-feed">
+          <% latestNews.slice(0, 8).forEach((item, index) => { %>
+            <article class="latest-feed-item">
+              <div class="latest-feed-index"><%= index + 1 %></div>
+              <div>
+                <span class="eyebrow <%= item.is_breaking ? 'accent' : '' %>"><%= item.category_name || 'عام' %></span>
+                <h4><a href="/news/<%= item.id %>"><%= item.title %></a></h4>
+                <div class="story-meta">
+                  <span><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
+                  <span><%= item.source || settings.site_name || 'أوتر' %></span>
+                </div>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      </aside>
+    </section>
+    <% } %>
+
+    <% if (featuredNews && featuredNews.length > 0) { %>
+    <section class="section-block">
+      <div class="section-header">
+        <div>
+          <h2>قصص مختارة</h2>
+          <p>مجموعة تحريرية مختارة من أبرز العناوين ذات الأولوية.</p>
+        </div>
+      </div>
+      <div class="home-featured-strip">
+        <% featuredNews.slice(0, 4).forEach(item => { %>
+          <article class="story-card">
+            <a class="story-card-media" href="/news/<%= item.id %>">
+              <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
+            </a>
+            <div class="story-card-body">
+              <span class="eyebrow"><%= item.category_name || 'عام' %></span>
+              <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
+              <% if (item.summary) { %><p><%= item.summary %></p><% } %>
+              <div class="story-meta">
+                <span><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
+                <span><%= item.source || settings.site_name || 'أوتر' %></span>
+              </div>
+            </div>
+          </article>
+        <% }) %>
       </div>
     </section>
     <% } %>
 
-    <!-- ===== LATEST NEWS (horizontal scroll on mobile) ===== -->
-    <% if (typeof latestNews !== 'undefined' && latestNews.length > 0) { %>
-    <section class="latest-section">
-      <div class="section-title">
-        <h2>آخر الأخبار</h2>
+    <% if (latestNews && latestNews.length > 0) { %>
+    <section class="section-block">
+      <div class="section-header">
+        <div>
+          <h2>آخر الأخبار</h2>
+          <p>بطاقات سريعة للمتابعة السلسة عبر الهاتف وسطح المكتب.</p>
+        </div>
+        <a href="/search" class="section-link">تصفح الأرشيف</a>
       </div>
       <div class="latest-scroll">
-        <% latestNews.slice(0, 10).forEach(item => { %>
-        <a href="/news/<%= item.id %>" class="latest-card">
-          <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
-          <div class="latest-card-body">
-            <span class="cat-badge"><%= item.category_name || 'عام' %></span>
-            <h4><%= item.title %></h4>
-            <span class="meta"><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
-          </div>
-        </a>
-        <% }); %>
-      </div>
-    </section>
-    <% } %>
-
-    <!-- ===== CATEGORY SECTIONS (like saba.ye) ===== -->
-    <% if (typeof categoryNews !== 'undefined' && typeof categories !== 'undefined') { %>
-      <% categories.forEach(cat => { %>
-        <% if (categoryNews[cat.id] && categoryNews[cat.id].length > 0) { %>
-        <section class="cat-section">
-          <div class="cat-header">
-            <h2><a href="/category/<%= cat.id %>"><%= cat.name_ar %></a></h2>
-          </div>
-          <div class="cat-list">
-            <% categoryNews[cat.id].slice(0, 4).forEach(item => { %>
-            <a href="/news/<%= item.id %>" class="cat-item">
-              <% if (item.image) { %>
-              <img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy">
-              <% } %>
-              <div class="cat-item-text">
-                <h3><%= item.title %></h3>
-                <span class="meta"><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
+        <% latestNews.slice(0, 8).forEach(item => { %>
+          <article class="latest-card">
+            <a href="/news/<%= item.id %>"><img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy"></a>
+            <div class="latest-card-body">
+              <span class="cat-badge"><%= item.category_name || 'عام' %></span>
+              <h4><a href="/news/<%= item.id %>"><%= item.title %></a></h4>
+              <div class="story-meta">
+                <span><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
+                <span><%= item.source || settings.site_name || 'أوتر' %></span>
               </div>
-            </a>
-            <% }); %>
-          </div>
-        </section>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <% if (categories && categoryNews) { %>
+      <% categories.forEach(cat => { %>
+        <% const items = categoryNews[cat.id] || []; %>
+        <% if (items.length > 0) { %>
+          <section class="section-block">
+            <div class="section-header">
+              <div>
+                <h2><a href="/category/<%= cat.id %>"><%= cat.name_ar %></a></h2>
+                <p>متابعة مركزة لملف <%= cat.name_ar %> بعناوين أساسية وداعمة.</p>
+              </div>
+              <a href="/category/<%= cat.id %>" class="section-link">المزيد</a>
+            </div>
+            <div class="category-module">
+              <article class="story-card">
+                <a class="story-card-media" href="/news/<%= items[0].id %>">
+                  <img src="<%= items[0].image || '/images/placeholder.jpg' %>" alt="<%= items[0].title %>" loading="lazy">
+                </a>
+                <div class="story-card-body">
+                  <span class="eyebrow"><%= cat.name_ar %></span>
+                  <h3><a href="/news/<%= items[0].id %>"><%= items[0].title %></a></h3>
+                  <% if (items[0].summary) { %><p><%= items[0].summary %></p><% } %>
+                  <div class="story-meta">
+                    <span><%= new Date(items[0].published_at).toLocaleDateString('ar-YE') %></span>
+                    <span><%= items[0].source || settings.site_name || 'أوتر' %></span>
+                  </div>
+                </div>
+              </article>
+              <div class="story-stack">
+                <% items.slice(1, 5).forEach(item => { %>
+                  <article class="story-card-horizontal">
+                    <a class="story-card-media" href="/news/<%= item.id %>">
+                      <img src="<%= item.image || '/images/placeholder.jpg' %>" alt="<%= item.title %>" loading="lazy">
+                    </a>
+                    <div class="story-card-body">
+                      <span class="eyebrow"><%= item.category_name || cat.name_ar %></span>
+                      <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
+                      <div class="story-meta">
+                        <span><%= new Date(item.published_at).toLocaleDateString('ar-YE') %></span>
+                      </div>
+                    </div>
+                  </article>
+                <% }) %>
+              </div>
+            </div>
+          </section>
         <% } %>
-      <% }); %>
+      <% }) %>
     <% } %>
 
-    <!-- ===== MEDIA SECTIONS ===== -->
-    <% if (typeof videos !== 'undefined' && videos.length > 0) { %>
-    <section class="media-section">
-      <div class="cat-header">
-        <h2><a href="/videos">مكتبة الفيديو</a></h2>
-      </div>
-      <div class="media-row">
-        <% videos.slice(0, 3).forEach(item => { %>
-        <a href="/videos" class="media-card" onclick="event.preventDefault();openVideoModal('<%= item.file_path %>','<%= item.title %>')">
-          <img src="<%= item.thumbnail || item.file_path %>" alt="<%= item.title %>" loading="lazy">
-          <span class="play-btn">▶</span>
-          <p><%= item.title %></p>
-        </a>
-        <% }); %>
-      </div>
-    </section>
-    <% } %>
-
-    <% if (typeof galleries !== 'undefined' && galleries.length > 0) { %>
-    <section class="media-section">
-      <div class="cat-header">
-        <h2><a href="/galleries">معرض الصور</a></h2>
-      </div>
-      <div class="media-row">
-        <% galleries.slice(0, 4).forEach(item => { %>
-        <a href="/gallery/<%= item.id %>" class="media-card">
-          <img src="<%= item.thumbnail || item.file_path %>" alt="<%= item.title %>" loading="lazy">
-          <p><%= item.title %></p>
-        </a>
-        <% }); %>
-      </div>
-    </section>
-    <% } %>
-
-    <% if (typeof audios !== 'undefined' && audios.length > 0) { %>
-    <section class="media-section">
-      <div class="cat-header">
-        <h2><a href="/audios">مكتبة الصوت</a></h2>
-      </div>
-      <div class="media-row">
-        <% audios.slice(0, 3).forEach(item => { %>
-        <div class="audio-card">
-          <p><%= item.title %></p>
-          <audio controls preload="none"><source src="<%= item.file_path %>"></audio>
+    <% if ((videos && videos.length) || (galleries && galleries.length) || (publications && publications.length)) { %>
+    <section class="section-block">
+      <div class="section-header">
+        <div>
+          <h2>وسائط ومكتبات</h2>
+          <p>فيديو وصور ومنشورات بتنسيق عرض غني ومرن.</p>
         </div>
-        <% }); %>
+      </div>
+      <div class="media-strip">
+        <% (videos || []).slice(0, 2).forEach(item => { %>
+          <article class="media-card video-card" onclick="openVideoModal('<%= item.file_path %>', '<%= item.title %>')">
+            <div class="media-card-media">
+              <img src="<%= item.thumbnail || item.file_path %>" alt="<%= item.title %>" loading="lazy">
+              <span class="play-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              </span>
+            </div>
+            <div class="media-card-body">
+              <span class="eyebrow">فيديو</span>
+              <h3><%= item.title %></h3>
+              <div class="story-meta"><span><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></span></div>
+            </div>
+          </article>
+        <% }) %>
+
+        <% (galleries || []).slice(0, 1).forEach(item => { %>
+          <article class="media-card">
+            <a class="media-card-media" href="/gallery/<%= item.id %>">
+              <img src="<%= item.thumbnail || item.file_path %>" alt="<%= item.title %>" loading="lazy">
+            </a>
+            <div class="media-card-body">
+              <span class="eyebrow">صور</span>
+              <h3><a href="/gallery/<%= item.id %>"><%= item.title %></a></h3>
+              <div class="story-meta"><span><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></span></div>
+            </div>
+          </article>
+        <% }) %>
+
+        <% (publications || []).slice(0, 1).forEach(item => { %>
+          <article class="media-card">
+            <a class="media-card-media" href="/publications">
+              <img src="<%= item.thumbnail || item.file_path %>" alt="<%= item.title %>" loading="lazy">
+            </a>
+            <div class="media-card-body">
+              <span class="eyebrow">منشور</span>
+              <h3><a href="/publications"><%= item.title %></a></h3>
+              <div class="story-meta"><span><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></span></div>
+            </div>
+          </article>
+        <% }) %>
       </div>
     </section>
     <% } %>
-
   </div>
 </main>
 

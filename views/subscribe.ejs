@@ -8,77 +8,35 @@
       <span class="separator">/</span>
       <span class="current">الاشتراك</span>
     </nav>
+
+    <section class="page-hero">
+      <span class="eyebrow">النشرة البريدية</span>
+      <h1 class="page-title">اشترك لتصلك أهم الأخبار</h1>
+      <p>خدمة بريدية خفيفة ومباشرة لتلقي أبرز التحديثات والعناوين العاجلة من أوتر.</p>
+    </section>
+
     <div class="content-grid">
       <div class="content-area">
-        <section class="section-block">
-          <div class="section-header" style="border-color: #1a237e;">
-            <h2 style="color: #1a237e;">📧 الاشتراك في النشرة البريدية</h2>
+        <section class="section-block page-panel newsletter-hero">
+          <div class="newsletter-copy">
+            <h2>ابقَ على اطلاع دون ضوضاء</h2>
+            <p>اشترك باستخدام بريدك الإلكتروني لتصلك أبرز القصص والملفات والعناوين العاجلة في تجربة منظمة.</p>
+            <ul class="newsletter-benefits">
+              <li>أبرز الأخبار اليومية</li>
+              <li>تنبيهات بالعناوين المهمة</li>
+              <li>ملفات وتحليلات مختارة</li>
+            </ul>
           </div>
-          <div style="padding: 30px; text-align: center;">
-            <div style="max-width: 600px; margin: 0 auto;">
-              <div style="font-size: 60px; margin-bottom: 20px;">📬</div>
-              <h3 style="font-size: 24px; color: #1a237e; margin-bottom: 15px;">ابقَ على اطلاع!</h3>
-              <p style="font-size: 16px; color: #555; line-height: 1.8; margin-bottom: 30px;">
-                اشترك في النشرة البريدية لأوتر وتصلك آخر الأخبار العاجلة والمهمة مباشرة إلى بريدك الإلكتروني. نعدك بعدم إرسال رسائل مزعجة.
-              </p>
-              
-              <form id="subscribeForm" style="display: flex; gap: 10px; max-width: 500px; margin: 0 auto 20px;">
-                <input type="email" name="email" placeholder="أدخل بريدك الإلكتروني" required style="flex: 1; padding: 14px 18px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; font-family: 'Tajawal', sans-serif;">
-                <button type="submit" style="padding: 14px 28px; background: #1a237e; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; font-family: 'Tajawal', sans-serif;">اشترك</button>
-              </form>
-              
-              <div id="subscribeMsg" style="display: none; padding: 12px; border-radius: 8px; margin-top: 10px;"></div>
-              
-              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-                <h4 style="color: #333; margin-bottom: 15px;">ما الذي ستصلك؟</h4>
-                <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
-                  <div style="text-align: center;">
-                    <div style="font-size: 30px; margin-bottom: 5px;">⚡</div>
-                    <span style="font-size: 13px; color: #555;">أخبار عاجلة</span>
-                  </div>
-                  <div style="text-align: center;">
-                    <div style="font-size: 30px; margin-bottom: 5px;">📊</div>
-                    <span style="font-size: 13px; color: #555;">ملخص يومي</span>
-                  </div>
-                  <div style="text-align: center;">
-                    <div style="font-size: 30px; margin-bottom: 5px;">🎯</div>
-                    <span style="font-size: 13px; color: #555;">أخبار مخصصة</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <form id="subscribeForm" class="newsletter-form newsletter-form-large">
+            <input type="email" name="email" placeholder="أدخل بريدك الإلكتروني" required>
+            <button type="submit" class="btn btn-primary">اشترك الآن</button>
+            <div id="subscribeMsg" class="newsletter-message" style="display:none;"></div>
+          </form>
         </section>
       </div>
       <%- include('partials/sidebar') %>
     </div>
   </div>
 </main>
-
-<script>
-document.getElementById('subscribeForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const email = this.querySelector('input[name="email"]').value;
-  const msg = document.getElementById('subscribeMsg');
-  try {
-    const res = await fetch('/api/newsletter/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    const result = await res.json();
-    msg.style.display = 'block';
-    msg.textContent = result.message;
-    msg.style.background = result.success ? '#e8f5e9' : '#ffebee';
-    msg.style.color = result.success ? '#2e7d32' : '#c62828';
-    if (result.success) this.reset();
-  } catch (err) {
-    msg.style.display = 'block';
-    msg.textContent = 'حدث خطأ، حاول مرة أخرى';
-    msg.style.background = '#ffebee';
-    msg.style.color = '#c62828';
-  }
-});
-</script>
 
 <%- include('partials/footer') %>
