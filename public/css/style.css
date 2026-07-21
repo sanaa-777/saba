@@ -2017,3 +2017,89 @@ img {
 .hero-primary.no-image .story-meta.inverse {
   color: rgba(255,255,255,.7);
 }
+
+/* ═══ Urgent/Breaking News Section ═══ */
+.urgent-section {
+  border: 2px solid #dc2626;
+  border-radius: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #fef2f2 0%, #fff 100%);
+}
+[data-theme="dark"] .urgent-section {
+  background: linear-gradient(135deg, #1a0505 0%, #1e1e1e 100%);
+  border-color: #ef4444;
+}
+.urgent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #dc2626;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  animation: urgentPulse 2s infinite;
+}
+@keyframes urgentPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.urgent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+.urgent-card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all .2s;
+}
+.urgent-card:hover {
+  box-shadow: 0 4px 12px rgba(220,38,38,.15);
+  transform: translateY(-2px);
+}
+.urgent-card img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+.urgent-card-body {
+  padding: 12px;
+}
+.urgent-time {
+  display: inline-block;
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+[data-theme="dark"] .urgent-time {
+  background: #2d0505;
+  color: #f87171;
+}
+.urgent-card-body h4 {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.urgent-card-body h4 a {
+  color: var(--text, #1e293b);
+  text-decoration: none;
+}
+.urgent-card.no-image .urgent-card-body {
+  padding: 14px;
+}
+@media(max-width:768px) {
+  .urgent-grid {
+    grid-template-columns: 1fr;
+  }
+  .urgent-card img {
+    height: 120px;
+  }
+}

@@ -110,6 +110,31 @@
     </section>
     <% } %>
 
+    <% if (urgentNews && urgentNews.length > 0) { %>
+    <section class="section-block urgent-section">
+      <div class="section-header">
+        <div>
+          <h2><span class="urgent-badge">⚡ عاجل</span> آخر الأخبار العاجلة</h2>
+          <p>تحديثات مستمرة لأهم الأحداث العاجلة.</p>
+        </div>
+        <a href="/category/<%= urgentNews[0].category_id %>" class="section-link">المزيد</a>
+      </div>
+      <div class="urgent-grid">
+        <% urgentNews.slice(0, 6).forEach(item => { %>
+          <article class="urgent-card<%= !item.image ? ' no-image' : '' %>">
+            <% if (item.image) { %>
+            <a href="/news/<%= item.id %>"><img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy"></a>
+            <% } %>
+            <div class="urgent-card-body">
+              <span class="urgent-time"><%= timeAgo(item.published_at) %></span>
+              <h4><a href="/news/<%= item.id %>"><%= item.title %></a></h4>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
     <% if (featuredNews && featuredNews.length > 0) { %>
     <section class="section-block">
       <div class="section-header">

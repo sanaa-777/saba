@@ -26,6 +26,15 @@ router.get('/', (req, res) => {
     } catch(e) { categoryNews[cat.id] = []; }
   }
 
+  // Breaking news from عاجل category
+  let urgentNews = [];
+  try {
+    const urgentCat = db.prepare("SELECT id FROM categories WHERE slug = 'breaking' OR name_ar = 'عاجل' LIMIT 1").get();
+    if (urgentCat) {
+      urgentNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.category_id = ? AND n.status = 1 ORDER BY n.published_at DESC LIMIT 8`).all(urgentCat.id);
+    }
+  } catch(e) {}
+
   // Latest news (sidebar)
   let latestNews = [];
   try { latestNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 ORDER BY n.published_at DESC LIMIT 15`).all(); } catch(e) {}
@@ -62,6 +71,7 @@ router.get('/', (req, res) => {
     categories: cats,
     latestNews,
     featuredNews,
+    urgentNews,
     videos,
     galleries,
     audios,
