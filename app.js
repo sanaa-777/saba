@@ -51,6 +51,7 @@ app.use(languageMiddleware);
 
 // Global middleware
 app.use((req, res, next) => {
+  try {
   const db = getDb();
   res.locals.categories = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order').all();
   res.locals.settings = {};
@@ -77,6 +78,17 @@ app.use((req, res, next) => {
   }
 
   next();
+  } catch (err) {
+    console.error('Global middleware error:', err.message);
+    // Set defaults so views don't crash
+    res.locals.categories = res.locals.categories || [];
+    res.locals.settings = res.locals.settings || {};
+    res.locals.currentPath = req.path;
+    res.locals.session = req.session;
+    res.locals.activePoll = null;
+    res.locals.breakingNews = [];
+    next();
+  }
 });
 
 // Socket.IO handler
