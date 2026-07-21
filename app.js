@@ -145,12 +145,13 @@ app.get('/api/new-news-count', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+  const dbUrl = process.env.DATABASE_URL ? 'SET' : 'NOT SET';
   try {
     const db = getDb();
     const result = db.prepare('SELECT 1 as test').get();
-    res.json({ status: 'ok', db: result });
+    res.json({ status: 'ok', dbUrl, db: result });
   } catch (err) {
-    res.status(500).json({ status: 'error', message: err.message, code: err.code });
+    res.status(500).json({ status: 'error', dbUrl, message: err.message, code: err.code, stack: err.stack ? err.stack.substring(0, 300) : '' });
   }
 });
 
