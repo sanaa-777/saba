@@ -8,9 +8,12 @@
   <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="القائمة">☰</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <div class="admin-layout">
   <!-- Sidebar -->
-  <aside class="admin-sidebar">
+  <aside class="admin-sidebar" id="adminSidebar">
     <div class="admin-sidebar-header">
       <h2>أوتر</h2>
       <span>لوحة التحكم</span>

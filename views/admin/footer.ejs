@@ -1,5 +1,17 @@
     </div>
   </main>
 </div>
+<script>
+function toggleSidebar() {
+  document.getElementById('adminSidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+// Close sidebar when clicking a link on mobile
+document.querySelectorAll('.sidebar-nav a').forEach(link => {
+  link.addEventListener('click', () => {
+    if (window.innerWidth <= 768) toggleSidebar();
+  });
+});
+</script>
 </body>
 </html>

@@ -202,6 +202,16 @@ function initDatabase() {
       status INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Images table (for Vercel serverless - stores images in DB)
+    CREATE TABLE IF NOT EXISTS images (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      filename TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      data TEXT NOT NULL,
+      size INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Check if data exists

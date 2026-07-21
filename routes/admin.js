@@ -7,29 +7,29 @@ const fs = require('fs');
 const { getDb } = require('../db/init');
 const { requireAuth } = require('../middleware/auth');
 
-// Multer configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../public/images/uploads');
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Multer configuration - memory storage for Vercel serverless
 const upload = multer({
-  storage,
-  limits: { fileSize: 50 * 1024 * 1024 },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|mp3|wav|pdf|doc|docx/;
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     if (extname || mimetype) return cb(null, true);
     cb(new Error('نوع الملف غير مسموح'));
   }
 });
+
+// Helper: save uploaded file to database, return URL path
+function saveImageToDb(file) {
+  if (!file) return null;
+  const db = getDb();
+  const base64 = file.buffer.toString('base64');
+  const result = db.prepare('INSERT INTO images (filename, mime_type, data, size) VALUES (?, ?, ?, ?)').run(
+    file.originalname, file.mimetype, base64, file.size
+  );
+  return '/api/images/' + result.lastInsertRowid;
+}
 
 // Login page
 router.get('/login', (req, res) => {
@@ -113,7 +113,7 @@ router.get('/news/create', requireAuth, (req, res) => {
 router.post('/news/create', requireAuth, upload.single('image'), (req, res) => {
   const db = getDb();
   const { title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags } = req.body;
-  const image = req.file ? '/images/uploads/' + req.file.filename : null;
+  const image = saveImageToDb(req.file);
   const slug = title.replace(/\s+/g, '-').substring(0, 80);
   const publishedAt = status === '1' ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
 
@@ -160,7 +160,7 @@ router.post('/news/edit/:id', requireAuth, upload.single('image'), (req, res) =>
   const { title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags, keep_image } = req.body;
   const existing = db.prepare('SELECT image FROM news WHERE id = ?').get(req.params.id);
   let image = existing ? existing.image : null;
-  if (req.file) image = '/images/uploads/' + req.file.filename;
+  if (req.file) image = saveImageToDb(req.file);
   if (!keep_image && !req.file) image = null;
 
   const slug = title.replace(/\s+/g, '-').substring(0, 80);
@@ -265,7 +265,7 @@ router.post('/media/upload', requireAuth, upload.single('file'), (req, res) => {
   const db = getDb();
   if (!req.file) return res.redirect('/admin/media');
   const { title, description, category, type } = req.body;
-  const filePath = '/images/uploads/' + req.file.filename;
+  const filePath = saveImageToDb(req.file);
   let mediaType = type || 'image';
   if (req.file.mimetype.startsWith('video')) mediaType = 'video';
   if (req.file.mimetype.startsWith('audio')) mediaType = 'audio';
@@ -278,11 +278,6 @@ router.post('/media/upload', requireAuth, upload.single('file'), (req, res) => {
 
 router.post('/media/delete/:id', requireAuth, (req, res) => {
   const db = getDb();
-  const media = db.prepare('SELECT file_path FROM media WHERE id = ?').get(req.params.id);
-  if (media) {
-    const fullPath = path.join(__dirname, '../public', media.file_path);
-    if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
-  }
   db.prepare('DELETE FROM media WHERE id = ?').run(req.params.id);
   res.redirect('/admin/media');
 });
@@ -326,7 +321,7 @@ router.post('/slider/create', requireAuth, upload.single('image'), (req, res) =>
   const db = getDb();
   const { news_id, title, summary, link, sort_order, is_active } = req.body;
   let image = null;
-  if (req.file) image = '/images/uploads/' + req.file.filename;
+  if (req.file) image = saveImageToDb(req.file);
   else if (news_id) {
     const n = db.prepare('SELECT image FROM news WHERE id = ?').get(news_id);
     if (n) image = n.image;
@@ -342,7 +337,7 @@ router.post('/slider/edit/:id', requireAuth, upload.single('image'), (req, res) 
   const { news_id, title, summary, link, sort_order, is_active, keep_image } = req.body;
   const existing = db.prepare('SELECT image FROM slider WHERE id = ?').get(req.params.id);
   let image = existing ? existing.image : null;
-  if (req.file) image = '/images/uploads/' + req.file.filename;
+  if (req.file) image = saveImageToDb(req.file);
   if (!keep_image && !req.file) image = null;
   db.prepare('UPDATE slider SET news_id=?, image=?, title=?, summary=?, link=?, sort_order=?, is_active=? WHERE id=?').run(
     news_id || null, image, title, summary, link, sort_order || 0, is_active ? 1 : 0, req.params.id
@@ -366,7 +361,7 @@ router.get('/ads', requireAuth, (req, res) => {
 router.post('/ads/create', requireAuth, upload.single('image'), (req, res) => {
   const db = getDb();
   const { name, position, code, link, start_date, end_date, is_active } = req.body;
-  const image = req.file ? '/images/uploads/' + req.file.filename : null;
+  const image = saveImageToDb(req.file);
   db.prepare('INSERT INTO advertisements (name, position, code, image, link, start_date, end_date, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
     name, position, code, image, link, start_date, end_date, is_active ? 1 : 0
   );
@@ -378,7 +373,7 @@ router.post('/ads/edit/:id', requireAuth, upload.single('image'), (req, res) => 
   const { name, position, code, link, start_date, end_date, is_active, keep_image } = req.body;
   const existing = db.prepare('SELECT image FROM advertisements WHERE id = ?').get(req.params.id);
   let image = existing ? existing.image : null;
-  if (req.file) image = '/images/uploads/' + req.file.filename;
+  if (req.file) image = saveImageToDb(req.file);
   if (!keep_image && !req.file) image = null;
   db.prepare('UPDATE advertisements SET name=?, position=?, code=?, image=?, link=?, start_date=?, end_date=?, is_active=? WHERE id=?').run(
     name, position, code, image, link, start_date, end_date, is_active ? 1 : 0, req.params.id

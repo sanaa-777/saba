@@ -98,6 +98,18 @@ app.use('/admin', adminRoutes);
 app.use('/api', featuresRoutes);
 app.use('/api/v1', apiRoutes);
 
+// Image serving endpoint (from database)
+app.get('/api/images/:id', (req, res) => {
+  const db = getDb();
+  const img = db.prepare('SELECT data, mime_type, filename FROM images WHERE id = ?').get(req.params.id);
+  if (!img) return res.status(404).send('Image not found');
+  const buffer = Buffer.from(img.data, 'base64');
+  res.set('Content-Type', img.mime_type);
+  res.set('Content-Disposition', `inline; filename="${img.filename}"`);
+  res.set('Cache-Control', 'public, max-age=31536000');
+  res.send(buffer);
+});
+
 // API endpoints
 app.get('/api/breaking-news', (req, res) => {
   const db = getDb();
