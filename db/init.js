@@ -2,11 +2,18 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-const DB_PATH = path.join(__dirname, 'awtar.db');
+// On Vercel, copy DB to /tmp (writable)
+const isVercel = !!process.env.VERCEL;
+const SOURCE_DB = path.join(__dirname, 'awtar.db');
+const DB_PATH = isVercel ? path.join('/tmp', 'awtar.db') : SOURCE_DB;
+
 let db;
 
 function getDb() {
   if (!db) {
+    if (isVercel && !fs.existsSync(DB_PATH)) {
+      try { fs.copyFileSync(SOURCE_DB, DB_PATH); } catch (e) { /* seed will create it */ }
+    }
     db = new Database(DB_PATH);
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');

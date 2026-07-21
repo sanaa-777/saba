@@ -3,14 +3,23 @@ const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const http = require('http');
-const { Server } = require('socket.io');
 const { initDatabase, getDb } = require('./db/init');
 const { languageMiddleware } = require('./middleware/language');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+
+// Socket.IO - optional, skip on Vercel
+let io = { emit: () => {}, on: () => {} };
+try {
+  if (!process.env.VERCEL) {
+    const { Server } = require('socket.io');
+    io = new Server(server);
+  }
+} catch (e) { /* Socket.IO not available */ }
+
 const PORT = process.env.PORT || 3000;
+const isVercel = !!process.env.VERCEL;
 
 // Initialize database
 initDatabase();
@@ -34,7 +43,7 @@ app.use(session({
 // Language middleware
 app.use(languageMiddleware);
 
-// Global middleware - make categories, settings, and language available to all views
+// Global middleware
 app.use((req, res, next) => {
   const db = getDb();
   res.locals.categories = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order').all();
@@ -44,7 +53,6 @@ app.use((req, res, next) => {
   res.locals.currentPath = req.path;
   res.locals.session = req.session;
 
-  // Get active poll for sidebar
   try {
     res.locals.activePoll = db.prepare("SELECT * FROM polls WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1").get();
     if (res.locals.activePoll) {
@@ -56,7 +64,6 @@ app.use((req, res, next) => {
     res.locals.activePoll = null;
   }
 
-  // Get breaking news count for ticker
   try {
     res.locals.breakingNews = db.prepare("SELECT * FROM breaking_news WHERE is_active = 1 ORDER BY sort_order").all();
   } catch (e) {
@@ -66,16 +73,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Socket.IO for real-time updates
-io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
-
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+// Socket.IO handler
+if (!isVercel) {
+  io.on('connection', (socket) => {
+    console.log('Client connected:', socket.id);
+    socket.on('disconnect', () => {
+      console.log('Client disconnected:', socket.id);
+    });
   });
-});
+}
 
-// Make io accessible to routes
 app.set('io', io);
 
 // Routes
@@ -89,14 +96,13 @@ app.use('/admin', adminRoutes);
 app.use('/api', featuresRoutes);
 app.use('/api/v1', apiRoutes);
 
-// API endpoint for real-time breaking news
+// API endpoints
 app.get('/api/breaking-news', (req, res) => {
   const db = getDb();
   const breaking = db.prepare("SELECT * FROM breaking_news WHERE is_active = 1 ORDER BY sort_order").all();
   res.json({ success: true, breaking });
 });
 
-// API endpoint for new news count
 app.get('/api/new-news-count', (req, res) => {
   const db = getDb();
   const since = req.query.since || new Date(Date.now() - 3600000).toISOString();
@@ -120,15 +126,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Broadcast breaking news function
 function broadcastBreakingNews(data) {
   io.emit('breaking-news', data);
 }
 
-// Start server
-server.listen(PORT, () => {
-  console.log(`Awtar running on http://localhost:${PORT}`);
-  console.log(`Socket.IO enabled for real-time updates`);
-});
+// Start server (local only)
+if (!isVercel) {
+  server.listen(PORT, () => {
+    console.log(`Awtar running on http://localhost:${PORT}`);
+  });
+}
 
-module.exports = { app, server, io, broadcastBreakingNews };
+module.exports = app;
