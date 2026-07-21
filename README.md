@@ -1,6 +1,6 @@
 # Awtar - أوتر
 
-Complete news website built with Node.js, Express, SQLite, and EJS templates.
+Complete news website built with Node.js, Express, PostgreSQL/Supabase, and EJS templates. Uses Supabase PostgreSQL as the application database in deployment.
 
 ## Features
 
@@ -20,7 +20,7 @@ Complete news website built with Node.js, Express, SQLite, and EJS templates.
 ## Tech Stack
 
 - **Backend**: Node.js + Express.js
-- **Database**: SQLite (better-sqlite3)
+- **Database**: PostgreSQL (Supabase)
 - **Templates**: EJS (server-side rendering)
 - **Auth**: express-session + bcryptjs
 - **Uploads**: Multer
@@ -38,6 +38,20 @@ npm start
 
 The server starts at `http://localhost:3000`
 
+### Environment
+
+Production deploys should define:
+
+```bash
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_ANON_KEY=your-supabase-anon-key
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@db.your-project-ref.supabase.co:5432/postgres?sslmode=require
+PG_POOL_MAX=4
+SESSION_SECRET=replace-with-random-secret
+```
+
+The application expects `DATABASE_URL` to point to your Supabase PostgreSQL instance.
+
 ## Admin Panel
 
 Access: `http://localhost:3000/admin`
@@ -54,7 +68,8 @@ awtar/
 ├── start.js            # Entry point (init DB + start server)
 ├── package.json
 ├── db/
-│   └── init.js         # Database schema + seed data
+│   ├── init.js         # DB adapter selector
+│   ├── postgres-init.js # PostgreSQL/Supabase compatibility layer
 ├── middleware/
 │   └── auth.js         # Admin auth middleware
 ├── routes/
@@ -78,8 +93,6 @@ awtar/
 │   ├── images/         # Static images
 │   ├── sw.js           # Service worker (PWA)
 │   └── manifest.json   # PWA manifest
-└── db/
-    └── awtar.db        # SQLite database (auto-created)
 ```
 
 ## Routes
@@ -123,7 +136,7 @@ awtar/
 
 ## Database
 
-SQLite database with the following tables:
+PostgreSQL/Supabase schema includes the following tables:
 - `categories` - News categories
 - `news` - News articles
 - `tags` - Article tags
