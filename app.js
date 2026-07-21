@@ -81,12 +81,15 @@ app.use((req, res, next) => {
     // Get auto عاجl news from category
     let autoBreaking = [];
     try {
-      // Find عاجl category ID first
-      const urgentCat = db.prepare("SELECT id FROM categories WHERE slug = 'breaking' OR name_ar LIKE '%عاجل%' LIMIT 1").get();
-      if (urgentCat) {
-        const catId = parseInt(urgentCat.id) || 16; // fallback to 16
-        autoBreaking = db.prepare("SELECT id, title as text, '/news/' || id as link, 999 as sort_order, published_at as created_at FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 10").all(catId);
-      }
+      // Get all news with category slug 'breaking'
+      const urgentNews = db.prepare("SELECT n.id, n.title, n.published_at FROM news n WHERE n.category_id IN (SELECT id FROM categories WHERE slug = 'breaking') AND n.status = 1 ORDER BY n.published_at DESC LIMIT 10").all();
+      autoBreaking = urgentNews.map(n => ({
+        id: n.id,
+        text: n.title,
+        link: '/news/' + n.id,
+        sort_order: 999,
+        created_at: n.published_at
+      }));
     } catch(e) {}
     // Combine and deduplicate, limit to 10
     const allBreaking = [...manualBreaking, ...autoBreaking];
