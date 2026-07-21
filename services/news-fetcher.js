@@ -1,6 +1,17 @@
 const RSSParser = require('rss-parser');
 const cheerio = require('cheerio');
 
+// Strong proxy list for blocked sources
+const PROXY_SERVICES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://api.codetabs.com/v1/proxy?quest='
+];
+
+function getProxy(index = 0) {
+  return PROXY_SERVICES[index % PROXY_SERVICES.length];
+}
+
 const rssParser = new RSSParser({
   timeout: 15000,
   headers: {
@@ -18,7 +29,7 @@ function detectSourceType(url) {
   return 'website';
 }
 
-// ─── Fetch with timeout & retry ───
+// ─── Fetch with timeout, retry & proxy fallback ───
 async function fetchWithRetry(url, opts = {}, retries = 2) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), opts.timeout || 15000);
@@ -34,10 +45,21 @@ async function fetchWithRetry(url, opts = {}, retries = 2) {
       redirect: 'follow'
     });
     clearTimeout(timeout);
+    if (!res.ok && retries > 0) {
+      // Try with proxy on 403/429
+      if (res.status === 403 || res.status === 429) {
+        const proxyUrl = getProxy(retries) + encodeURIComponent(url);
+        return fetchWithRetry(proxyUrl, opts, retries - 1);
+      }
+    }
     return res;
   } catch (err) {
     clearTimeout(timeout);
-    if (retries > 0) return fetchWithRetry(url, opts, retries - 1);
+    if (retries > 0) {
+      // Try with proxy on network error
+      const proxyUrl = getProxy(retries) + encodeURIComponent(url);
+      return fetchWithRetry(proxyUrl, opts, retries - 1);
+    }
     throw err;
   }
 }

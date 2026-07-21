@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 const cookieSession = require('cookie-session');
 const cookieParser = require('cookie-parser');
 const path = require('path');
@@ -31,6 +32,9 @@ try {
 // View engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Compression for faster loading on slow connections
+app.use(compression({ threshold: 1024, level: 6 }));
 
 // Middleware
 app.use(express.json());
@@ -103,11 +107,13 @@ if (!isVercel) {
 
 app.set('io', io);
 
-// Disable HTTP caching for dynamic pages and APIs to avoid stale content after admin edits/deletes
+// Caching strategy: static = long cache, dynamic = no cache
 app.use((req, res, next) => {
   const staticPrefixes = ['/css/', '/js/', '/images/', '/manifest.json', '/favicon', '/robots.txt'];
   const isStatic = staticPrefixes.some(prefix => req.path.startsWith(prefix));
-  if (!isStatic) {
+  if (isStatic) {
+    res.set('Cache-Control', 'public, max-age=604800, immutable');
+  } else {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
@@ -137,6 +143,33 @@ app.get('/api/images/:id', (req, res) => {
   res.set('Content-Disposition', `inline; filename="${img.filename}"`);
   res.set('Cache-Control', 'public, max-age=31536000');
   res.send(buffer);
+});
+
+// Image proxy for blocked sources
+app.get('/api/proxy-image', async (req, res) => {
+  const imageUrl = req.query.url;
+  if (!imageUrl) return res.status(400).send('Missing url parameter');
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    const response = await fetch(imageUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'image/*,*/*',
+        'Referer': new URL(imageUrl).origin + '/'
+      }
+    });
+    clearTimeout(timeout);
+    if (!response.ok) return res.status(response.status).send('Image not available');
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    res.set('Content-Type', contentType);
+    res.set('Cache-Control', 'public, max-age=86400');
+    const buffer = Buffer.from(await response.arrayBuffer());
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).send('Proxy error');
+  }
 });
 
 // API endpoints
