@@ -16,7 +16,7 @@
   </div>
   <div class="admin-card-body">
     <div id="statusMsg" class="status-msg"></div>
-    <form id="newsForm" method="POST" action="<%= article ? '/admin/news/edit/' + article.id : '/admin/news/create' %>" enctype="multipart/form-data">
+    <form id="newsForm" method="POST" action="<%= article ? '/api/v1/admin/news/edit/' + article.id : '/api/v1/admin/news/create' %>" enctype="multipart/form-data">
       <div class="form-row">
         <div class="form-group">
           <label>العنوان *</label>
