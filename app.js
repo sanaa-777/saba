@@ -81,12 +81,10 @@ app.use((req, res, next) => {
     // Get auto عاجl news from category
     let autoBreaking = [];
     try {
-      // Step 1: Find عاجl category
-      const urgentCat = db.prepare("SELECT id FROM categories WHERE slug = 'breaking' LIMIT 1").get();
+      // Use categories already loaded
+      const urgentCat = (res.locals.categories || []).find(c => c.slug === 'breaking');
       if (urgentCat) {
-        // Step 2: Get news from that category
-        const catId = Number(urgentCat.id) || 16;
-        const news = db.prepare("SELECT id, title, published_at FROM news WHERE category_id = " + catId + " AND status = 1 ORDER BY published_at DESC LIMIT 10").all();
+        const news = db.prepare('SELECT id, title, published_at FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 10').all(urgentCat.id);
         autoBreaking = news.map(n => ({
           id: n.id,
           text: n.title,
