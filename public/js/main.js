@@ -42,30 +42,41 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ============================================
-     Mobile navigation
+     Mobile Slide Panel
      ============================================ */
-  const mobileNav = $('#mobileNav');
-  const mobileNavOverlay = $('#mobileNavOverlay');
+  const mobilePanel = $('#mobilePanel');
+  const mobilePanelOverlay = $('#mobilePanelOverlay');
   const mobileMenuBtn = $('#mobileMenuBtn');
-  const mobileNavClose = $('#mobileNavClose');
+  const mobilePanelClose = $('#mobilePanelClose');
 
-  const openNav = () => {
-    if (!mobileNav) return;
-    mobileNav.classList.add('open');
-    mobileNavOverlay?.classList.add('open');
-    body.classList.add('nav-open');
+  const openPanel = () => {
+    if (!mobilePanel) return;
+    mobilePanel.classList.add('active');
+    mobilePanelOverlay?.classList.add('active');
+    body.style.overflow = 'hidden';
   };
 
-  const closeNav = () => {
-    mobileNav?.classList.remove('open');
-    mobileNavOverlay?.classList.remove('open');
-    body.classList.remove('nav-open');
+  const closePanel = () => {
+    mobilePanel?.classList.remove('active');
+    mobilePanelOverlay?.classList.remove('active');
+    body.style.overflow = '';
   };
 
-  mobileMenuBtn?.addEventListener('click', openNav);
-  mobileNavClose?.addEventListener('click', closeNav);
-  mobileNavOverlay?.addEventListener('click', closeNav);
-  $$('#mobileNav a').forEach((link) => link.addEventListener('click', closeNav));
+  mobileMenuBtn?.addEventListener('click', openPanel);
+  mobilePanelClose?.addEventListener('click', closePanel);
+  mobilePanelOverlay?.addEventListener('click', closePanel);
+  $$('#mobilePanel a').forEach((link) => link.addEventListener('click', closePanel));
+
+  /* ============================================
+     Mobile Theme Toggle
+     ============================================ */
+  const mobileThemeBtn = $('#mobileThemeBtn');
+  mobileThemeBtn?.addEventListener('click', () => {
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    const newTheme = isDark ? 'light' : 'dark';
+    applyTheme(newTheme);
+    localStorage.setItem('awtar-theme', newTheme);
+  });
 
   /* ============================================
      Date display

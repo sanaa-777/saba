@@ -14,7 +14,8 @@
   }
 %>
 
-<div class="top-bar">
+<!-- Top Bar (desktop only) -->
+<div class="top-bar desktop-only">
   <div class="container">
     <div class="top-bar-right">
       <span class="date-gregorian"></span>
@@ -40,13 +41,35 @@
   </div>
 </div>
 
-<header class="site-header">
+<!-- Mobile Header (new design) -->
+<header class="mobile-header mobile-only">
+  <div class="mobile-header-inner">
+    <!-- Logo -->
+    <a href="/" class="mobile-logo">
+      <img src="<%= settings.site_logo || '/images/logo.png' %>" alt="<%= settings.site_name || 'أوتر' %>" width="36" height="36">
+    </a>
+    <!-- Search Bar -->
+    <form class="mobile-search" action="/search" method="GET">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+      <input type="text" name="q" placeholder="ابحث..." aria-label="البحث">
+    </form>
+    <!-- Dark Mode Toggle -->
+    <button class="mobile-icon-btn" id="mobileThemeBtn" aria-label="تغيير الوضع">
+      <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+      <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
+    </button>
+    <!-- Menu Toggle -->
+    <button class="mobile-icon-btn mobile-menu-btn" id="mobileMenuBtn" aria-label="القائمة">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+  </div>
+</header>
+
+<!-- Desktop Header -->
+<header class="site-header desktop-only">
   <div class="container">
     <div class="header-inner">
       <div class="brand-wrap">
-        <button class="mobile-menu-toggle" id="mobileMenuBtn" aria-label="فتح القائمة">
-          <span></span>
-        </button>
         <div class="logo">
           <a href="/">
             <img src="<%= settings.site_logo || '/images/logo.png' %>" alt="<%= settings.site_name || 'أوتر' %>" class="logo-img" width="54" height="54">
@@ -110,7 +133,8 @@
   </div>
 </header>
 
-<nav class="main-nav" id="mainNav">
+<!-- Desktop Nav -->
+<nav class="main-nav desktop-only" id="mainNav">
   <div class="container nav-shell">
     <ul class="nav-list">
       <li class="nav-item"><a href="/" class="nav-link <%= navActive('/') %>">الرئيسية</a></li>
@@ -135,6 +159,7 @@
   </div>
 </nav>
 
+<!-- Breaking News -->
 <% if (breakingNews && breakingNews.length > 0) { %>
 <section class="container">
   <div class="breaking-ticker" aria-label="شريط الأخبار العاجلة">
@@ -153,40 +178,57 @@
 </section>
 <% } %>
 
-<div class="mobile-nav" id="mobileNav">
-  <div class="mobile-nav-header">
-    <div class="mobile-nav-logo"><%= settings.site_name || 'أوتر' %></div>
-    <button class="mobile-nav-close" id="mobileNavClose" aria-label="إغلاق القائمة">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+<!-- Mobile Slide Panel (half screen) -->
+<div class="mobile-panel-overlay" id="mobilePanelOverlay"></div>
+<aside class="mobile-panel" id="mobilePanel">
+  <div class="mobile-panel-header">
+    <img src="<%= settings.site_logo || '/images/logo.png' %>" alt="<%= settings.site_name || 'أوتر' %>" width="32" height="32">
+    <span class="mobile-panel-title"><%= settings.site_name || 'أوتر' %></span>
+    <button class="mobile-panel-close" id="mobilePanelClose" aria-label="إغلاق">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
     </button>
   </div>
-  <div class="mobile-nav-search">
-    <form action="/search" method="GET">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
-      <input type="text" name="q" placeholder="ابحث في الموقع">
-      <button type="submit" aria-label="بحث">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
-      </button>
-    </form>
-  </div>
-  <div class="mobile-nav-scroll">
-    <ul class="mobile-nav-list">
-      <li><a href="/" class="<%= navActive('/') %>"><span>الرئيسية</span><span>↗</span></a></li>
+  <div class="mobile-panel-body">
+    <ul class="mobile-panel-nav">
+      <li><a href="/" class="<%= navActive('/') %>">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        الرئيسية
+      </a></li>
       <% (categories || []).forEach(cat => { %>
-        <li><a href="/category/<%= cat.id %>" class="<%= currentPath === '/category/' + cat.id ? 'active' : '' %>"><span><%= cat.name_ar %></span><span>↗</span></a></li>
+        <li><a href="/category/<%= cat.id %>" class="<%= currentPath === '/category/' + cat.id ? 'active' : '' %>">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <%= cat.name_ar %>
+        </a></li>
       <% }); %>
-      <li class="mobile-nav-divider"></li>
-      <% quickLinks.forEach(link => { %>
-        <li><a href="<%= link.href %>"><span><%= link.label %></span><span>↗</span></a></li>
-      <% }); %>
-      <li><a href="/about"><span>من نحن</span><span>↗</span></a></li>
-      <li><a href="/contact"><span>اتصل بنا</span><span>↗</span></a></li>
     </ul>
-    <div class="mobile-nav-lang">
-      <a href="?lang=ar" class="<%= lang === 'ar' ? 'active' : '' %>">AR</a>
-      <a href="?lang=en" class="<%= lang === 'en' ? 'active' : '' %>">EN</a>
-      <a href="?lang=fr" class="<%= lang === 'fr' ? 'active' : '' %>">FR</a>
+    <div class="mobile-panel-divider"></div>
+    <ul class="mobile-panel-nav">
+      <% quickLinks.forEach(link => { %>
+        <li><a href="<%= link.href %>">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <%= link.label %>
+        </a></li>
+      <% }); %>
+      <li><a href="/about">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        من نحن
+      </a></li>
+      <li><a href="/contact">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        اتصل بنا
+      </a></li>
+    </ul>
+    <div class="mobile-panel-divider"></div>
+    <div class="mobile-panel-footer">
+      <a href="<%= session && session.admin ? '/admin' : '/admin/login' %>" class="mobile-panel-admin">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <%= session && session.admin ? 'لوحة التحكم' : 'تسجيل الدخول' %>
+      </a>
+      <div class="mobile-panel-social">
+        <a href="<%= settings.facebook || '#' %>" target="_blank" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3h-3.1V8.2c0-.9.3-1.5 1.5-1.5h1.7V4c-.3 0-1.3-.1-2.5-.1-2.4 0-4 1.5-4 4.2V10H7.5v3h2.6v8h3.4z"/></svg></a>
+        <a href="<%= settings.twitter || '#' %>" target="_blank" aria-label="X"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.4L1 2h6.5l4.4 5.8L18.9 2zm-1.1 18h1.7L6.6 3.9H4.8L17.8 20z"/></svg></a>
+        <a href="<%= settings.telegram || '#' %>" target="_blank" aria-label="Telegram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9.8 15.6 9.4 21c.6 0 .9-.3 1.3-.6l3-2.9 6.1 4.5c1.1.6 1.8.3 2.1-1l3.8-17.7h0c.4-1.8-.6-2.5-1.7-2.1L1.8 9.5c-1.7.7-1.7 1.7-.3 2.1l5.7 1.8L20.4 5c.6-.4 1.2-.2.7.2"/></svg></a>
+      </div>
     </div>
   </div>
-</div>
-<div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+</aside>
