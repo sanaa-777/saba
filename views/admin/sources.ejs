@@ -118,11 +118,11 @@
     <button class="btn-sm btn-fetch" onclick="fetchSource(<%= src.id %>, this)">⚡ جلب الآن</button>
     <button class="btn-sm btn-primary" onclick="openEditModal(<%= src.id %>)">✏️ تعديل</button>
     <a href="/admin/sources/logs/<%= src.id %>" class="btn-sm btn-secondary">📋 السجل</a>
-    <form method="POST" action="/admin/sources/delete/<%= src.id %}" style="display:inline" onsubmit="return confirm('حذف المصدر وكل سجلاته؟')">
+    <form method="POST" action="/admin/sources/delete/<%- src.id %>" style="display:inline" onsubmit="return confirm('حذف المصدر وكل سجلاته؟')">
       <button class="btn-sm btn-danger" type="submit">🗑️ حذف</button>
     </form>
   </div>
-  <div class="fetch-result" id="result-<%= src.id %>"></div>
+  <div class="fetch-result" id="result-<%- src.id %>"></div>
 </div>
 <% }); %>
 <% } %>

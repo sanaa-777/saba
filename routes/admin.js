@@ -544,9 +544,10 @@ router.post('/sources/create', requireAuth, (req, res) => {
   source_type = source_type || 'auto';
   if (source_type === 'auto') source_type = detectSourceType(url);
   fetch_interval = parseInt(fetch_interval) || 900;
-  db.prepare(`INSERT INTO news_sources (name, url, source_type, category_id, fetch_interval, use_proxy, proxy_url, auto_publish, next_fetch_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP + INTERVAL '1 second' * ?)`).run(
+  const nextFetch = new Date(Date.now() + fetch_interval * 1000).toISOString();
+  db.prepare(`INSERT INTO news_sources (name, url, source_type, category_id, fetch_interval, use_proxy, proxy_url, auto_publish, next_fetch_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
     name, url, source_type, category_id || null, fetch_interval,
-    use_proxy ? 1 : 0, proxy_url || null, auto_publish ? 1 : 0, fetch_interval
+    use_proxy ? 1 : 0, proxy_url || null, auto_publish ? 1 : 0, nextFetch
   );
   res.redirect('/admin/sources');
 });
