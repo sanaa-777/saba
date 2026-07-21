@@ -144,14 +144,20 @@ app.get('/api/new-news-count', (req, res) => {
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  const dbUrl = process.env.DATABASE_URL ? 'SET' : 'NOT SET';
+app.get('/api/health', async (req, res) => {
+  const dbUrl = process.env.DATABASE_URL ? 'SET (' + process.env.DATABASE_URL.substring(0, 30) + '...)' : 'NOT SET';
   try {
-    const db = getDb();
-    const result = db.prepare('SELECT 1 as test').get();
-    res.json({ status: 'ok', dbUrl, db: result });
+    const { Pool } = require('pg');
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      connectionTimeoutMillis: 10000
+    });
+    const result = await pool.query('SELECT 1 as test');
+    await pool.end();
+    res.json({ status: 'ok', dbUrl, rows: result.rows });
   } catch (err) {
-    res.status(500).json({ status: 'error', dbUrl, message: err.message, code: err.code, stack: err.stack ? err.stack.substring(0, 300) : '' });
+    res.status(500).json({ status: 'error', dbUrl, message: err.message, code: err.code });
   }
 });
 
