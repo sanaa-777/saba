@@ -81,8 +81,11 @@ app.use((req, res, next) => {
     // Get auto عاجl news from category
     let autoBreaking = [];
     try {
-      // Direct query: get news from any category named عاجl or with slug breaking
-      autoBreaking = db.prepare("SELECT n.id, n.title as text, '/news/' || n.id as link, 999 as sort_order, n.published_at as created_at FROM news n JOIN categories c ON n.category_id = c.id WHERE (c.slug = 'breaking' OR c.name_ar = 'عاجل') AND n.status = 1 ORDER BY n.published_at DESC LIMIT 10").all();
+      // Find عاجl category ID first
+      const urgentCat = db.prepare("SELECT id FROM categories WHERE slug = 'breaking' OR name_ar LIKE '%عاجل%' LIMIT 1").get();
+      if (urgentCat && urgentCat.id) {
+        autoBreaking = db.prepare("SELECT id, title as text, '/news/' || id as link, 999 as sort_order, published_at as created_at FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 10").all(urgentCat.id);
+      }
     } catch(e) {}
     // Combine and deduplicate, limit to 10
     const allBreaking = [...manualBreaking, ...autoBreaking];
