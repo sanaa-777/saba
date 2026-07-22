@@ -43,22 +43,32 @@ const LOCK_TTL_SECONDS = 300; // 5 minutes max lock duration
 function acquireLock(db, lockName, lockedBy) {
   try {
     // Clean expired locks first
-    db.prepare("DELETE FROM fetch_locks WHERE expires_at < CURRENT_TIMESTAMP").run();
+    try {
+      db.prepare("DELETE FROM fetch_locks WHERE expires_at < CURRENT_TIMESTAMP").run();
+    } catch(e) { /* table might not exist */ }
 
-    // Try to acquire lock (INSERT will fail if lock exists and not expired)
-    const existing = db.prepare("SELECT lock_name, locked_by, locked_at, expires_at FROM fetch_locks WHERE lock_name = ? AND expires_at > CURRENT_TIMESTAMP").get(lockName);
-    if (existing) {
-      return { acquired: false, lockedBy: existing.locked_by, lockedAt: existing.locked_at };
-    }
+    // Try to acquire lock
+    try {
+      const existing = db.prepare("SELECT lock_name, locked_by, locked_at, expires_at FROM fetch_locks WHERE lock_name = ? AND expires_at > CURRENT_TIMESTAMP").get(lockName);
+      if (existing) {
+        return { acquired: false, lockedBy: existing.locked_by, lockedAt: existing.locked_at };
+      }
+    } catch(e) { /* table might not exist, proceed */ }
 
-    // Delete expired lock if exists
-    db.prepare("DELETE FROM fetch_locks WHERE lock_name = ?").run(lockName);
+    // Delete existing lock if any
+    try {
+      db.prepare("DELETE FROM fetch_locks WHERE lock_name = ?").run(lockName);
+    } catch(e) { /* table might not exist */ }
 
     // Acquire lock
-    db.prepare("INSERT INTO fetch_locks (lock_name, locked_by, locked_at, expires_at) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '1 second' * ?)").run(lockName, lockedBy, LOCK_TTL_SECONDS);
+    try {
+      db.prepare("INSERT INTO fetch_locks (lock_name, locked_by, locked_at, expires_at) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '1 second' * ?)").run(lockName, lockedBy, LOCK_TTL_SECONDS);
+    } catch(e) {
+      // Table doesn't exist — proceed without lock
+      console.warn('Lock table not available, proceeding without lock');
+    }
     return { acquired: true };
   } catch (err) {
-    // If table doesn't exist or any error, allow the fetch to proceed
     console.warn('Lock acquisition error (proceeding anyway):', err.message);
     return { acquired: true, fallback: true };
   }
@@ -77,7 +87,7 @@ function isFetchLocked(db) {
     const lock = db.prepare("SELECT lock_name, locked_by, locked_at FROM fetch_locks WHERE lock_name = 'global_fetch' AND expires_at > CURRENT_TIMESTAMP").get();
     return lock || null;
   } catch (err) {
-    return null;
+    return null; // Table doesn't exist, not locked
   }
 }
 
@@ -392,11 +402,11 @@ function isDuplicate(article, db) {
   // Check deleted_articles first — never re-add deleted content
   try {
     if (article.title && article.title.length > 10) {
-      // Check by exact title
+      // Check by EXACT title only
       const deleted = db.prepare('SELECT id FROM deleted_articles WHERE title = ?').get(article.title);
       if (deleted) return true;
       
-      // Check by content fingerprint (hash)
+      // Check by content fingerprint (hash of FULL title)
       const contentHash = crypto.createHash('md5').update(article.title).digest('hex');
       const deletedByHash = db.prepare('SELECT id FROM deleted_articles WHERE content_hash = ?').get(contentHash);
       if (deletedByHash) return true;
@@ -407,18 +417,16 @@ function isDuplicate(article, db) {
     }
   } catch(e) { /* deleted_articles table might not exist yet */ }
 
-  // Check existing articles
-  if (article.url) {
-    const existing = db.prepare('SELECT id FROM news WHERE content LIKE ? OR title = ?').get(`%${article.url}%`, article.title);
-    if (existing) return true;
-  }
-  const byTitle = db.prepare('SELECT id FROM news WHERE title = ?').get(article.title);
+  // Check existing articles — EXACT title match ONLY
+  const byTitle = db.prepare('SELECT id FROM news WHERE title = ? AND deleted_at IS NULL').get(article.title);
   if (byTitle) return true;
-  if (article.title.length > 20) {
-    const partial = article.title.substring(0, 50);
-    const similar = db.prepare('SELECT id FROM news WHERE title LIKE ?').get(`%${partial}%`);
-    if (similar) return true;
+
+  // Check by source URL if available
+  if (article.url) {
+    const byUrl = db.prepare('SELECT id FROM news WHERE source_url = ? AND deleted_at IS NULL').get(article.url);
+    if (byUrl) return true;
   }
+
   return false;
 }
 

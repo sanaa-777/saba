@@ -1,12 +1,10 @@
-# GitHub Actions: Automatic News Fetching
-# Runs every 15 minutes as primary fetcher (Vercel Cron is backup)
-
+# GitHub Actions: Automatic News Fetching - Every 15 minutes
 name: Fetch News
 
 on:
   schedule:
     - cron: '*/15 * * * *'  # Every 15 minutes
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:  # Manual trigger from GitHub UI
 
 concurrency:
   group: fetch-news
@@ -18,47 +16,53 @@ jobs:
     timeout-minutes: 5
     
     steps:
-      - name: Trigger news fetch
-        id: fetch
+      - name: Fetch news from sources
         run: |
+          echo "🔄 Starting news fetch..."
+          
+          # Try up to 3 times
           for i in 1 2 3; do
             echo "Attempt $i..."
+            
             RESPONSE=$(curl -s -w "\n%{http_code}" \
-              -X GET "${{ secrets.SITE_URL }}/api/cron/fetch-news?source=github" \
+              "${{ secrets.SITE_URL || 'https://awtar-news.vercel.app' }}/api/cron/fetch-news?source=github" \
               -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
               -H "User-Agent: GitHub-Actions-NewsFetcher/1.0" \
               -H "Accept: application/json" \
-              --max-time 120)
+              --max-time 120 \
+              --retry 2 \
+              --retry-delay 5)
             
             HTTP_CODE=$(echo "$RESPONSE" | tail -1)
             BODY=$(echo "$RESPONSE" | head -n -1)
             
-            echo "HTTP: $HTTP_CODE"
-            echo "$BODY" | head -20
+            echo "HTTP Status: $HTTP_CODE"
             
             if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-              SKIPPED=$(echo "$BODY" | jq -r '.skipped // false')
+              echo "Response: $BODY" | head -5
+              
+              SKIPPED=$(echo "$BODY" | jq -r '.skipped // false' 2>/dev/null)
               if [ "$SKIPPED" = "true" ]; then
                 echo "⏭️ Skipped (another fetch in progress)"
                 exit 0
               fi
               
-              TOTAL_NEW=$(echo "$BODY" | jq -r '.totalNew // 0')
-              ERRORS=$(echo "$BODY" | jq -r '.errors // 0')
-              echo "📰 New: $TOTAL_NEW | Errors: $ERRORS"
+              TOTAL_NEW=$(echo "$BODY" | jq -r '.totalNew // 0' 2>/dev/null)
+              ERRORS=$(echo "$BODY" | jq -r '.errors // 0' 2>/dev/null)
+              
+              echo "📰 New articles: $TOTAL_NEW"
+              echo "❌ Errors: $ERRORS"
               
               if [ "$TOTAL_NEW" -gt 0 ]; then
-                echo "✅ New articles fetched!"
+                echo "✅ Successfully fetched new articles!"
                 exit 0
               fi
+            else
+              echo "❌ HTTP Error: $HTTP_CODE"
             fi
             
-            echo "Waiting 30s before retry..."
-            sleep 30
+            echo "Waiting 10s before retry..."
+            sleep 10
           done
           
-          echo "::warning::All fetch attempts completed with no new articles"
-
-      - name: Report failure
-        if: failure()
-        run: echo "::error::News fetch workflow failed"
+          echo "⚠️ All attempts completed"
