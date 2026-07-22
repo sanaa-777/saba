@@ -437,6 +437,34 @@ function initDatabase() {
     seedPostgres(pgdb);
   }
 
+  // Run migrations
+  try {
+    const sourceCount = pgdb.prepare('SELECT COUNT(*) as cnt FROM news_sources WHERE is_active = 1').get();
+    if (sourceCount && sourceCount.cnt > 0) {
+      // Check if sources have broken URLs
+      const brokenSources = pgdb.prepare("SELECT id, name, url FROM news_sources WHERE url LIKE '%saba.ye%' OR url LIKE '%almassirah.net%' OR url LIKE '%alarabiya.net%' OR url LIKE '%maribpress.net%' OR url LIKE '%newyemen.net%'").all();
+      if (brokenSources.length > 0) {
+        console.log(`Found ${brokenSources.length} broken sources, fixing...`);
+        // Update broken sources to working URLs
+        const fixes = [
+          { url: '%saba.ye%', name: 'BBC Arabic RSS', newUrl: 'https://feeds.bbci.co.uk/arabic/rss.xml' },
+          { url: '%almassirah.net%', name: 'Al Jazeera RSS', newUrl: 'https://www.aljazeera.com/xml/rss/all.xml' },
+          { url: '%alarabiya.net%', name: 'France 24 RSS', newUrl: 'https://www.francetvinfo.fr/titres.rss' },
+          { url: '%maribpress.net%', name: 'Disabled - maribpress', newUrl: null },
+          { url: '%newyemen.net%', name: 'Disabled - newyemen', newUrl: null }
+        ];
+        for (const fix of fixes) {
+          if (fix.newUrl) {
+            pgdb.prepare("UPDATE news_sources SET name = ?, url = ?, last_fetch_status = 'pending', last_error = NULL WHERE url LIKE ?").run(fix.name, fix.newUrl, fix.url);
+          } else {
+            pgdb.prepare("UPDATE news_sources SET is_active = 0, last_fetch_status = 'disabled' WHERE url LIKE ?").run(fix.url);
+          }
+        }
+        console.log('Fixed broken sources');
+      }
+    }
+  } catch(e) { console.log('Migration error:', e.message); }
+
   initialized = true;
 }
 
