@@ -419,3 +419,15 @@ router.post('/admin/news/permanent-delete/:id', requireAuth, (req, res) => {
   }
 });
 module.exports = router;
+
+// Debug endpoint to test fetch for a specific source
+router.get('/debug/fetch/:id', async (req, res) => {
+  try {
+    const db = getDb();
+    const { fetchAndSave } = require('../services/news-fetcher');
+    const result = await fetchAndSave(db, parseInt(req.params.id), 'debug');
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.json({ success: false, error: err.message, stack: err.stack });
+  }
+});
