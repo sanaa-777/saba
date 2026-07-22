@@ -231,7 +231,7 @@ router.get('/news/:id', (req, res) => {
   }
 
   // Increment views
-  db.prepare('UPDATE news SET views = views + 1 WHERE id = ?').run(req.params.id);
+  db.prepare('UPDATE news SET views = views + 1 WHERE id = ?').run(articleId);
   article.views += 1;
 
   // Tags
