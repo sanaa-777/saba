@@ -386,3 +386,14 @@ if (!isVercel) {
 }
 
 module.exports = app;
+
+// Debug endpoint to check sources (temporary)
+app.get('/api/debug/sources', (req, res) => {
+  try {
+    const db = getDb();
+    const sources = db.prepare('SELECT id, name, url, is_active, last_fetch_status, last_error FROM news_sources').all();
+    res.json({ success: true, sources });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
