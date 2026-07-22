@@ -62,7 +62,7 @@
             <td><%= new Date(item.created_at).toLocaleDateString('ar-YE') %></td>
             <td class="actions">
               <a href="/admin/news/edit/<%= item.id %>" class="btn btn-sm btn-primary">تعديل</a>
-              <a href="/news/<%= item.id %>" class="btn btn-sm btn-secondary" target="_blank">عرض</a>
+              <a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>" class="btn btn-sm btn-secondary" target="_blank">عرض</a>
             </td>
           </tr>
           <% }); %>

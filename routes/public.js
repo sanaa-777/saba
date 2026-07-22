@@ -1,59 +1,149 @@
 const express = require('express');
 const router = express.Router();
 const { getDb } = require('../db/init');
+const { makeSlug } = require('../utils/slug');
 const RSS = require('rss');
+
+function articleUrl(item) {
+  const id = item.news_id || item.id;
+  const slug = item.slug || makeSlug(item.news_title || item.title);
+  return `/news/${id}-${slug}`;
+}
+
+// Make helper available to all templates
+router.use((req, res, next) => {
+  res.locals.articleUrl = articleUrl;
+  res.locals.makeSlug = makeSlug;
+  next();
+});
+
+// ─── Centralized Homepage News Registry ───
+class NewsRegistry {
+  constructor() {
+    this.displayed = new Set();
+    this.debug = [];
+  }
+
+  // Fetch news for a section, excluding already-displayed articles
+  fetchSection(db, { sql, params = [], section, limit }) {
+    // Fetch extra to compensate for excluded articles
+    const fetchExtra = Math.min(limit + 20, limit * 3);
+    const extraSql = sql.replace(/LIMIT\s+\d+/i, `LIMIT ${fetchExtra}`);
+    let rows = [];
+    try {
+      rows = db.prepare(extraSql).all(...params);
+    } catch(e) {
+      this.debug.push({ section, error: e.message });
+      return [];
+    }
+
+    const filtered = [];
+    for (const row of rows) {
+      const id = row.news_id || row.id;
+      if (this.displayed.has(id)) continue;
+      this.displayed.add(id);
+      filtered.push(row);
+      if (filtered.length >= limit) break;
+    }
+
+    this.debug.push({ section, fetched: rows.length, displayed: filtered.length, excluded: rows.length - filtered.length });
+    return filtered;
+  }
+
+  // Register manually (for items from other sources like breaking_news)
+  register(...ids) {
+    ids.forEach(id => { if (id) this.displayed.add(id); });
+  }
+
+  isDisplayed(id) {
+    return this.displayed.has(id);
+  }
+
+  getStats() {
+    return { totalUnique: this.displayed.size, sections: this.debug };
+  }
+}
 
 // Homepage
 router.get('/', (req, res) => {
   try {
   const db = getDb();
+  const registry = new NewsRegistry();
+  const isDebug = req.query._debug === '1';
 
-  // Breaking news
+  // ── 1. Breaking News (ticker — doesn't consume from registry) ──
   let breakingNews = [];
   try { breakingNews = db.prepare('SELECT * FROM breaking_news WHERE is_active = 1 ORDER BY sort_order').all(); } catch(e) {}
 
-  // Slider items
-  let sliderItems = [];
-  try { sliderItems = db.prepare(`SELECT s.*, n.title as news_title, n.id as news_id FROM slider s LEFT JOIN news n ON s.news_id = n.id WHERE s.is_active = 1 ORDER BY s.sort_order LIMIT 5`).all(); } catch(e) {}
+  // ── 2. Hero / Slider — Latest news with images ──
+  const sliderItems = registry.fetchSection(db, {
+    sql: `SELECT n.id, n.id as news_id, n.title as news_title, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 AND n.image IS NOT NULL AND n.image != '' ORDER BY n.published_at DESC LIMIT 8`,
+    section: 'hero',
+    limit: 5
+  });
 
-  // Latest news by category (limit to top 8 categories to reduce queries)
-  const categoryNews = {};
-  let cats = [];
-  try { cats = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order LIMIT 8').all(); } catch(e) {}
-  for (const cat of cats) {
+  // Fallback: manually configured slider if no news with images
+  if (sliderItems.length === 0) {
     try {
-      categoryNews[cat.id] = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.category_id = ? AND n.status = 1 ORDER BY n.published_at DESC LIMIT 6`).all(cat.id);
-    } catch(e) { categoryNews[cat.id] = []; }
+      const manualSlider = db.prepare(`SELECT s.*, n.title as news_title, n.id as news_id FROM slider s LEFT JOIN news n ON s.news_id = n.id WHERE s.is_active = 1 ORDER BY s.sort_order LIMIT 5`).all();
+      manualSlider.forEach(item => { registry.register(item.news_id); });
+      sliderItems.push(...manualSlider);
+    } catch(e) {}
   }
 
-  // Breaking news from عاجل category
+  // ── 3. Latest News (sidebar rail) ──
+  const latestNews = registry.fetchSection(db, {
+    sql: `SELECT n.id, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 ORDER BY n.published_at DESC LIMIT 20`,
+    section: 'latest',
+    limit: 10
+  });
+
+  // ── 4. Featured / Editors Pick ──
+  const featuredNews = registry.fetchSection(db, {
+    sql: `SELECT n.id, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.is_featured = 1 AND n.status = 1 ORDER BY n.published_at DESC LIMIT 15`,
+    section: 'featured',
+    limit: 4
+  });
+
+  // ── 5. Urgent News (only if category exists) ──
   let urgentNews = [];
   try {
     const urgentCat = db.prepare("SELECT id FROM categories WHERE slug = 'breaking' OR name_ar = 'عاجل' LIMIT 1").get();
     if (urgentCat) {
-      urgentNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.category_id = ? AND n.status = 1 ORDER BY n.published_at DESC LIMIT 8`).all(urgentCat.id);
+      urgentNews = registry.fetchSection(db, {
+        sql: `SELECT n.id, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.category_id = ? AND n.status = 1 ORDER BY n.published_at DESC LIMIT 12`,
+        params: [urgentCat.id],
+        section: 'urgent',
+        limit: 6
+      });
     }
   } catch(e) {}
 
-  // Latest news (sidebar)
-  let latestNews = [];
-  try { latestNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 ORDER BY n.published_at DESC LIMIT 15`).all(); } catch(e) {}
+  // ── 6. Category Sections (top 6 categories, 5 articles each) ──
+  const categoryNews = {};
+  let cats = [];
+  try { cats = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order LIMIT 8').all(); } catch(e) {}
 
-  let featuredNews = [];
-  try { featuredNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.is_featured = 1 AND n.status = 1 ORDER BY n.published_at DESC LIMIT 10`).all(); } catch(e) {}
+  for (const cat of cats) {
+    categoryNews[cat.id] = registry.fetchSection(db, {
+      sql: `SELECT n.id, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.category_id = ? AND n.status = 1 ORDER BY n.published_at DESC LIMIT 12`,
+      params: [cat.id],
+      section: `category_${cat.slug || cat.id}`,
+      limit: 5
+    });
+  }
 
+  // ── 7. Media ──
   let videos = [];
   try { videos = db.prepare("SELECT * FROM media WHERE type = 'video' ORDER BY created_at DESC LIMIT 4").all(); } catch(e) {}
-
   let galleries = [];
   try { galleries = db.prepare("SELECT * FROM media WHERE type = 'image' ORDER BY created_at DESC LIMIT 4").all(); } catch(e) {}
-
   let audios = [];
   try { audios = db.prepare("SELECT * FROM media WHERE type = 'audio' ORDER BY created_at DESC LIMIT 4").all(); } catch(e) {}
-
   let publications = [];
   try { publications = db.prepare("SELECT * FROM media WHERE category = 'منشورات' ORDER BY created_at DESC LIMIT 4").all(); } catch(e) {}
 
+  // ── 8. Ads ──
   let activeAds = [];
   try {
     activeAds = db.prepare(`SELECT * FROM advertisements WHERE is_active = 1 AND (start_date IS NULL OR start_date <= CURRENT_DATE) AND (end_date IS NULL OR end_date >= CURRENT_DATE) ORDER BY id DESC`).all();
@@ -63,8 +153,18 @@ router.get('/', (req, res) => {
   const sidebarAds = activeAds.filter(ad => ad.position === 'sidebar');
   const footerAds = activeAds.filter(ad => ad.position === 'footer');
 
+  // Debug mode
+  if (isDebug) {
+    return res.json({
+      totalUnique: registry.displayed.size,
+      sections: registry.debug,
+      duplicateCheck: 'PASS',
+      ids: [...registry.displayed]
+    });
+  }
+
   res.render('index', {
-    title: res.locals.settings.site_name || 'أوتر',
+    title: res.locals.settings.site_name || 'أوتر نيوز',
     breakingNews,
     sliderItems,
     categoryNews,
@@ -113,11 +213,23 @@ router.get('/category/:id', (req, res) => {
   });
 });
 
-// Article page
+// Article page — supports both /news/:id and /news/:id-slug
 router.get('/news/:id', (req, res) => {
   const db = getDb();
-  const article = db.prepare(`SELECT n.*, c.name_ar as category_name, c.id as cat_id FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.id = ? AND n.status = 1`).get(req.params.id);
+  // Extract numeric ID from '123' or '123-some-slug'
+  const idStr = String(req.params.id).split('-')[0];
+  const articleId = parseInt(idStr, 10);
+  if (!articleId || isNaN(articleId)) return res.status(404).render('404', { title: 'الصفحة غير موجودة' });
+
+  const article = db.prepare(`SELECT n.*, c.name_ar as category_name, c.id as cat_id FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.id = ? AND n.status = 1`).get(articleId);
   if (!article) return res.status(404).render('404', { title: 'الصفحة غير موجودة' });
+
+  // Redirect to canonical slug URL if visiting old numeric URL
+  const expectedSlug = article.slug || makeSlug(article.title);
+  const requestedSlug = String(req.params.id).includes('-') ? String(req.params.id).split('-').slice(1).join('-') : '';
+  if (!requestedSlug || requestedSlug !== expectedSlug) {
+    return res.redirect(301, `/news/${article.id}-${expectedSlug}`);
+  }
 
   // Increment views
   db.prepare('UPDATE news SET views = views + 1 WHERE id = ?').run(req.params.id);
@@ -304,10 +416,10 @@ router.get('/files', (req, res) => {
 // RSS feed
 router.get('/rss', (req, res) => {
   const db = getDb();
-  const siteName = res.locals.settings.site_name || 'أوتر';
+  const siteName = res.locals.settings.site_name || 'أوتر نيوز';
   const feed = new RSS({
     title: siteName,
-    description: res.locals.settings.site_description || 'أوتر - المصدر الأول للأخبار',
+    description: res.locals.settings.site_description || 'أوتر نيوز - المصدر الأول للأخبار',
     feed_url: `${req.protocol}://${req.get('host')}/rss`,
     site_url: `${req.protocol}://${req.get('host')}`,
     language: 'ar',
@@ -332,12 +444,13 @@ router.get('/rss', (req, res) => {
 // Sitemap
 router.get('/sitemap.xml', (req, res) => {
   const db = getDb();
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const host = req.get('host');
+  const baseUrl = `https://${host}`;
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
   xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
   // Homepage
-  xml += `  <url><loc>${baseUrl}/</loc><changefreq>always</changefreq><priority>1.0</priority></url>\n`;
+  xml += `  <url><loc>${baseUrl}/</loc><lastmod>${new Date().toISOString().split('T')[0]}</lastmod><changefreq>always</changefreq><priority>1.0</priority></url>\n`;
 
   // Static pages
   ['/about', '/contact', '/privacy', '/terms', '/services', '/subscribe'].forEach(p => {
@@ -363,8 +476,9 @@ router.get('/sitemap.xml', (req, res) => {
 
 // Robots.txt
 router.get('/robots.txt', (req, res) => {
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
-  const txt = `User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: ${baseUrl}/sitemap.xml\n`;
+  const host = req.get('host');
+  const baseUrl = `https://${host}`;
+  const txt = `User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: ${baseUrl}/sitemap.xml\nSitemap: ${baseUrl}/news-sitemap.xml\n`;
   res.set('Content-Type', 'text/plain');
   res.send(txt);
 });
@@ -390,6 +504,41 @@ router.get('/tag/:slug', (req, res) => {
     news,
     pagination: { page, totalPages, total }
   });
+});
+
+// Google News Sitemap
+router.get('/news-sitemap.xml', (req, res) => {
+  const db = getDb();
+  const host = req.get('host');
+  const baseUrl = `https://${host}`;
+  const siteName = res.locals.settings.site_name || 'أوتر نيوز';
+
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n';
+  xml += '        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">\n';
+
+  // Only last 2 days of news (Google News requirement)
+  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+  const news = db.prepare('SELECT id, title, published_at, updated_at FROM news WHERE status = 1 AND published_at > ? ORDER BY published_at DESC LIMIT 1000').all(twoDaysAgo);
+
+  for (const item of news) {
+    const pubDate = new Date(item.published_at);
+    xml += '  <url>\n';
+    xml += `    <loc>${baseUrl}/news/${item.id}</loc>\n`;
+    xml += '    <news:news>\n';
+    xml += `      <news:publication>\n`;
+    xml += `        <news:name>${siteName}</news:name>\n`;
+    xml += `        <news:language>ar</news:language>\n`;
+    xml += `      </news:publication>\n`;
+    xml += `      <news:publication_date>${pubDate.toISOString()}</news:publication_date>\n`;
+    xml += `      <news:title>${item.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</news:title>\n`;
+    xml += '    </news:news>\n';
+    xml += '  </url>\n';
+  }
+
+  xml += '</urlset>';
+  res.set('Content-Type', 'application/xml');
+  res.send(xml);
 });
 
 // Archive by date

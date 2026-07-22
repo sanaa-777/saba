@@ -360,6 +360,55 @@ document.addEventListener('DOMContentLoaded', () => {
     $('.media-modal-close', modal)?.addEventListener('click', () => closeModal(modal));
   });
 
+  /* ============================================
+     Live News Checker — polls for new articles every 2 minutes
+     ============================================ */
+  let lastCheckedAt = new Date().toISOString();
+  const newsCheckerInterval = 120000; // 2 minutes
+
+  function checkForNewNews() {
+    fetch(`/api/new-news-count?since=${encodeURIComponent(lastCheckedAt)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.count > 0) {
+          showNewNewsBanner(data.count);
+        }
+        lastCheckedAt = new Date().toISOString();
+      })
+      .catch(() => {});
+  }
+
+  function showNewNewsBanner(count) {
+    // Remove existing banner
+    const existing = document.querySelector('.new-news-banner');
+    if (existing) existing.remove();
+
+    const banner = document.createElement('a');
+    banner.href = '/';
+    banner.className = 'new-news-banner';
+    banner.innerHTML = `<span class="new-news-dot"></span> ${count} خبر جديد — اضغط للتحديث`;
+    banner.style.cssText = `
+      position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:9999;
+      background:linear-gradient(135deg,#1a237e,#0d47a1);color:#fff;
+      padding:10px 24px;border-radius:0 0 12px 12px;font-size:14px;font-weight:600;
+      font-family:inherit;text-decoration:none;display:flex;align-items:center;gap:8px;
+      box-shadow:0 4px 20px rgba(0,0,0,0.3);animation:slideDown 300ms ease;
+    `;
+    document.body.appendChild(banner);
+
+    // Auto-hide after 15 seconds
+    setTimeout(() => {
+      banner.style.opacity = '0';
+      banner.style.transition = 'opacity 300ms ease';
+      setTimeout(() => banner.remove(), 300);
+    }, 15000);
+  }
+
+  // Start checking only on homepage
+  if (window.location.pathname === '/') {
+    setInterval(checkForNewNews, newsCheckerInterval);
+  }
+
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       closeModal(videoModal);
@@ -432,3 +481,39 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('img[data-src]').forEach(img => imgObserver.observe(img));
   }
 });
+
+// Copy link to clipboard
+function copyLink() {
+  const url = window.location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('تم نسخ الرابط');
+    }).catch(() => {
+      fallbackCopy(url);
+    });
+  } else {
+    fallbackCopy(url);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  showToast('تم نسخ الرابط');
+}
+
+function showToast(msg) {
+  const existing = document.querySelector('.copy-toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'copy-toast';
+  toast.textContent = msg;
+  toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a237e;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;font-family:inherit;z-index:9999;animation:slideUp 300ms ease;';
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 300ms'; setTimeout(() => toast.remove(), 300); }, 2000);
+}

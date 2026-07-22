@@ -41,8 +41,10 @@
       <tr>
         <th>#</th>
         <th>الحالة</th>
+        <th>المحفِّز</th>
         <th>أخبار جديدة</th>
         <th>مكررة</th>
+        <th>صور</th>
         <th>بدأ</th>
         <th>انتهى</th>
         <th>المدة</th>
@@ -54,8 +56,10 @@
       <tr>
         <td><%= logs.length - i %></td>
         <td><span class="badge badge-<%= log.status %>"><%= log.status === 'success' ? '✅ نجح' : log.status === 'error' ? '❌ فشل' : '⏳ يعمل' %></span></td>
+        <td><span class="badge badge-running" style="font-size:10px"><%= log.triggered_by === 'vercel_cron' ? '▲ Vercel' : log.triggered_by === 'github_actions' ? '🐙 GitHub' : log.triggered_by === 'admin_manual' ? '👤 يدوي' : log.triggered_by || 'غير معروف' %></span></td>
         <td style="color:#059669;font-weight:600"><%= log.new_count || 0 %></td>
         <td style="color:#d97706"><%= log.duplicate_count || 0 %></td>
+        <td style="color:#6366f1"><%= log.image_count || 0 %></td>
         <td><%= new Date(log.started_at).toLocaleString('ar-YE') %></td>
         <td><%= log.finished_at ? new Date(log.finished_at).toLocaleString('ar-YE') : '-' %></td>
         <td><%= log.finished_at ? Math.round((new Date(log.finished_at) - new Date(log.started_at)) / 1000) + ' ث' : '-' %></td>

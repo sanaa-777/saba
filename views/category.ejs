@@ -53,7 +53,7 @@
                   <div class="story-meta">
                     <span><%= new Date(news[0].published_at).toLocaleDateString('ar-YE') %></span>
                     <span><%= news[0].views %> مشاهدة</span>
-                    <span><%= news[0].source || settings.site_name || 'أوتر' %></span>
+                    <span><%= news[0].source || settings.site_name || 'أوتر نيوز' %></span>
                   </div>
                 </div>
               </article>
@@ -61,12 +61,12 @@
               <div class="compact-stack">
                 <% news.slice(1, 5).forEach(item => { %>
                   <article class="story-card-horizontal">
-                    <a class="story-card-media" href="/news/<%= item.id %>">
+                    <a class="story-card-media" href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>">
                       <% if (item.image) { %><img src="<%= item.image %>" alt="<%= item.title %><% } %>" loading="lazy">
                     </a>
                     <div class="story-card-body">
                       <span class="eyebrow"><%= item.category_name || category.name_ar %></span>
-                      <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
+                      <h3><a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>"><%= item.title %></a></h3>
                       <% if (item.summary) { %><p><%= item.summary %></p><% } %>
                       <div class="story-meta">
                         <span><%= timeAgo(item.published_at) %></span>
@@ -91,13 +91,13 @@
               <% news.forEach(item => { %>
                 <article class="news-list-item">
                   <div class="list-item-image">
-                    <a href="/news/<%= item.id %>">
+                    <a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>">
                       <% if (item.image) { %><img src="<%= item.image %>" alt="<%= item.title %><% } %>" loading="lazy">
                     </a>
                   </div>
                   <div class="list-item-content">
                     <span class="eyebrow"><%= item.category_name || category.name_ar %></span>
-                    <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
+                    <h3><a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>"><%= item.title %></a></h3>
                     <% if (item.summary) { %><p><%= item.summary %></p><% } %>
                     <div class="card-meta">
                       <span><%= timeAgo(item.published_at) %></span>

@@ -1,0 +1,77 @@
+<%- include('header') %>
+
+<div class="admin-card">
+  <div class="admin-card-header">
+    <div>
+      <h3>🗑️ سلة المحذوفات</h3>
+      <p class="admin-card-subtitle">الأخبار المحذوفة يمكن استعادتها أو حذفها نهائيًا.</p>
+    </div>
+    <a href="/admin/news" class="btn btn-secondary">العودة للأخبار</a>
+  </div>
+
+  <% if (trash.news.length === 0) { %>
+  <div style="text-align:center;padding:40px;color:#94a3b8;">
+    <div style="font-size:40px;margin-bottom:8px;">🗑️</div>
+    <p>سلة المحذوفات فارغة</p>
+  </div>
+  <% } else { %>
+  <div class="admin-card-body" style="padding:0;">
+    <table class="admin-table">
+      <thead>
+        <tr><th>#</th><th>العنوان</th><th>التصنيف</th><th>تاريخ الحذف</th><th>إجراءات</th></tr>
+      </thead>
+      <tbody>
+        <% trash.news.forEach(item => { %>
+        <tr id="trash-row-<%= item.id %>">
+          <td><%= item.id %></td>
+          <td><%= item.title.length > 50 ? item.title.substring(0, 50) + '…' : item.title %></td>
+          <td><%= item.category_name || '-' %></td>
+          <td><%= new Date(item.deleted_at).toLocaleString('ar-YE') %></td>
+          <td class="actions">
+            <button class="btn btn-sm btn-success" onclick="restoreArticle(<%= item.id %>)">استعادة</button>
+            <button class="btn btn-sm btn-danger" onclick="permanentDelete(<%= item.id %>)">حذف نهائي</button>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+
+<script>
+async function restoreArticle(id) {
+  if (!confirm('هل تريد استعادة هذا الخبر؟')) return;
+  try {
+    const res = await fetch('/api/v1/admin/news/restore/' + id, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    });
+    const result = await res.json();
+    if (result.success) {
+      const row = document.getElementById('trash-row-' + id);
+      if (row) { row.style.transition = 'opacity 0.3s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 300); }
+    } else { alert(result.message || 'تعذر الاستعادة'); }
+  } catch(e) { alert('تعذر الاتصال بالخادم'); }
+}
+
+async function permanentDelete(id) {
+  if (!confirm('⚠️ تحذير: الحذف نهائي ولا يمكن استعادة الخبر!\n\nهل تريد المتابعة؟')) return;
+  if (!confirm('تأكيد أخير: سيتم حذف الخبر نهائيًا من قاعدة البيانات.')) return;
+  try {
+    const res = await fetch('/api/v1/admin/news/permanent-delete/' + id, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    });
+    const result = await res.json();
+    if (result.success) {
+      const row = document.getElementById('trash-row-' + id);
+      if (row) { row.style.transition = 'opacity 0.3s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 300); }
+    } else { alert(result.message || 'تعذر الحذف'); }
+  } catch(e) { alert('تعذر الاتصال بالخادم'); }
+}
+</script>
+
+<%- include('footer') %>

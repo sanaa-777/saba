@@ -1,0 +1,81 @@
+# GitHub Actions: Automatic News Fetching
+# Runs every 15 minutes as a backup for Vercel Cron
+# Uses CRON_SECRET to authenticate with the fetch endpoint
+
+name: Fetch News
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  
+  # Allow manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Trigger source label'
+        required: false
+        default: 'github_actions'
+
+# Prevent concurrent runs
+concurrency:
+  group: fetch-news
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Trigger news fetch
+        id: fetch
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X GET "${{ secrets.SITE_URL }}/api/cron/fetch-news?source=github" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "User-Agent: GitHub-Actions-NewsFetcher/1.0" \
+            -H "Accept: application/json" \
+            --max-time 120 \
+            --retry 2 \
+            --retry-delay 10)
+          
+          # Split response body and status code
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          # Parse response
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Fetch completed successfully"
+            SKIPPED=$(echo "$BODY" | jq -r '.skipped // false')
+            if [ "$SKIPPED" = "true" ]; then
+              echo "⏭️ Fetch was skipped (another fetch in progress)"
+              REASON=$(echo "$BODY" | jq -r '.reason // "unknown"')
+              echo "Reason: $REASON"
+            else
+              TOTAL_NEW=$(echo "$BODY" | jq -r '.totalNew // 0')
+              TOTAL_IMAGES=$(echo "$BODY" | jq -r '.totalImages // 0')
+              ERRORS=$(echo "$BODY" | jq -r '.errors // 0')
+              SOURCES=$(echo "$BODY" | jq -r '.sources // 0')
+              echo "📰 New articles: $TOTAL_NEW"
+              echo "🖼️ Images extracted: $TOTAL_IMAGES"
+              echo "📡 Sources processed: $SOURCES"
+              echo "❌ Errors: $ERRORS"
+              
+              if [ "$ERRORS" -gt 0 ]; then
+                echo "::warning::$ERRORS source(s) had errors"
+              fi
+            fi
+          else
+            echo "::error::Fetch failed with HTTP $HTTP_CODE"
+            echo "Response: $BODY"
+            exit 1
+          fi
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "::error::News fetch workflow failed. Check the logs above for details."

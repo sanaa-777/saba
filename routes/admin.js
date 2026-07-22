@@ -4,9 +4,49 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { getDb } = require('../db/init');
 const { requireAuth } = require('../middleware/auth');
 const { createNews, updateNews, deleteNews } = require('../services/news-admin-service');
+const { logAction } = require('../services/audit-service');
+const rateLimit = require('express-rate-limit');
+
+// Async error wrapper — catches unhandled promise rejections in route handlers
+const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
+// CSRF token helpers (synchronous, no external dependency needed)
+function generateCsrfToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function csrfMiddleware(req, res, next) {
+  if (req.method === 'GET') {
+    // Generate and store token in session
+    const token = generateCsrfToken();
+    req.session.csrfToken = token;
+    res.locals.csrfToken = token;
+    return next();
+  }
+  // For POST/PUT/PATCH/DELETE, verify token
+  const sessionToken = req.session.csrfToken;
+  const bodyToken = req.body._csrf || req.headers['x-csrf-token'];
+  if (!sessionToken || !bodyToken || sessionToken !== bodyToken) {
+    return res.status(403).render('error', { title: 'خطأ أمني', error: 'انتهت صلاحية الجلسة. يرجى إعادة تحميل الصفحة.' });
+  }
+  // Rotate token after use
+  req.session.csrfToken = generateCsrfToken();
+  res.locals.csrfToken = req.session.csrfToken;
+  next();
+}
+
+// Rate limiter for login
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per window
+  message: 'تم تجاوز عدد المحاولات المسموحة. حاول مرة أخرى بعد 15 دقيقة.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 // Multer configuration - memory storage for Vercel serverless
 const upload = multer({
@@ -21,9 +61,25 @@ const upload = multer({
   }
 });
 
-// Helper: save uploaded file as data URI
-function saveImageToDb(file) {
+// Helper: save uploaded file — Cloudinary if configured, else base64 fallback
+const cloudinaryService = require('../services/cloudinary-service');
+
+async function saveImage(file) {
   if (!file) return null;
+  
+  // Try Cloudinary first
+  if (cloudinaryService.isConfigured()) {
+    try {
+      const result = await cloudinaryService.uploadImage(file.buffer, {
+        folder: 'awtar-news/articles'
+      });
+      if (result && result.url) return result.url;
+    } catch (err) {
+      console.error('Cloudinary upload failed, falling back to base64:', err.message);
+    }
+  }
+  
+  // Fallback: base64 data URI
   const base64 = file.buffer.toString('base64');
   return `data:${file.mimetype};base64,${base64}`;
 }
@@ -37,21 +93,30 @@ function getMediaType(mimetype) {
 // Login page
 router.get('/login', (req, res) => {
   if (req.session.admin) return res.redirect('/admin');
-  res.render('admin/login', { title: 'تسجيل الدخول', error: null });
+  const csrfToken = generateCsrfToken();
+  req.session.csrfToken = csrfToken;
+  res.render('admin/login', { title: 'تسجيل الدخول', error: null, csrfToken });
 });
 
 // Login POST
-router.post('/login', (req, res) => {
-  const { username, password } = req.body;
+router.post('/login', loginLimiter, (req, res) => {
+  const { username, password, _csrf } = req.body;
+  if (!req.session.csrfToken || _csrf !== req.session.csrfToken) {
+    return res.render('admin/login', { title: 'تسجيل الدخول', error: 'انتهت صلاحية الجلسة، أعد تحميل الصفحة', csrfToken: generateCsrfToken() });
+  }
   const db = getDb();
   const user = db.prepare('SELECT * FROM admin_users WHERE username = ?').get(username);
 
   if (!user || !bcrypt.compareSync(password, user.password)) {
-    return res.render('admin/login', { title: 'تسجيل الدخول', error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
+    logAction(db, { admin: username, action: 'login_failed', entityType: 'auth', newValues: { reason: 'invalid_credentials' }, ip: req.ip });
+    const newToken = generateCsrfToken();
+    req.session.csrfToken = newToken;
+    return res.render('admin/login', { title: 'تسجيل الدخول', error: 'اسم المستخدم أو كلمة المرور غير صحيحة', csrfToken: newToken });
   }
 
   db.prepare('UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
   req.session.admin = { id: user.id, username: user.username, name: user.name, role: user.role };
+  logAction(db, { admin: user.username, action: 'login_success', entityType: 'auth', entityId: user.id, ip: req.ip });
   res.redirect('/admin');
 });
 
@@ -60,6 +125,9 @@ router.get('/logout', (req, res) => {
   req.session = null;
   res.redirect('/admin/login');
 });
+
+// Apply CSRF to all routes below (after login/logout)
+router.use(csrfMiddleware);
 
 // Dashboard
 router.get('/', requireAuth, (req, res) => {
@@ -113,29 +181,18 @@ router.get('/news/create', requireAuth, (req, res) => {
 });
 
 // News create POST
-router.post('/news/create', requireAuth, upload.single('image'), (req, res) => {
+router.post('/news/create', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
   const db = getDb();
   const { title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags } = req.body;
-  const image = saveImageToDb(req.file);
+  const image = await saveImage(req.file);
 
-  createNews(db, {
-    title,
-    summary,
-    content,
-    category_id,
-    source,
-    is_breaking,
-    is_slider,
-    is_featured,
-    status,
-    meta_title,
-    meta_description,
-    tags,
-    image
+  const newsId = createNews(db, {
+    title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags, image
   });
 
+  logAction(db, { admin: req.session.admin?.username, action: 'create', entityType: 'news', entityId: newsId, newValues: { title, status, category_id }, ip: req.ip });
   res.redirect('/admin/news');
-});
+}));
 
 // News edit form
 router.get('/news/edit/:id', requireAuth, (req, res) => {
@@ -149,12 +206,12 @@ router.get('/news/edit/:id', requireAuth, (req, res) => {
 });
 
 // News edit POST
-router.post('/news/edit/:id', requireAuth, upload.single('image'), (req, res) => {
+router.post('/news/edit/:id', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
   const db = getDb();
   const { title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags, keep_image } = req.body;
   const existing = db.prepare('SELECT image FROM news WHERE id = ?').get(req.params.id);
   let image = existing ? existing.image : null;
-  if (req.file) image = saveImageToDb(req.file);
+  if (req.file) image = await saveImage(req.file);
   if (!keep_image && !req.file) image = null;
 
   updateNews(db, req.params.id, {
@@ -174,13 +231,35 @@ router.post('/news/edit/:id', requireAuth, upload.single('image'), (req, res) =>
   });
 
   res.redirect('/admin/news');
-});
+}));
 
 // News delete
 router.post('/news/delete/:id', requireAuth, (req, res) => {
   const db = getDb();
+  const article = db.prepare('SELECT id, title FROM news WHERE id = ?').get(req.params.id);
   deleteNews(db, req.params.id);
+  logAction(db, { admin: req.session.admin?.username, action: 'delete', entityType: 'news', entityId: req.params.id, oldValues: { title: article?.title }, ip: req.ip });
   res.redirect('/admin/news');
+});
+
+// Trash page
+router.get('/trash', requireAuth, (req, res) => {
+  const db = getDb();
+  const { getTrashedNews } = require('../services/news-admin-service');
+  const page = parseInt(req.query.page) || 1;
+  const trash = getTrashedNews(db, { page });
+  res.render('admin/trash', { title: 'سلة المحذوفات', admin: req.session.admin, trash, pagination: { page: trash.page, totalPages: trash.totalPages, total: trash.total } });
+});
+
+// Bulk actions
+router.post('/news/bulk', requireAuth, (req, res) => {
+  const db = getDb();
+  const { ids, action, categoryId, tagIds } = req.body;
+  if (!ids || !Array.isArray(ids) || ids.length === 0) return res.json({ success: false, message: 'لم يتم تحديد أخبار' });
+  const { bulkAction } = require('../services/news-admin-service');
+  const result = bulkAction(db, { ids, action, categoryId, tagIds: tagIds ? normalizeTagIds(tagIds) : [] });
+  logAction(db, { admin: req.session.admin?.username, action: `bulk_${action}`, entityType: 'news', newValues: { count: ids.length, action, result }, ip: req.ip });
+  res.json({ success: true, message: `تم تنفيذ العملية على ${result.success} خبر`, ...result });
 });
 
 // Categories
@@ -252,18 +331,18 @@ router.get('/media', requireAuth, (req, res) => {
   res.render('admin/media', { title: 'إدارة الوسائط', admin: req.session.admin, media, filterType: type || '' });
 });
 
-router.post('/media/upload', requireAuth, upload.single('file'), (req, res) => {
+router.post('/media/upload', requireAuth, upload.single('file'), asyncHandler(async (req, res) => {
   const db = getDb();
   if (!req.file) return res.redirect('/admin/media');
   const { title, description, category, type } = req.body;
-  const filePath = saveImageToDb(req.file);
+  const filePath = await saveImage(req.file);
   const mediaType = type || getMediaType(req.file.mimetype);
 
   db.prepare('INSERT INTO media (type, title, file_path, description, category, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)').run(
     mediaType, title || req.file.originalname, filePath, description || '', category || ''
   );
   res.redirect('/admin/media');
-});
+}));
 
 router.post('/media/delete/:id', requireAuth, (req, res) => {
   const db = getDb();
@@ -338,11 +417,11 @@ router.get('/slider', requireAuth, (req, res) => {
   res.render('admin/slider', { title: 'إدارة السلايدر', admin: req.session.admin, sliderItems, news });
 });
 
-router.post('/slider/create', requireAuth, upload.single('image'), (req, res) => {
+router.post('/slider/create', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
   const db = getDb();
   const { news_id, title, summary, link, sort_order, is_active } = req.body;
   let image = null;
-  if (req.file) image = saveImageToDb(req.file);
+  if (req.file) image = await saveImage(req.file);
   else if (news_id) {
     const n = db.prepare('SELECT image FROM news WHERE id = ?').get(news_id);
     if (n) image = n.image;
@@ -351,20 +430,20 @@ router.post('/slider/create', requireAuth, upload.single('image'), (req, res) =>
     news_id || null, image, title, summary, link, sort_order || 0, is_active ? 1 : 0
   );
   res.redirect('/admin/slider');
-});
+}));
 
-router.post('/slider/edit/:id', requireAuth, upload.single('image'), (req, res) => {
+router.post('/slider/edit/:id', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
   const db = getDb();
   const { news_id, title, summary, link, sort_order, is_active, keep_image } = req.body;
   const existing = db.prepare('SELECT image FROM slider WHERE id = ?').get(req.params.id);
   let image = existing ? existing.image : null;
-  if (req.file) image = saveImageToDb(req.file);
+  if (req.file) image = await saveImage(req.file);
   if (!keep_image && !req.file) image = null;
   db.prepare('UPDATE slider SET news_id=?, image=?, title=?, summary=?, link=?, sort_order=?, is_active=? WHERE id=?').run(
     news_id || null, image, title, summary, link, sort_order || 0, is_active ? 1 : 0, req.params.id
   );
   res.redirect('/admin/slider');
-});
+}));
 
 router.post('/slider/delete/:id', requireAuth, (req, res) => {
   const db = getDb();
@@ -379,28 +458,28 @@ router.get('/ads', requireAuth, (req, res) => {
   res.render('admin/ads', { title: 'إدارة الإعلانات', admin: req.session.admin, ads });
 });
 
-router.post('/ads/create', requireAuth, upload.single('image'), (req, res) => {
+router.post('/ads/create', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
   const db = getDb();
   const { name, position, code, link, start_date, end_date, is_active } = req.body;
-  const image = saveImageToDb(req.file);
+  const image = await saveImage(req.file);
   db.prepare('INSERT INTO advertisements (name, position, code, image, link, start_date, end_date, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
     name, position, code, image, link, start_date, end_date, is_active ? 1 : 0
   );
   res.redirect('/admin/ads');
-});
+}));
 
-router.post('/ads/edit/:id', requireAuth, upload.single('image'), (req, res) => {
+router.post('/ads/edit/:id', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
   const db = getDb();
   const { name, position, code, link, start_date, end_date, is_active, keep_image } = req.body;
   const existing = db.prepare('SELECT image FROM advertisements WHERE id = ?').get(req.params.id);
   let image = existing ? existing.image : null;
-  if (req.file) image = saveImageToDb(req.file);
+  if (req.file) image = await saveImage(req.file);
   if (!keep_image && !req.file) image = null;
   db.prepare('UPDATE advertisements SET name=?, position=?, code=?, image=?, link=?, start_date=?, end_date=?, is_active=? WHERE id=?').run(
     name, position, code, image, link, start_date, end_date, is_active ? 1 : 0, req.params.id
   );
   res.redirect('/admin/ads');
-});
+}));
 
 router.post('/ads/delete/:id', requireAuth, (req, res) => {
   const db = getDb();
@@ -514,16 +593,26 @@ router.get('/newsletter', requireAuth, (req, res) => {
   res.render('admin/newsletter', { title: 'النشرة البريدية', admin: req.session.admin, subscribers, campaigns, stats });
 });
 
-router.post('/newsletter/send', requireAuth, (req, res) => {
+router.post('/newsletter/send', requireAuth, asyncHandler(async (req, res) => {
   const db = getDb();
   const { subject, content } = req.body;
   if (!subject || !content) return res.redirect('/admin/newsletter');
   
-  const subscribers = db.prepare('SELECT * FROM newsletter_subscribers WHERE is_active = 1').all();
-  db.prepare('INSERT INTO newsletter_campaigns (subject, content, sent_at, recipients_count, status) VALUES (?, ?, CURRENT_TIMESTAMP, ?, 1)').run(subject, content, subscribers.length);
-  console.log(`Newsletter "${subject}" sent to ${subscribers.length} subscribers`);
+  const newsletterService = require('../services/newsletter-service');
+  let result;
+  
+  if (newsletterService.isConfigured()) {
+    result = await newsletterService.sendCampaign(db, subject, content);
+  } else {
+    // Fallback: just record the campaign
+    const subscribers = db.prepare('SELECT * FROM newsletter_subscribers WHERE is_active = 1').all();
+    db.prepare('INSERT INTO newsletter_campaigns (subject, content, sent_at, recipients_count, status) VALUES (?, ?, CURRENT_TIMESTAMP, ?, 1)').run(subject, content, subscribers.length);
+    result = { sent: subscribers.length, failed: 0, errors: [] };
+  }
+  
+  console.log(`Newsletter "${subject}": sent=${result.sent}, failed=${result.failed}`);
   res.redirect('/admin/newsletter');
-});
+}));
 
 router.post('/newsletter/subscribers/delete/:id', requireAuth, (req, res) => {
   const db = getDb();
@@ -610,7 +699,7 @@ router.post('/sources/delete/:id', requireAuth, (req, res) => {
 router.post('/sources/fetch/:id', requireAuth, async (req, res) => {
   const db = getDb();
   try {
-    const result = await fetchAndSave(db, parseInt(req.params.id));
+    const result = await fetchAndSave(db, parseInt(req.params.id), 'admin_manual');
     res.json({ success: true, ...result });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -621,8 +710,8 @@ router.post('/sources/fetch/:id', requireAuth, async (req, res) => {
 router.post('/sources/fetch-all', requireAuth, async (req, res) => {
   const db = getDb();
   try {
-    const results = await fetchAllActive(db);
-    res.json({ success: true, results });
+    const result = await fetchAllActive(db, 'admin_manual');
+    res.json({ success: true, ...result });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -643,6 +732,31 @@ router.get('/sources/detect', requireAuth, (req, res) => {
   if (!url) return res.json({ type: 'unknown' });
   const type = detectSourceType(url);
   res.json({ type });
+});
+
+// Audit Log page
+router.get('/audit-log', requireAuth, (req, res) => {
+  const db = getDb();
+  const { getLogs } = require('../services/audit-service');
+  const page = parseInt(req.query.page) || 1;
+  const filterAction = req.query.action || '';
+  const result = getLogs(db, { page, limit: 50, action: filterAction || undefined });
+  res.render('admin/audit-log', {
+    title: 'سجل العمليات',
+    admin: req.session.admin,
+    logs: result.logs,
+    filterAction,
+    pagination: { page: result.page, totalPages: result.totalPages, total: result.total }
+  });
+});
+
+// Global error handler for async routes
+router.use((err, req, res, next) => {
+  console.error('Admin route error:', err.message);
+  if (req.xhr || req.headers.accept?.includes('application/json')) {
+    return res.status(500).json({ success: false, error: 'حدث خطأ غير متوقع' });
+  }
+  res.status(500).render('error', { title: 'خطأ', error: 'حدث خطأ غير متوقع' });
 });
 
 module.exports = router;

@@ -6,7 +6,10 @@
       <h3>إدارة الأخبار</h3>
       <p class="admin-card-subtitle">عرض منظم للأرشيف التحريري مع فلاتر سريعة وإجراءات مباشرة.</p>
     </div>
-    <a href="/admin/news/create" class="btn btn-primary">إضافة خبر</a>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="/admin/news/create" class="btn btn-primary">إضافة خبر</a>
+      <a href="/admin/trash" class="btn btn-secondary">🗑️ سلة المحذوفات</a>
+    </div>
   </div>
   <div class="filters-bar">
     <select onchange="window.location.href='?status='+this.value+'&category=<%= filters.category || '' %>'">
@@ -27,12 +30,14 @@
       <table class="admin-table">
         <thead>
           <tr>
+            <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"></th>
             <th>#</th><th>صورة</th><th>العنوان</th><th>التصنيف</th><th>عاجل</th><th>الحالة</th><th>المشاهدات</th><th>إجراءات</th>
           </tr>
         </thead>
         <tbody>
           <% news.forEach(function(item) { %>
           <tr id="news-row-<%= item.id %>">
+            <td><input type="checkbox" class="news-checkbox" value="<%= item.id %>"></td>
             <td><%= item.id %></td>
             <td>
               <% if (item.image) { %>
@@ -48,7 +53,8 @@
             <td><%= item.views.toLocaleString() %></td>
             <td class="actions">
               <a href="/admin/news/edit/<%= item.id %>" class="btn btn-sm btn-primary">تعديل</a>
-              <a href="/news/<%= item.id %>" class="btn btn-sm btn-secondary" target="_blank">عرض</a>
+              <a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>" class="btn btn-sm btn-secondary" target="blank">عرض</a>
+              <button class="btn btn-sm <%= item.status === 1 ? 'btn-warning' : 'btn-success' %>" onclick="togglePublish(<%= item.id %>, <%= item.status %>)"><%= item.status === 1 ? 'إلغاء النشر' : 'نشر' %></button>
               <button class="btn btn-sm btn-danger" onclick="deleteNews(<%= item.id %>)">حذف</button>
             </td>
           </tr>
@@ -56,6 +62,14 @@
         </tbody>
       </table>
     </div>
+  </div>
+
+  <!-- Bulk Actions Bar -->
+  <div id="bulkBar" style="display:none;position:sticky;bottom:0;background:#1a237e;color:#fff;padding:12px 20px;border-radius:0 0 12px 12px;display:none;align-items:center;gap:12px;z-index:10;">
+    <span id="bulkCount">0 خبر محدد</span>
+    <button class="btn btn-sm" style="background:#4caf50;color:#fff" onclick="bulkAction('publish">نشر</button>
+    <button class="btn btn-sm" style="background:#ff9800;color:#fff" onclick="bulkAction('unpublish')">إلغاء النشر</button>
+    <button class="btn btn-sm" style="background:#f44336;color:#fff" onclick="bulkAction('trash')">نقل للسلة</button>
   </div>
   <% if (pagination.totalPages > 1) { %>
   <div class="admin-pagination">
@@ -82,12 +96,12 @@ async function parseDeleteResponse(response) {
 }
 
 async function deleteNews(id) {
-  if (!confirm('هل أنت متأكد من حذف هذا الخبر؟')) return;
+  if (!confirm('هل أنت متأكد من حذف هذا الخبر؟ لن يتم استعادته تلقائيًا.')) return;
   try {
     const res = await fetch('/api/v1/admin/news/delete/' + id, {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Accept': 'application/json' }
+      headers: { 'Accept': 'application/json', 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' }
     });
     const result = await parseDeleteResponse(res);
     if (res.ok && result.success) {
@@ -101,8 +115,71 @@ async function deleteNews(id) {
       alert(result.message || 'تعذر حذف الخبر');
     }
   } catch (err) {
-    alert('تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى');
+    alert('تعذر الاتصال بالخادم');
   }
+}
+
+async function togglePublish(id, currentStatus) {
+  const newStatus = currentStatus === 1 ? 0 : 1;
+  const action = newStatus === 1 ? 'نشر' : 'إلغاء النشر';
+  if (!confirm(`هل تريد ${action} هذا الخبر؟`)) return;
+  try {
+    const res = await fetch('/api/v1/admin/news/toggle-status/' + id, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const result = await parseDeleteResponse(res);
+    if (res.ok && result.success) {
+      location.reload();
+    } else {
+      alert(result.message || 'تعذر تغيير الحالة');
+    }
+  } catch (err) {
+    alert('تعذر الاتصال بالخادم');
+  }
+}
+
+// Bulk Actions
+function toggleSelectAll(cb) {
+  document.querySelectorAll('.news-checkbox').forEach(c => c.checked = cb.checked);
+  updateBulkBar();
+}
+
+document.querySelectorAll('.news-checkbox').forEach(c => c.addEventListener('change', updateBulkBar));
+
+function updateBulkBar() {
+  const checked = document.querySelectorAll('.news-checkbox:checked');
+  const bar = document.getElementById('bulkBar');
+  const count = document.getElementById('bulkCount');
+  if (checked.length > 0) {
+    bar.style.display = 'flex';
+    count.textContent = checked.length + ' خبر محدد';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+async function bulkAction(action) {
+  const ids = Array.from(document.querySelectorAll('.news-checkbox:checked')).map(c => parseInt(c.value));
+  if (ids.length === 0) return;
+  const actionNames = { publish: 'نشر', unpublish: 'إلغاء النشر', trash: 'نقل للسلة' };
+  if (!confirm(`هل تريد ${actionNames[action] || action} ${ids.length} خبر؟`)) return;
+  try {
+    const res = await fetch('/admin/news/bulk', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, action })
+    });
+    const result = await res.json();
+    if (result.success) {
+      location.reload();
+    } else {
+      alert(result.message || 'تعذر تنفيذ العملية');
+    }
+  } catch(e) { alert('تعذر الاتصال'); }
 }
 </script>
 

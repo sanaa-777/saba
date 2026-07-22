@@ -46,7 +46,7 @@
   <div class="mobile-header-inner">
     <!-- Logo -->
     <a href="/" class="mobile-logo">
-      <img src="<%= settings.site_logo || '/images/logo.png' %>" alt="<%= settings.site_name || 'أوتر' %>" width="36" height="36">
+      <img src="<%= settings.site_logo || '/images/logo.png' %>" alt="<%= settings.site_name || 'أوتر نيوز' %>" width="36" height="36">
     </a>
     <!-- Search Bar -->
     <form class="mobile-search" action="/search" method="GET">
@@ -72,9 +72,9 @@
       <div class="brand-wrap">
         <div class="logo">
           <a href="/">
-            <img src="<%= settings.site_logo || '/images/logo.png' %>" alt="<%= settings.site_name || 'أوتر' %>" class="logo-img" width="54" height="54">
+            <img src="<%= settings.site_logo || '/images/logo.png' %>" alt="<%= settings.site_name || 'أوتر نيوز' %>" class="logo-img" width="54" height="54">
             <div class="logo-text">
-              <h1><%= settings.site_name || 'أوتر' %></h1>
+              <h1><%= settings.site_name || 'أوتر نيوز' %></h1>
               <span>premium news</span>
             </div>
           </a>
@@ -103,9 +103,8 @@
           <span>عاجل</span>
         </a>
         <% if (session && session.admin) { %>
-        <a href="/admin" class="header-login-link">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          <span>لوحة التحكم</span>
+        <a href="/admin" class="header-icon-btn" aria-label="لوحة التحكم" title="لوحة التحكم">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         </a>
         <% } %>
         <button class="header-icon-btn theme-toggle" id="themeToggle" aria-label="الوضع الداكن">
@@ -184,8 +183,8 @@
 <div class="mobile-panel-overlay" id="mobilePanelOverlay"></div>
 <aside class="mobile-panel" id="mobilePanel">
   <div class="mobile-panel-header">
-    <img src="<%= settings.site_logo || '/images/logo.png' %>" alt="<%= settings.site_name || 'أوتر' %>" width="32" height="32">
-    <span class="mobile-panel-title"><%= settings.site_name || 'أوتر' %></span>
+    <img src="<%= settings.site_logo || '/images/logo.png' %>" alt="<%= settings.site_name || 'أوتر نيوز' %>" width="32" height="32">
+    <span class="mobile-panel-title"><%= settings.site_name || 'أوتر نيوز' %></span>
     <button class="mobile-panel-close" id="mobilePanelClose" aria-label="إغلاق">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
     </button>
@@ -222,12 +221,6 @@
     </ul>
     <div class="mobile-panel-divider"></div>
     <div class="mobile-panel-footer">
-      <% if (session && session.admin) { %>
-      <a href="/admin" class="mobile-panel-admin">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        لوحة التحكم
-      </a>
-      <% } %>
       <div class="mobile-panel-social">
         <a href="<%= settings.facebook || '#' %>" target="_blank" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3h-3.1V8.2c0-.9.3-1.5 1.5-1.5h1.7V4c-.3 0-1.3-.1-2.5-.1-2.4 0-4 1.5-4 4.2V10H7.5v3h2.6v8h3.4z"/></svg></a>
         <a href="<%= settings.twitter || '#' %>" target="_blank" aria-label="X"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.4L1 2h6.5l4.4 5.8L18.9 2zm-1.1 18h1.7L6.6 3.9H4.8L17.8 20z"/></svg></a>

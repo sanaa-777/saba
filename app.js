@@ -1,11 +1,13 @@
 const express = require('express');
 const compression = require('compression');
 const cookieSession = require('cookie-session');
+const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const http = require('http');
 const { initDatabase, getDb } = require('./db/init');
 const { languageMiddleware } = require('./middleware/language');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const server = http.createServer(app);
@@ -43,11 +45,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cookieParser());
 app.use(cookieSession({
   name: 'awtar_session',
-  keys: [process.env.SESSION_SECRET || 'awtar-secret-key-2024'],
+  keys: [process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex')],
   maxAge: 24 * 60 * 60 * 1000,
-  sameSite: 'lax',
-  httpOnly: false,
-  secure: false
+  sameSite: 'strict',
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production'
 }));
 
 // Language middleware
@@ -56,57 +58,59 @@ app.use(languageMiddleware);
 // Global middleware
 app.use((req, res, next) => {
   try {
-  const db = getDb();
-  res.locals.categories = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order').all();
-  res.locals.settings = {};
-  const settings = db.prepare('SELECT * FROM settings').all();
-  settings.forEach(s => { res.locals.settings[s.key] = s.value; });
-  res.locals.currentPath = req.path;
-  res.locals.session = req.session;
+    const db = getDb();
+    res.locals.categories = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order').all();
+    res.locals.settings = {};
+    const settings = db.prepare('SELECT * FROM settings').all();
+    settings.forEach(s => { res.locals.settings[s.key] = s.value; });
+    res.locals.currentPath = req.path;
+    res.locals.session = req.session;
 
-  try {
-    res.locals.activePoll = db.prepare("SELECT * FROM polls WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1").get();
-    if (res.locals.activePoll) {
-      res.locals.activePollOptions = db.prepare("SELECT * FROM poll_options WHERE poll_id = ? ORDER BY id").all(res.locals.activePoll.id);
-      const totalVotes = db.prepare("SELECT SUM(votes) as total FROM poll_options WHERE poll_id = ?").get(res.locals.activePoll.id).total || 0;
-      res.locals.activePollTotalVotes = totalVotes;
-    }
-  } catch (e) {
-    res.locals.activePoll = null;
-  }
-
-  try {
-    // Get manual breaking news
-    const manualBreaking = db.prepare("SELECT id, text, link, sort_order, created_at FROM breaking_news WHERE is_active = 1").all();
-    // Auto-sync: add recent عاجl news to breaking_news if not already there
     try {
-      const urgentCat = (res.locals.categories || []).find(c => c.slug === 'breaking');
-      if (urgentCat) {
-        const recentUrgent = db.prepare('SELECT id, title FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 10').all(urgentCat.id);
-        for (const n of recentUrgent) {
-          const exists = db.prepare('SELECT id FROM breaking_news WHERE link = ?').get('/news/' + n.id);
-          if (!exists) {
-            db.prepare('INSERT INTO breaking_news (text, link, is_active, sort_order) VALUES (?, ?, 1, 999)').run(n.title, '/news/' + n.id);
+      res.locals.activePoll = db.prepare("SELECT * FROM polls WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1").get();
+      if (res.locals.activePoll) {
+        res.locals.activePollOptions = db.prepare("SELECT * FROM poll_options WHERE poll_id = ? ORDER BY id").all(res.locals.activePoll.id);
+        const totalVotes = db.prepare("SELECT SUM(votes) as total FROM poll_options WHERE poll_id = ?").get(res.locals.activePoll.id).total || 0;
+        res.locals.activePollTotalVotes = totalVotes;
+      }
+    } catch (e) {
+      res.locals.activePoll = null;
+    }
+
+    try {
+      // Get manual breaking news
+      const manualBreaking = db.prepare("SELECT id, text, link, sort_order, created_at FROM breaking_news WHERE is_active = 1").all();
+      // Auto-sync: add recent urgent news to breaking_news if not already there
+      let autoBreaking = [];
+      try {
+        const urgentCat = (res.locals.categories || []).find(c => c.slug === 'breaking');
+        if (urgentCat) {
+          const recentUrgent = db.prepare('SELECT id, title FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 10').all(urgentCat.id);
+          for (const n of recentUrgent) {
+            const exists = db.prepare('SELECT id FROM breaking_news WHERE link = ?').get('/news/' + n.id);
+            if (!exists) {
+              db.prepare('INSERT INTO breaking_news (text, link, is_active, sort_order) VALUES (?, ?, 1, 999)').run(n.title, '/news/' + n.id);
+            }
           }
         }
-      }
-    } catch(e) {}
-    // Combine and deduplicate, limit to 10
-    const allBreaking = [...manualBreaking, ...autoBreaking];
-    const seen = new Set();
-    res.locals.breakingNews = allBreaking.filter(item => {
-      if (seen.has(item.text)) return false;
-      seen.add(item.text);
-      return true;
-    }).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).slice(0, 10);
-  } catch (e) {
-    res.locals.breakingNews = [];
-  }
+        // Re-fetch all active breaking news after auto-sync
+        autoBreaking = db.prepare("SELECT id, text, link, sort_order, created_at FROM breaking_news WHERE is_active = 1").all();
+      } catch(e) {}
+      // Combine and deduplicate, limit to 10
+      const allBreaking = [...manualBreaking, ...autoBreaking];
+      const seen = new Set();
+      res.locals.breakingNews = allBreaking.filter(item => {
+        if (seen.has(item.text)) return false;
+        seen.add(item.text);
+        return true;
+      }).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).slice(0, 10);
+    } catch (e) {
+      res.locals.breakingNews = [];
+    }
 
-  next();
+    next();
   } catch (err) {
     console.error('Global middleware error:', err.message);
-    // Set defaults so views don't crash
     res.locals.categories = res.locals.categories || [];
     res.locals.settings = res.locals.settings || {};
     res.locals.currentPath = req.path;
@@ -167,30 +171,176 @@ app.get('/api/images/:id', (req, res) => {
   res.send(buffer);
 });
 
-// Image proxy for blocked sources
-app.get('/api/proxy-image', async (req, res) => {
+// ============================================================
+// Image Proxy — SSRF-safe, open to external news image sources
+// ============================================================
+const BLOCKED_HOSTS = new Set([
+  'localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]',
+  '169.254.169.254', 'metadata.google.internal',
+  'metadata.google.com', 'instance-data'
+]);
+
+function isPrivateIP(hostname) {
+  const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!ipv4Match) return false;
+  const [, a, b, c] = ipv4Match.map(Number);
+  // Block RFC1918 + link-local + loopback
+  if (a === 10) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 169 && b === 254) return true;
+  if (a === 127) return true;
+  if (a === 0) return true;
+  return false;
+}
+
+function isSafeProxyUrl(urlStr) {
+  try {
+    const parsed = new URL(urlStr);
+    // Only allow http/https
+    if (!['http:', 'https:'].includes(parsed.protocol)) return false;
+    const hostname = parsed.hostname.toLowerCase();
+    // Block known bad hosts
+    if (BLOCKED_HOSTS.has(hostname)) return false;
+    // Block private IPs
+    if (isPrivateIP(hostname)) return false;
+    // Block internal domains
+    if (hostname.endsWith('.internal') || hostname.endsWith('.local') || hostname.endsWith('.localhost')) return false;
+    // Block non-standard ports (allow 80, 443, and empty)
+    if (parsed.port && !['80', '443', ''].includes(parsed.port)) return false;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// In-memory cache for proxied images (simple LRU with TTL)
+const imageCache = new Map();
+const IMAGE_CACHE_MAX = 500;
+const IMAGE_CACHE_TTL = 3600000; // 1 hour
+
+function getCachedImage(key) {
+  const entry = imageCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > IMAGE_CACHE_TTL) {
+    imageCache.delete(key);
+    return null;
+  }
+  return entry;
+}
+
+function setCachedImage(key, buffer, contentType) {
+  if (imageCache.size >= IMAGE_CACHE_MAX) {
+    const firstKey = imageCache.keys().next().value;
+    imageCache.delete(firstKey);
+  }
+  imageCache.set(key, { buffer, contentType, ts: Date.now(), size: buffer.length });
+}
+
+// Rate limit proxy endpoint
+const proxyLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { error: 'Too many proxy requests' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.get('/api/proxy-image', proxyLimiter, async (req, res) => {
   const imageUrl = req.query.url;
-  if (!imageUrl) return res.status(400).send('Missing url parameter');
+  if (!imageUrl) return res.status(400).json({ error: 'Missing url parameter' });
+  if (!isSafeProxyUrl(imageUrl)) return res.status(403).json({ error: 'URL not allowed' });
+
+  // Check cache first
+  const cacheKey = imageUrl;
+  const cached = getCachedImage(cacheKey);
+  if (cached) {
+    res.set('Content-Type', cached.contentType);
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.set('X-Cache', 'HIT');
+    return res.send(cached.buffer);
+  }
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
     const response = await fetch(imageUrl, {
       signal: controller.signal,
+      redirect: 'follow',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'image/*,*/*',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9,ar;q=0.8',
         'Referer': new URL(imageUrl).origin + '/'
       }
     });
     clearTimeout(timeout);
+
     if (!response.ok) return res.status(response.status).send('Image not available');
+
     const contentType = response.headers.get('content-type') || 'image/jpeg';
+    // Validate content type is actually an image
+    if (!contentType.startsWith('image/')) return res.status(400).json({ error: 'Not an image' });
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    // Limit max size to 10MB
+    if (buffer.length > 10 * 1024 * 1024) return res.status(413).json({ error: 'Image too large' });
+    // Skip tiny images (likely tracking pixels)
+    if (buffer.length < 100) return res.status(400).json({ error: 'Image too small' });
+
+    // Cache it
+    setCachedImage(cacheKey, buffer, contentType);
+
     res.set('Content-Type', contentType);
     res.set('Cache-Control', 'public, max-age=86400');
-    const buffer = Buffer.from(await response.arrayBuffer());
+    res.set('X-Cache', 'MISS');
     res.send(buffer);
   } catch (err) {
-    res.status(500).send('Proxy error');
+    if (err.name === 'AbortError') {
+      return res.status(504).json({ error: 'Image fetch timeout' });
+    }
+    console.error('Proxy error:', imageUrl, err.message);
+    res.status(502).json({ error: 'Failed to fetch image' });
+  }
+});
+
+// Cron endpoint for automatic news fetching (Vercel Cron + GitHub Actions)
+app.get('/api/cron/fetch-news', async (req, res) => {
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
+    const authHeader = req.headers.authorization;
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+  }
+
+  // Detect trigger source
+  const userAgent = req.headers['user-agent'] || '';
+  let triggeredBy = 'vercel_cron';
+  if (userAgent.includes('GitHub Actions')) triggeredBy = 'github_actions';
+  else if (req.query.source === 'github') triggeredBy = 'github_actions';
+  else if (req.query.source === 'supabase') triggeredBy = 'supabase';
+
+  try {
+    const db = getDb();
+    const { fetchAllActive } = require('./services/news-fetcher');
+    const result = await fetchAllActive(db, triggeredBy);
+
+    if (result.skipped) {
+      return res.json({ success: true, skipped: true, reason: result.reason });
+    }
+
+    res.json({
+      success: true,
+      triggeredBy,
+      totalNew: result.totalNew,
+      totalImages: result.totalImages,
+      errors: result.errors,
+      sources: result.results.length
+    });
+  } catch (err) {
+    console.error('Cron fetch error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -231,7 +381,7 @@ function broadcastBreakingNews(data) {
 // Start server (local only)
 if (!isVercel) {
   server.listen(PORT, () => {
-    console.log(`Awtar running on http://localhost:${PORT}`);
+    console.log(`Awtar News running on http://localhost:${PORT}`);
   });
 }
 

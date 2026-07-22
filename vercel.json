@@ -11,5 +11,11 @@
       "src": "/(.*)",
       "dest": "app.js"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/fetch-news",
+      "schedule": "*/15 * * * *"
+    }
   ]
 }

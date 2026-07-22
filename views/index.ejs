@@ -14,22 +14,30 @@
     if (diff < 2592000) return 'قبل ' + Math.floor(diff / 604800) + ' أسابيع';
     return date.toLocaleDateString('ar-YE');
   }
+
+  // Helper: article link
+  function articleLink(item) { return '/news/' + (item.news_id || item.id); }
+  function articleTitle(item) { return item.news_title || item.title; }
 %>
 <main class="home-page">
   <div class="container">
-    <% const lead = sliderItems && sliderItems.length ? sliderItems[0] : (featuredNews && featuredNews.length ? featuredNews[0] : latestNews[0]); %>
-    <% const secondaryStories = sliderItems && sliderItems.length > 1 ? sliderItems.slice(1, 5) : latestNews.slice(1, 5); %>
+
+    <%/* ═══════════════════════════════════════════════
+        SECTION 1: HERO — Lead story + secondary + latest rail
+        ═══════════════════════════════════════════════ */%>
+    <% const lead = sliderItems && sliderItems.length ? sliderItems[0] : null; %>
+    <% const secondaryStories = sliderItems && sliderItems.length > 1 ? sliderItems.slice(1, 5) : []; %>
 
     <% if (lead) { %>
-    <section class="home-top-grid">
+    <section class="home-top-grid" aria-label="أهم الأخبار">
       <div class="hero-cluster">
         <article class="hero-primary<%= !lead.image ? ' no-image' : '' %>">
-          <a href="/news/<%= lead.news_id || lead.id %>">
+          <a href="<%= articleLink(lead) %>">
             <div class="hero-primary-media">
-              <% if (lead.image) { %><img src="<%= lead.image %>" alt="<%= lead.title || lead.news_title %>"><% } %>
+              <% if (lead.image) { %><img src="<%= lead.image %>" alt="<%= articleTitle(lead) %>" decoding="async" onload="this.classList.add('loaded')"><% } %>
               <div class="hero-primary-overlay">
                 <span class="eyebrow accent"><%= lead.category_name || '' %></span>
-                <h2><%= lead.title || lead.news_title %></h2>
+                <h2><%= articleTitle(lead) %></h2>
                 <% if (lead.summary) { %><p><%= lead.summary %></p><% } %>
                 <div class="story-meta inverse">
                   <span><%= timeAgo(lead.published_at) %></span>
@@ -39,17 +47,18 @@
           </a>
         </article>
 
+        <% if (secondaryStories.length > 0) { %>
         <div class="hero-secondary-list">
           <% secondaryStories.forEach(item => { %>
             <article class="hero-secondary-card<%= !item.image ? ' no-image' : '' %>">
               <% if (item.image) { %>
-              <a class="hero-secondary-card-media" href="/news/<%= item.news_id || item.id %>">
-                <img src="<%= item.image %>" alt="<%= item.title || item.news_title %>" loading="lazy">
+              <a class="hero-secondary-card-media" href="<%= articleLink(item) %>">
+                <img src="<%= item.image %>" alt="<%= articleTitle(item) %>" loading="lazy" decoding="async" onload="this.classList.add('loaded')">
               </a>
               <% } %>
               <div class="hero-secondary-card-content">
                 <span class="eyebrow"><%= item.category_name || 'أخبار' %></span>
-                <h3><a href="/news/<%= item.news_id || item.id %>"><%= item.title || item.news_title %></a></h3>
+                <h3><a href="<%= articleLink(item) %>"><%= articleTitle(item) %></a></h3>
                 <div class="story-meta">
                   <span><%= timeAgo(item.published_at) %></span>
                 </div>
@@ -57,13 +66,16 @@
             </article>
           <% }) %>
         </div>
+        <% } %>
       </div>
 
-      <aside class="latest-rail">
+      <%/* Latest News Rail — sidebar */%>
+      <% if (latestNews && latestNews.length > 0) { %>
+      <aside class="latest-rail" aria-label="آخر الأخبار">
         <div class="latest-rail-header">
           <div>
             <h3>غرفة الأخبار</h3>
-            <p>تحديثات سريعة مرتبة حسب التوقيت والأهمية.</p>
+            <p>تحديثات سريعة مرتبة حسب التوقيت.</p>
           </div>
           <span class="live-dot"></span>
         </div>
@@ -72,8 +84,8 @@
             <article class="latest-feed-item">
               <div class="latest-feed-index"><%= index + 1 %></div>
               <div>
-                <span class="eyebrow <%= item.is_breaking ? 'accent' : '' %>"><%= item.category_name || 'عام' %></span>
-                <h4><a href="/news/<%= item.id %>"><%= item.title %></a></h4>
+                <span class="eyebrow"><%= item.category_name || 'عام' %></span>
+                <h4><a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>"><%= item.title %></a></h4>
                 <div class="story-meta">
                   <span><%= timeAgo(item.published_at) %></span>
                 </div>
@@ -82,21 +94,74 @@
           <% }) %>
         </div>
       </aside>
-    </section>
-    <% if (sidebarAds && sidebarAds.length > 0) { const ad = sidebarAds[0]; %>
-    <section class="home-ad-block sidebar-ad">
-      <% if (ad.code) { %>
-        <div class="home-ad-inner"><%- ad.code %></div>
-      <% } else { %>
-        <a class="home-ad-inner" href="<%= ad.link || '#' %>" <%= ad.link ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
-          <% if (ad.image) { %><img src="<%= ad.image %>" alt="<%= ad.name %>" loading="lazy"><% } %>
-          <div class="home-ad-caption"><span>إعلان جانبي</span><strong><%= ad.name %></strong></div>
-        </a>
       <% } %>
     </section>
     <% } %>
+
+    <%/* ═══════════════════════════════════════════════
+        SECTION 2: BREAKING NEWS — urgent grid (only if real urgent news exist)
+        ═══════════════════════════════════════════════ */%>
+    <% if (urgentNews && urgentNews.length > 0) { %>
+    <section class="section-block urgent-section" aria-label="أخبار عاجلة">
+      <div class="section-header">
+        <div>
+          <h2><span class="urgent-badge">⚡ عاجل</span> آخر الأخبار العاجلة</h2>
+        </div>
+        <a href="/category/<%= urgentNews[0].category_id %>" class="section-link">المزيد</a>
+      </div>
+      <div class="urgent-grid">
+        <% urgentNews.forEach(item => { %>
+          <article class="urgent-card<%= !item.image ? ' no-image' : '' %>">
+            <% if (item.image) { %>
+            <a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>"><img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy" decoding="async"></a>
+            <% } %>
+            <div class="urgent-card-body">
+              <span class="cat-badge urgent-cat-badge">عاجل</span>
+              <span class="urgent-time"><%= timeAgo(item.published_at) %></span>
+              <h4><a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>"><%= item.title %></a></h4>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    </section>
     <% } %>
 
+    <%/* ═══════════════════════════════════════════════
+        SECTION 3: EDITORS PICK — featured stories
+        ═══════════════════════════════════════════════ */%>
+    <% if (featuredNews && featuredNews.length > 0) { %>
+    <section class="section-block" aria-label="قصص مختارة">
+      <div class="section-header">
+        <div>
+          <h2>قصص مختارة</h2>
+          <p>مجموعة تحريرية من أبرز العناوين.</p>
+        </div>
+      </div>
+      <div class="home-featured-strip">
+        <% featuredNews.forEach(item => { %>
+          <article class="story-card<%= !item.image ? ' no-image' : '' %>">
+            <% if (item.image) { %>
+            <a class="story-card-media" href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>">
+              <img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy" decoding="async">
+            </a>
+            <% } %>
+            <div class="story-card-body">
+              <span class="eyebrow"><%= item.category_name || 'عام' %></span>
+              <h3><a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>"><%= item.title %></a></h3>
+              <% if (item.summary) { %><p><%= item.summary %></p><% } %>
+              <div class="story-meta">
+                <span><%= timeAgo(item.published_at) %></span>
+              </div>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+    <% } %>
+
+    <%/* ═══════════════════════════════════════════════
+        SECTION 4: AD BREAK
+        ═══════════════════════════════════════════════ */%>
     <% if (headerAds && headerAds.length > 0) { const ad = headerAds[0]; %>
     <section class="home-ad-block">
       <% if (ad.code) { %>
@@ -110,118 +175,26 @@
     </section>
     <% } %>
 
-    <% if (urgentNews && urgentNews.length > 0) { %>
-    <section class="section-block urgent-section">
-      <div class="section-header">
-        <div>
-          <h2><span class="urgent-badge">⚡ عاجل</span> آخر الأخبار العاجلة</h2>
-          <p>تحديثات مستمرة لأهم الأحداث العاجلة.</p>
-        </div>
-        <a href="/category/<%= urgentNews[0].category_id %>" class="section-link">المزيد</a>
-      </div>
-      <div class="urgent-grid">
-        <% urgentNews.slice(0, 6).forEach(item => { %>
-          <article class="urgent-card<%= !item.image ? ' no-image' : '' %>">
-            <% if (item.image) { %>
-            <a href="/news/<%= item.id %>"><img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy"></a>
-            <% } %>
-            <div class="urgent-card-body">
-              <span class="cat-badge urgent-cat-badge">عاجل</span>
-              <span class="urgent-time"><%= timeAgo(item.published_at) %></span>
-              <h4><a href="/news/<%= item.id %>"><%= item.title %></a></h4>
-            </div>
-          </article>
-        <% }) %>
-      </div>
-    </section>
-    <% } %>
-
-    <% if (featuredNews && featuredNews.length > 0) { %>
-    <section class="section-block">
-      <div class="section-header">
-        <div>
-          <h2>قصص مختارة</h2>
-          <p>مجموعة تحريرية مختارة من أبرز العناوين ذات الأولوية.</p>
-        </div>
-      </div>
-      <div class="home-featured-strip">
-        <% featuredNews.slice(0, 4).forEach(item => { %>
-          <article class="story-card<%= !item.image ? ' no-image' : '' %>">
-            <% if (item.image) { %>
-            <a class="story-card-media" href="/news/<%= item.id %>">
-              <img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy">
-            </a>
-            <% } %>
-            <div class="story-card-body">
-              <span class="eyebrow"><%= item.category_name || 'عام' %></span>
-              <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
-              <% if (item.summary) { %><p><%= item.summary %></p><% } %>
-              <div class="story-meta">
-                <span><%= timeAgo(item.published_at) %></span>
-              </div>
-            </div>
-          </article>
-        <% }) %>
-      </div>
-    </section>
-    <% } %>
-
-    <% if (latestNews && latestNews.length > 0) { %>
-    <section class="section-block">
-      <div class="section-header">
-        <div>
-          <h2>آخر الأخبار</h2>
-          <p>بطاقات سريعة للمتابعة السلسة عبر الهاتف وسطح المكتب.</p>
-        </div>
-        <a href="/search" class="section-link">تصفح الأرشيف</a>
-      </div>
-      <div class="latest-scroll">
-        <% latestNews.slice(0, 8).forEach(item => { %>
-          <article class="latest-card<%= !item.image ? ' no-image' : '' %>">
-            <% if (item.image) { %><a href="/news/<%= item.id %>"><img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy"></a><% } %>
-            <div class="latest-card-body">
-              <span class="cat-badge"><%= item.category_name || 'عام' %></span>
-              <h4><a href="/news/<%= item.id %>"><%= item.title %></a></h4>
-              <div class="story-meta">
-                <span><%= timeAgo(item.published_at) %></span>
-              </div>
-            </div>
-          </article>
-        <% }) %>
-      </div>
-    </section>
-    <% } %>
-
-    <% if (contentAds && contentAds.length > 0) { const ad = contentAds[0]; %>
-    <section class="home-ad-block content-ad">
-      <% if (ad.code) { %>
-        <div class="home-ad-inner"><%- ad.code %></div>
-      <% } else { %>
-        <a class="home-ad-inner" href="<%= ad.link || '#' %>" <%= ad.link ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
-          <% if (ad.image) { %><img src="<%= ad.image %>" alt="<%= ad.name %>" loading="lazy"><% } %>
-          <div class="home-ad-caption"><span>إعلان</span><strong><%= ad.name %></strong></div>
-        </a>
-      <% } %>
-    </section>
-    <% } %>
-
+    <%/* ═══════════════════════════════════════════════
+        SECTION 5: CATEGORY SECTIONS — each with unique articles
+        ═══════════════════════════════════════════════ */%>
     <% if (categories && categoryNews) { %>
-      <% categories.forEach(cat => { %>
+      <% categories.forEach((cat, catIndex) => { %>
         <% const items = categoryNews[cat.id] || []; %>
         <% if (items.length > 0) { %>
-          <section class="section-block">
+          <section class="section-block" aria-label="<%= cat.name_ar %>">
             <div class="section-header">
               <div>
                 <h2><a href="/category/<%= cat.id %>"><%= cat.name_ar %></a></h2>
-                <p>متابعة مركزة لملف <%= cat.name_ar %> بعناوين أساسية وداعمة.</p>
               </div>
               <a href="/category/<%= cat.id %>" class="section-link">المزيد</a>
             </div>
             <div class="category-module">
+              <%/* Lead story for category */%>
               <article class="story-card<%= !items[0].image ? ' no-image' : '' %>">
                 <% if (items[0].image) { %>
                 <a class="story-card-media" href="/news/<%= items[0].id %>">
-                  <img src="<%= items[0].image %>" alt="<%= items[0].title %>" loading="lazy">
+                  <img src="<%= items[0].image %>" alt="<%= items[0].title %>" loading="lazy" decoding="async">
                 </a>
                 <% } %>
                 <div class="story-card-body">
@@ -233,17 +206,19 @@
                   </div>
                 </div>
               </article>
+              <%/* Side stories */%>
+              <% if (items.length > 1) { %>
               <div class="story-stack">
                 <% items.slice(1, 5).forEach(item => { %>
                   <article class="story-card-horizontal<%= !item.image ? ' no-image' : '' %>">
                     <% if (item.image) { %>
-                    <a class="story-card-media" href="/news/<%= item.id %>">
-                      <img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy">
+                    <a class="story-card-media" href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>">
+                      <img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy" decoding="async">
                     </a>
                     <% } %>
                     <div class="story-card-body">
                       <span class="eyebrow"><%= item.category_name || cat.name_ar %></span>
-                      <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
+                      <h3><a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>"><%= item.title %></a></h3>
                       <div class="story-meta">
                         <span><%= timeAgo(item.published_at) %></span>
                       </div>
@@ -251,25 +226,44 @@
                   </article>
                 <% }) %>
               </div>
+              <% } %>
             </div>
           </section>
+
+          <%/* Ad between categories (after 2nd category) */%>
+          <% if (catIndex === 1 && contentAds && contentAds.length > 0) { const ad = contentAds[0]; %>
+          <section class="home-ad-block content-ad">
+            <% if (ad.code) { %>
+              <div class="home-ad-inner"><%- ad.code %></div>
+            <% } else { %>
+              <a class="home-ad-inner" href="<%= ad.link || '#' %>" <%= ad.link ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+                <% if (ad.image) { %><img src="<%= ad.image %>" alt="<%= ad.name %>" loading="lazy"><% } %>
+                <div class="home-ad-caption"><span>إعلان</span><strong><%= ad.name %></strong></div>
+              </a>
+            <% } %>
+          </section>
+          <% } %>
+
         <% } %>
       <% }) %>
     <% } %>
 
+    <%/* ═══════════════════════════════════════════════
+        SECTION 6: MEDIA
+        ═══════════════════════════════════════════════ */%>
     <% if ((videos && videos.length) || (galleries && galleries.length) || (publications && publications.length)) { %>
-    <section class="section-block">
+    <section class="section-block" aria-label="وسائط">
       <div class="section-header">
         <div>
           <h2>وسائط ومكتبات</h2>
-          <p>فيديو وصور ومنشورات بتنسيق عرض غني ومرن.</p>
+          <p>فيديو وصور ومنشورات.</p>
         </div>
       </div>
       <div class="media-strip">
         <% (videos || []).slice(0, 2).forEach(item => { %>
           <article class="media-card video-card" onclick="openVideoModal('<%= item.file_path %>', '<%= item.title %>')">
             <div class="media-card-media">
-              <img src="<%= item.thumbnail || item.file_path %>" alt="<%= item.title %>" loading="lazy">
+              <img src="<%= item.thumbnail || item.file_path %>" alt="<%= item.title %>" loading="lazy" decoding="async">
               <span class="play-btn">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
               </span>
@@ -281,11 +275,10 @@
             </div>
           </article>
         <% }) %>
-
         <% (galleries || []).slice(0, 1).forEach(item => { %>
           <article class="media-card">
             <a class="media-card-media" href="/gallery/<%= item.id %>">
-              <img src="<%= item.thumbnail || item.file_path %>" alt="<%= item.title %>" loading="lazy">
+              <img src="<%= item.thumbnail || item.file_path %>" alt="<%= item.title %>" loading="lazy" decoding="async">
             </a>
             <div class="media-card-body">
               <span class="eyebrow">صور</span>
@@ -294,11 +287,10 @@
             </div>
           </article>
         <% }) %>
-
         <% (publications || []).slice(0, 1).forEach(item => { %>
           <article class="media-card">
             <a class="media-card-media" href="/publications">
-              <img src="<%= item.thumbnail || item.file_path %>" alt="<%= item.title %>" loading="lazy">
+              <img src="<%= item.thumbnail || item.file_path %>" alt="<%= item.title %>" loading="lazy" decoding="async">
             </a>
             <div class="media-card-body">
               <span class="eyebrow">منشور</span>
@@ -311,6 +303,9 @@
     </section>
     <% } %>
 
+    <%/* ═══════════════════════════════════════════════
+        SECTION 7: FOOTER AD
+        ═══════════════════════════════════════════════ */%>
     <% if (footerAds && footerAds.length > 0) { const ad = footerAds[0]; %>
     <section class="home-ad-block footer-ad">
       <% if (ad.code) { %>

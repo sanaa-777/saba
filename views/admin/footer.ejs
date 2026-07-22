@@ -12,6 +12,35 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
     if (window.innerWidth <= 768) toggleSidebar();
   });
 });
+
+// Auto-inject CSRF token into all forms
+(function() {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+  if (!csrfToken) return;
+  document.querySelectorAll('form[method="POST"]').forEach(form => {
+    if (!form.querySelector('input[name="_csrf"]')) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = '_csrf';
+      input.value = csrfToken;
+      form.appendChild(input);
+    }
+  });
+  // Add CSRF header to fetch requests
+  const origFetch = window.fetch;
+  window.fetch = function(url, opts) {
+    opts = opts || {};
+    opts.headers = opts.headers || {};
+    if (opts.method && opts.method.toUpperCase() === 'POST') {
+      if (opts.headers instanceof Headers) {
+        opts.headers.set('X-CSRF-Token', csrfToken);
+      } else {
+        opts.headers['X-CSRF-Token'] = csrfToken;
+      }
+    }
+    return origFetch(url, opts);
+  };
+})();
 </script>
 </body>
 </html>

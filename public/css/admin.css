@@ -515,3 +515,63 @@ body { color: #102033; }
   .admin-overview-card { flex-direction: column; align-items: stretch; }
   .content-metrics { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════
+   Phase 2: Admin Panel Polish
+   ═══════════════════════════════════════════════ */
+
+/* Modern card design */
+.admin-card {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow 200ms ease;
+}
+.admin-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+/* Better stat cards */
+.stat-card {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+/* Status badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Better buttons */
+.btn {
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 200ms ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Sidebar modern */
+.admin-sidebar {
+  border-right: 1px solid #e5e7eb;
+  background: linear-gradient(180deg, #1a237e 0%, #0d1b4e 100%);
+}

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getDb } = require('../db/init');
 const { createNews, updateNews, deleteNews } = require('../services/news-admin-service');
+const { logAction } = require('../services/audit-service');
 
 // ============================================
 // PUBLIC API ENDPOINTS
@@ -257,6 +258,7 @@ router.get('/settings', (req, res) => {
 // ============================================
 
 const { requireAuth } = require('../middleware/auth');
+const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 const multer = require('multer');
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -270,19 +272,29 @@ const upload = multer({
   }
 });
 
-function saveImageToDb(file) {
+const cloudinaryService = require('../services/cloudinary-service');
+
+async function saveImage(file) {
   if (!file) return null;
+  if (cloudinaryService.isConfigured()) {
+    try {
+      const result = await cloudinaryService.uploadImage(file.buffer, { folder: 'awtar-news/api' });
+      if (result && result.url) return result.url;
+    } catch (err) {
+      console.error('Cloudinary upload failed:', err.message);
+    }
+  }
   const base64 = file.buffer.toString('base64');
   return `data:${file.mimetype};base64,${base64}`;
 }
 
 // POST /api/v1/admin/news/create
-router.post('/admin/news/create', requireAuth, upload.single('image'), (req, res) => {
+router.post('/admin/news/create', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
   try {
     const db = getDb();
     const { title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags } = req.body;
     if (!title || !content) return res.status(400).json({ success: false, message: 'العنوان والمحتوى مطلوبان' });
-    const image = saveImageToDb(req.file);
+    const image = await saveImage(req.file);
     const newsId = createNews(db, {
       title,
       summary,
@@ -302,10 +314,10 @@ router.post('/admin/news/create', requireAuth, upload.single('image'), (req, res
   } catch (err) {
     res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
   }
-});
+}));
 
 // POST /api/v1/admin/news/edit/:id
-router.post('/admin/news/edit/:id', requireAuth, upload.single('image'), (req, res) => {
+router.post('/admin/news/edit/:id', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
   try {
     const db = getDb();
     const { title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags, keep_image } = req.body;
@@ -313,7 +325,7 @@ router.post('/admin/news/edit/:id', requireAuth, upload.single('image'), (req, r
     const existing = db.prepare('SELECT image FROM news WHERE id = ?').get(req.params.id);
     if (!existing) return res.status(404).json({ success: false, message: 'الخبر غير موجود' });
     let image = existing.image;
-    if (req.file) image = saveImageToDb(req.file);
+    if (req.file) image = await saveImage(req.file);
     else if (!keep_image) image = null;
 
     updateNews(db, req.params.id, {
@@ -336,17 +348,74 @@ router.post('/admin/news/edit/:id', requireAuth, upload.single('image'), (req, r
   } catch (err) {
     res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
   }
-});
+}));
 
 // POST /api/v1/admin/news/delete/:id
 router.post('/admin/news/delete/:id', requireAuth, (req, res) => {
   try {
     const db = getDb();
+    const article = db.prepare('SELECT id, title FROM news WHERE id = ?').get(req.params.id);
     deleteNews(db, req.params.id);
-    res.json({ success: true, message: 'تم حذف الخبر' });
+    logAction(db, { admin: req.session.admin?.username, action: 'delete', entityType: 'news', entityId: req.params.id, oldValues: { title: article?.title }, ip: req.ip });
+    res.json({ success: true, message: 'تم حذف الخبر ولن يعود تلقائيًا' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
   }
 });
 
+// POST /api/v1/admin/news/toggle-status/:id
+router.post('/admin/news/toggle-status/:id', requireAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const { status } = req.body;
+    const newStatus = status === 0 || status === '0' ? 0 : 1;
+    const publishedAt = newStatus === 1 ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null;
+    if (publishedAt) {
+      db.prepare('UPDATE news SET status = ?, published_at = COALESCE(published_at, ?), updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newStatus, publishedAt, req.params.id);
+    } else {
+      db.prepare('UPDATE news SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newStatus, req.params.id);
+    }
+    logAction(db, { admin: req.session.admin?.username, action: newStatus === 1 ? 'publish' : 'unpublish', entityType: 'news', entityId: req.params.id, newValues: { status: newStatus }, ip: req.ip });
+    res.json({ success: true, message: newStatus === 1 ? 'تم نشر الخبر' : 'تم إلغاء النشر' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
+  }
+});
+
+module.exports = router;
+
+// POST /api/v1/admin/news/restore/:id
+router.post('/admin/news/restore/:id', requireAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const { restoreNews } = require('../services/news-admin-service');
+    const success = restoreNews(db, req.params.id);
+    if (success) {
+      logAction(db, { admin: req.session.admin?.username, action: 'restore', entityType: 'news', entityId: req.params.id, ip: req.ip });
+      res.json({ success: true, message: 'تم استعادة الخبر' });
+    } else {
+      res.status(404).json({ success: false, message: 'الخبر غير موجود في سلة المحذوفات' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
+  }
+});
+
+// POST /api/v1/admin/news/permanent-delete/:id
+router.post('/admin/news/permanent-delete/:id', requireAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const { permanentDeleteNews } = require('../services/news-admin-service');
+    const article = db.prepare('SELECT id, title FROM news WHERE id = ?').get(req.params.id);
+    const success = permanentDeleteNews(db, req.params.id);
+    if (success) {
+      logAction(db, { admin: req.session.admin?.username, action: 'permanent_delete', entityType: 'news', entityId: req.params.id, oldValues: { title: article?.title }, ip: req.ip });
+      res.json({ success: true, message: 'تم الحذف نهائيًا' });
+    } else {
+      res.status(404).json({ success: false, message: 'الخبر غير موجود' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
+  }
+});
 module.exports = router;

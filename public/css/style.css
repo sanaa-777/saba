@@ -692,12 +692,25 @@ select:focus {
 .hero-primary {
   min-height: 540px;
   display: flex;
+  background: var(--surface-2, #1a1a2e);
+  border-radius: 20px;
+  overflow: hidden;
 }
 .hero-primary a { width: 100%; display: flex; flex-direction: column; }
 .hero-primary-media {
   position: relative;
   min-height: 100%;
   overflow: hidden;
+}
+.hero-primary-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 400ms ease, transform 500ms ease;
+  opacity: 0;
+}
+.hero-primary-media img.loaded {
+  opacity: 1;
 }
 .hero-primary-media img,
 .hero-primary img,
@@ -769,7 +782,15 @@ select:focus {
   padding: 10px;
   min-height: 124px;
 }
-.hero-secondary-card-media { border-radius: 16px; overflow: hidden; }
+.hero-secondary-card-media { border-radius: 16px; overflow: hidden; background: var(--surface-2, #1a1a2e); position: relative; }
+.hero-secondary-card-media img {
+  width: 100%;
+  aspect-ratio: 16/10;
+  object-fit: cover;
+  transition: opacity 400ms ease, transform 300ms ease;
+  opacity: 0;
+}
+.hero-secondary-card-media img.loaded { opacity: 1; }
 .hero-secondary-card-content {
   display: flex;
   flex-direction: column;
@@ -2114,4 +2135,232 @@ img {
   font-size: 11px;
   font-weight: 700;
   margin-bottom: 4px;
+}
+
+/* Live News Banner */
+@keyframes slideDown {
+  from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+.new-news-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4caf50; display: inline-block;
+  animation: pulse 1.5s infinite;
+}
+
+/* ═══════════════════════════════════════════════
+   Phase 2: Professional Polish
+   ═══════════════════════════════════════════════ */
+
+/* Better section dividers */
+.section-block {
+  margin-bottom: 48px;
+  position: relative;
+}
+.section-block::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #1a237e, #3f51b5);
+  border-radius: 2px;
+  margin-top: 32px;
+}
+.section-block:last-child::after { display: none; }
+
+/* Improved section headers */
+.section-header h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-1, #1a1a2e);
+}
+.section-header p {
+  font-size: 0.875rem;
+  color: var(--text-3, #64748b);
+  margin-top: 4px;
+}
+
+/* Category color accents */
+.category-module {
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--surface-1, #fff);
+  border: 1px solid var(--border-1, #e5e7eb);
+  padding: 20px;
+}
+
+/* Better story cards */
+.story-card {
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 250ms ease, box-shadow 250ms ease;
+  background: var(--surface-1, #fff);
+  border: 1px solid var(--border-1, #e5e7eb);
+}
+.story-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+}
+.story-card-media {
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+}
+.story-card-media img {
+  aspect-ratio: 16/10;
+  object-fit: cover;
+  width: 100%;
+  transition: transform 400ms ease;
+}
+.story-card:hover .story-card-media img {
+  transform: scale(1.03);
+}
+
+/* Urgent section styling */
+.urgent-section {
+  background: linear-gradient(135deg, #fff5f5, #fff);
+  border-radius: 20px;
+  padding: 28px;
+  border: 1px solid #fecaca;
+}
+.urgent-badge {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-block;
+  animation: pulse 2s infinite;
+}
+
+/* Featured strip */
+.home-featured-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* Better ad blocks */
+.home-ad-block {
+  margin: 32px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-1, #e5e7eb);
+}
+
+/* Media strip */
+.media-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+.media-card {
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 250ms ease, box-shadow 250ms ease;
+  background: var(--surface-1, #fff);
+  border: 1px solid var(--border-1, #e5e7eb);
+}
+.media-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+}
+
+/* Latest feed improvements */
+.latest-feed-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-1, #f1f5f9);
+  transition: background 200ms ease;
+}
+.latest-feed-item:hover {
+  background: var(--surface-2, #f8fafc);
+  border-radius: 8px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.latest-feed-index {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent, #1a237e);
+  min-width: 28px;
+  opacity: 0.4;
+}
+
+/* Better breadcrumbs */
+.breadcrumbs {
+  font-size: 0.8rem;
+  color: var(--text-3, #94a3b8);
+  margin-bottom: 20px;
+  padding: 12px 0;
+}
+.breadcrumbs a {
+  color: var(--text-2, #64748b);
+  transition: color 200ms ease;
+}
+.breadcrumbs a:hover { color: var(--accent, #1a237e); }
+.breadcrumbs .separator { margin: 0 8px; opacity: 0.4; }
+
+/* Print styles */
+@media print {
+  .site-header, .main-nav, .breaking-ticker, .sidebar,
+  .site-footer, .mobile-header, .mobile-panel, .media-modal,
+  .scroll-top-btn, .new-news-banner, .home-ad-block { display: none !important; }
+  .article-content { font-size: 12pt; line-height: 1.6; }
+  .article-image img { max-width: 100%; height: auto; }
+}
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Focus styles for accessibility */
+a:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent, #1a237e);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Better selection color */
+::selection {
+  background: rgba(26, 35, 126, 0.15);
+  color: inherit;
+}
+
+/* Social Sharing */
+.social-sharing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  margin: 16px 0;
+  border-top: 1px solid var(--border-1, #e5e7eb);
+  border-bottom: 1px solid var(--border-1, #e5e7eb);
+}
+.social-sharing > span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-2, #64748b);
+  margin-left: 8px;
+}
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border-1, #e5e7eb);
+  background: var(--surface-1, #fff);
+  color: var(--text-2, #64748b);
+  cursor: pointer;
+  transition: all 200ms ease;
+  text-decoration: none;
+}
+.share-btn:hover {
+  background: #1a237e;
+  color: #fff;
+  border-color: #1a237e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 35, 126, 0.2);
 }

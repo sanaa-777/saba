@@ -70,12 +70,15 @@
 
           <div class="social-sharing">
             <span><%= t('share') %></span>
-            <a href="https://www.facebook.com/sharer/sharer.php?u=<%= encodeURIComponent(currentPath) %>" target="_blank" rel="noopener" class="share-btn" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3h-3.1V8.2c0-.9.3-1.5 1.5-1.5h1.7V4c-.3 0-1.3-.1-2.5-.1-2.4 0-4 1.5-4 4.2V10H7.5v3h2.6v8h3.4z"/></svg></a>
-            <a href="https://twitter.com/intent/tweet?url=<%= encodeURIComponent(currentPath) %>&text=<%= encodeURIComponent(article.title) %>" target="_blank" rel="noopener" class="share-btn" aria-label="X"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.4L1 2h6.5l4.4 5.8L18.9 2zm-1.1 18h1.7L6.6 3.9H4.8L17.8 20z"/></svg></a>
-            <a href="https://wa.me/?text=<%= encodeURIComponent(article.title + ' ' + currentPath) %>" target="_blank" rel="noopener" class="share-btn" aria-label="WhatsApp"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5A11.9 11.9 0 0 0 12.1 0C5.5 0 .2 5.3.2 11.9c0 2.1.5 4.1 1.5 5.9L0 24l6.3-1.7a11.9 11.9 0 0 0 5.7 1.4h.1c6.6 0 11.9-5.3 11.9-11.9 0-3.2-1.2-6.2-3.5-8.3Zm-8.4 18.2h-.1a9.8 9.8 0 0 1-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4a9.9 9.9 0 0 1-1.5-5.2C2.2 6.4 6.7 2 12.1 2c2.6 0 5.1 1 7 2.9a9.7 9.7 0 0 1 2.9 7c0 5.4-4.4 9.8-9.9 9.8Zm5.4-7.3c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.4.1-.6.1-.1.3-.3.5-.5.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.1-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1.1 1-1.1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2.1-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3Z"/></svg></a>
-            <a href="https://t.me/share/url?url=<%= encodeURIComponent(currentPath) %>&text=<%= encodeURIComponent(article.title) %>" target="_blank" rel="noopener" class="share-btn" aria-label="Telegram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9.8 15.6 9.4 21c.6 0 .9-.3 1.3-.6l3-2.9 6.1 4.5c1.1.6 1.8.3 2.1-1l3.8-17.7h0c.4-1.8-.6-2.5-1.7-2.1L1.8 9.5c-1.7.7-1.7 1.7-.3 2.1l5.7 1.8L20.4 5c.6-.4 1.2-.2.7.2"/></svg></a>
-            <a href="mailto:?subject=<%= encodeURIComponent(article.title) %>&body=<%= encodeURIComponent(currentPath) %>" class="share-btn" aria-label="Email"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><path d="m22 6-10 7L2 6"></path></svg></a>
+            <% const shareUrl = encodeURIComponent((settings.site_url || 'https://awtar-news.vercel.app') + currentPath); %>
+            <% const shareTitle = encodeURIComponent(article.title); %>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=<%= shareUrl %>" target="_blank" rel="noopener" class="share-btn" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3h-3.1V8.2c0-.9.3-1.5 1.5-1.5h1.7V4c-.3 0-1.3-.1-2.5-.1-2.4 0-4 1.5-4 4.2V10H7.5v3h2.6v8h3.4z"/></svg></a>
+            <a href="https://twitter.com/intent/tweet?url=<%= shareUrl %>&text=<%= shareTitle %>" target="_blank" rel="noopener" class="share-btn" aria-label="X"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.4L1 2h6.5l4.4 5.8L18.9 2zm-1.1 18h1.7L6.6 3.9H4.8L17.8 20z"/></svg></a>
+            <a href="https://wa.me/?text=<%= shareTitle + '%20' + shareUrl %>" target="_blank" rel="noopener" class="share-btn" aria-label="WhatsApp"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5A11.9 11.9 0 0 0 12.1 0C5.5 0 .2 5.3.2 11.9c0 2.1.5 4.1 1.5 5.9L0 24l6.3-1.7a11.9 11.9 0 0 0 5.7 1.4h.1c6.6 0 11.9-5.3 11.9-11.9 0-3.2-1.2-6.2-3.5-8.3Zm-8.4 18.2h-.1a9.8 9.8 0 0 1-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4a9.9 9.9 0 0 1-1.5-5.2C2.2 6.4 6.7 2 12.1 2c2.6 0 5.1 1 7 2.9a9.7 9.7 0 0 1 2.9 7c0 5.4-4.4 9.8-9.9 9.8Zm5.4-7.3c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.4.1-.6.1-.1.3-.3.5-.5.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.1-.7-1.7-1-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1.1 1-1.1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2.1-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3Z"/></svg></a>
+            <a href="https://t.me/share/url?url=<%= shareUrl %>&text=<%= shareTitle %>" target="_blank" rel="noopener" class="share-btn" aria-label="Telegram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9.8 15.6 9.4 21c.6 0 .9-.3 1.3-.6l3-2.9 6.1 4.5c1.1.6 1.8.3 2.1-1l3.8-17.7h0c.4-1.8-.6-2.5-1.7-2.1L1.8 9.5c-1.7.7-1.7 1.7-.3 2.1l5.7 1.8L20.4 5c.6-.4 1.2-.2.7.2"/></svg></a>
+            <a href="mailto:?subject=<%= shareTitle %>&body=<%= shareUrl %>" class="share-btn" aria-label="Email"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><path d="m22 6-10 7L2 6"></path></svg></a>
             <button class="share-btn print" aria-label="Print"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 14h12v8H6z"></path></svg></button>
+            <button class="share-btn copy-link" onclick="copyLink()" aria-label="نسخ الرابط"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></button>
           </div>
 
           <section class="comments-section">
@@ -110,13 +113,13 @@
 
           <div class="article-nav">
             <% if (prevArticle) { %>
-            <a href="/news/<%= prevArticle.id %>" class="nav-prev">
+            <a href="/news/<%= prevArticle.id %>-<%= (prevArticle.slug || prevArticle.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>" class="nav-prev">
               <span>الخبر السابق</span>
               <h4><%= prevArticle.title.length > 80 ? prevArticle.title.substring(0, 80) + '…' : prevArticle.title %></h4>
             </a>
             <% } %>
             <% if (nextArticle) { %>
-            <a href="/news/<%= nextArticle.id %>" class="nav-next">
+            <a href="/news/<%= nextArticle.id %>-<%= (nextArticle.slug || nextArticle.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>" class="nav-next">
               <span>الخبر التالي</span>
               <h4><%= nextArticle.title.length > 80 ? nextArticle.title.substring(0, 80) + '…' : nextArticle.title %></h4>
             </a>
@@ -131,12 +134,12 @@
                 <article class="related-card<%= !item.image ? ' no-image' : '' %>">
                   <% if (item.image) { %>
                   <div class="card-image">
-                    <a href="/news/<%= item.id %>"><img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy"></a>
+                    <a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>"><img src="<%= item.image %>" alt="<%= item.title %>" loading="lazy"></a>
                   </div>
                   <% } %>
                   <div class="card-content">
                     <span class="eyebrow"><%= item.category_name || article.category_name %></span>
-                    <h4><a href="/news/<%= item.id %>"><%= item.title %></a></h4>
+                    <h4><a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>"><%= item.title %></a></h4>
                     <span class="card-date"><%= timeAgo(item.published_at) %></span>
                   </div>
                 </article>

@@ -1,4 +1,4 @@
-# Awtar - أوتر
+# Awtar News - أوتر نيوز
 
 Complete news website built with Node.js, Express, PostgreSQL/Supabase, and EJS templates. Uses Supabase PostgreSQL as the application database in deployment.
 

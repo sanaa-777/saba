@@ -1,0 +1,78 @@
+<%- include('header') %>
+
+<div class="admin-card">
+  <div class="admin-card-header">
+    <div>
+      <h3>📋 سجل العمليات</h3>
+      <p class="admin-card-subtitle">تتبع جميع العمليات الإدارية مع التواريخ والتفاصيل.</p>
+    </div>
+  </div>
+
+  <div class="filters-bar">
+    <select onchange="window.location.href='?action='+this.value">
+      <option value="">جميع العمليات</option>
+      <option value="create" <%= filterAction === 'create' ? 'selected' : '' %>>إضافة</option>
+      <option value="update" <%= filterAction === 'update' ? 'selected' : '' %>>تعديل</option>
+      <option value="delete" <%= filterAction === 'delete' ? 'selected' : '' %>>حذف</option>
+      <option value="publish" <%= filterAction === 'publish' ? 'selected' : '' %>>نشر</option>
+      <option value="unpublish" <%= filterAction === 'unpublish' ? 'selected' : '' %>>إلغاء نشر</option>
+      <option value="login" <%= filterAction === 'login' ? 'selected' : '' %>>تسجيل دخول</option>
+    </select>
+    <span class="filters-summary"><%= pagination.total %> عملية</span>
+  </div>
+
+  <div class="admin-card-body" style="padding:0;">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>المستخدم</th>
+          <th>العملية</th>
+          <th>النوع</th>
+          <th>المعرف</th>
+          <th>التفاصيل</th>
+          <th>التاريخ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (logs.length === 0) { %>
+        <tr><td colspan="7" style="text-align:center;padding:30px;color:#94a3b8;">لا توجد سجلات بعد</td></tr>
+        <% } %>
+        <% logs.forEach(log => { %>
+        <tr>
+          <td><%= log.id %></td>
+          <td><strong><%= log.admin_user || 'system' %></strong></td>
+          <td>
+            <span class="badge <%= log.action === 'delete' ? 'badge-danger' : log.action === 'create' ? 'badge-success' : log.action === 'update' ? 'badge-warning' : 'badge-info' %>">
+              <%= log.action === 'create' ? 'إضافة' : log.action === 'update' ? 'تعديل' : log.action === 'delete' ? 'حذف' : log.action === 'publish' ? 'نشر' : log.action === 'unpublish' ? 'إلغاء نشر' : log.action === 'login' ? 'دخول' : log.action %>
+            </span>
+          </td>
+          <td><%= log.entity_type || '-' %></td>
+          <td><%= log.entity_id || '-' %></td>
+          <td style="max-width:300px;font-size:12px;color:#64748b;">
+            <% if (log.old_values) { %>
+              <div>قبل: <%= log.old_values.substring(0, 80) %></div>
+            <% } %>
+            <% if (log.new_values) { %>
+              <div>بعد: <%= log.new_values.substring(0, 80) %></div>
+            <% } %>
+          </td>
+          <td><%= new Date(log.created_at).toLocaleString('ar-YE') %></td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if (pagination.totalPages > 1) { %>
+  <div class="admin-pagination">
+    <% if (pagination.page > 1) { %><a href="?page=<%= pagination.page - 1 %>&action=<%= filterAction || '' %>">السابق</a><% } %>
+    <% for (let i = Math.max(1, pagination.page - 2); i <= Math.min(pagination.totalPages, pagination.page + 2); i++) { %>
+      <a href="?page=<%= i %>&action=<%= filterAction || '' %>" <%= i === pagination.page ? 'class="active"' : '' %>><%= i %></a>
+    <% } %>
+    <% if (pagination.page < pagination.totalPages) { %><a href="?page=<%= pagination.page + 1 %>&action=<%= filterAction || '' %>">التالي</a><% } %>
+  </div>
+  <% } %>
+</div>
+
+<%- include('footer') %>

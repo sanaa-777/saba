@@ -11,12 +11,13 @@
   <div class="login-page">
     <div class="login-box">
       <div class="admin-brand-mark">A</div>
-      <h1>لوحة تحكم أوتر</h1>
+      <h1>لوحة تحكم أوتر نيوز</h1>
       <p class="subtitle">وصول آمن لإدارة الأخبار والوسائط والإعدادات</p>
       <% if (error) { %>
         <div class="error-msg"><%= error %></div>
       <% } %>
       <form method="POST" action="/admin/login">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <div class="form-group">
           <label>اسم المستخدم</label>
           <input type="text" name="username" required autofocus placeholder="أدخل اسم المستخدم">

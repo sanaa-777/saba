@@ -1,7 +1,7 @@
 {
-  "name": "awtar",
+  "name": "awtar-news",
   "version": "1.0.0",
-  "description": "Awtar News Website - أوتر",
+  "description": "Awtar News Website - أوتر نيوز",
   "main": "app.js",
   "scripts": {
     "start": "node start.js",

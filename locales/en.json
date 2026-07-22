@@ -1,6 +1,6 @@
 {
-  "site_name": "Awtar",
-  "site_name_en": "Awtar",
+  "site_name": "Awtar News",
+  "site_name_en": "Awtar News",
   "home": "Home",
   "search": "Search",
   "search_placeholder": "Search news...",
@@ -60,7 +60,7 @@
   "subscribe": "Subscribe",
   "email": "Email",
   "contact_us": "Contact Us",
-  "about": "About Awtar",
+  "about": "About Awtar News",
   "terms": "Terms of Use",
   "all_rights": "All Rights Reserved",
   "news_count": "news",
