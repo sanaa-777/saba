@@ -680,6 +680,32 @@ router.get('/sources', requireAuth, (req, res) => {
   res.render('admin/sources', { title: 'مصادر الأخبار', admin: req.session.admin, sources, categories });
 });
 
+// Reset sources to defaults
+router.post('/sources/reset', requireAuth, (req, res) => {
+  const db = getDb();
+  const defaultSources = [
+    ['BBC Arabic', 'https://feeds.bbci.co.uk/arabic/rss.xml', 'rss', 2, 900, 1],
+    ['Al Jazeera', 'https://www.aljazeera.com/xml/rss/all.xml', 'rss', 2, 900, 1],
+    ['France 24 Arabic', 'https://www.francetvinfo.fr/titres.rss', 'rss', 2, 1200, 1],
+    ['Reuters Arabic', 'https://www.reutersagency.com/feed/', 'rss', 2, 1200, 1],
+    ['Sky News Arabia', 'https://www.skynewsarabia.com/web/rss.xml', 'rss', 2, 1200, 1]
+  ];
+  
+  let added = 0;
+  for (const [name, url, type, catId, interval, autoPub] of defaultSources) {
+    const existing = db.prepare('SELECT id FROM news_sources WHERE url = ?').get(url);
+    if (!existing) {
+      try {
+        db.prepare('INSERT INTO news_sources (name, url, source_type, category_id, fetch_interval, auto_publish, next_fetch_at, last_fetch_status) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)').run(name, url, type, catId, interval, autoPub, 'pending');
+        added++;
+      } catch(e) {}
+    }
+  }
+  
+  logAction(db, { admin: req.session.admin?.username, action: 'reset_sources', entityType: 'sources', newValues: { added }, ip: req.ip });
+  res.redirect('/admin/sources');
+});
+
 // Add source
 router.post('/sources/create', requireAuth, (req, res) => {
   const db = getDb();

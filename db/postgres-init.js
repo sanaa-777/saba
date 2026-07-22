@@ -392,28 +392,38 @@ function seedPostgres(pgdb) {
   seedData(pgdb);
 
   const sequenceTables = [
-    'categories',
-    'tags',
-    'news',
-    'media',
-    'breaking_news',
-    'slider',
-    'advertisements',
-    'admin_users',
-    'comments',
-    'polls',
-    'poll_options',
-    'poll_votes',
-    'newsletter_subscribers',
-    'newsletter_campaigns',
-    'images',
-    'news_sources',
-    'fetch_logs'
+    'categories', 'tags', 'news', 'media', 'breaking_news', 'slider',
+    'advertisements', 'admin_users', 'comments', 'polls', 'poll_options',
+    'poll_votes', 'newsletter_subscribers', 'newsletter_campaigns', 'images',
+    'news_sources', 'fetch_logs', 'deleted_articles', 'audit_log'
   ];
 
   for (const table of sequenceTables) {
-    pgdb.exec(`SELECT setval(pg_get_serial_sequence('${table}', 'id'), COALESCE((SELECT MAX(id) FROM ${table}), 1), true)`);
+    try {
+      pgdb.exec(`SELECT setval(pg_get_serial_sequence('${table}', 'id'), COALESCE((SELECT MAX(id) FROM ${table}), 1), true)`);
+    } catch(e) {}
   }
+
+  // Auto-add working RSS sources if none exist
+  try {
+    const sourceCount = pgdb.prepare('SELECT COUNT(*) as cnt FROM news_sources').get();
+    if (!sourceCount || sourceCount.cnt === 0) {
+      console.log('No news sources found, adding default sources...');
+      const defaultSources = [
+        ['BBC Arabic', 'https://feeds.bbci.co.uk/arabic/rss.xml', 'rss', 2, 900, 1],
+        ['Al Jazeera', 'https://www.aljazeera.com/xml/rss/all.xml', 'rss', 2, 900, 1],
+        ['France 24 Arabic', 'https://www.francetvinfo.fr/titres.rss', 'rss', 2, 1200, 1],
+        ['Reuters Arabic', 'https://www.reutersagency.com/feed/', 'rss', 2, 1200, 1],
+        ['Sky News Arabia', 'https://www.skynewsarabia.com/web/rss.xml', 'rss', 2, 1200, 1]
+      ];
+      const insertSource = pgdb.prepare('INSERT INTO news_sources (name, url, source_type, category_id, fetch_interval, auto_publish, next_fetch_at, last_fetch_status) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)');
+      for (const [name, url, type, catId, interval, autoPub] of defaultSources) {
+        try {
+          insertSource.run(name, url, type, catId, interval, autoPub, 'pending');
+        } catch(e) { console.log('Source add error:', name, e.message); }
+      }
+    }
+  } catch(e) { console.log('Source check error:', e.message); }
 }
 
 function initDatabase() {

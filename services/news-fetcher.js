@@ -528,6 +528,7 @@ async function fetchAllActive(db, triggeredBy = 'unknown') {
   // Check for existing lock
   const existingLock = isFetchLocked(db);
   if (existingLock) {
+    console.log(`Fetch skipped: locked by ${existingLock.locked_by}`);
     return {
       skipped: true,
       reason: `Already locked by ${existingLock.locked_by} at ${existingLock.locked_at}`,
@@ -538,6 +539,7 @@ async function fetchAllActive(db, triggeredBy = 'unknown') {
   // Acquire lock
   const lock = acquireLock(db, 'global_fetch', triggeredBy);
   if (!lock.acquired) {
+    console.log(`Fetch skipped: could not acquire lock`);
     return {
       skipped: true,
       reason: `Could not acquire lock — held by ${lock.lockedBy}`,
@@ -545,14 +547,21 @@ async function fetchAllActive(db, triggeredBy = 'unknown') {
     };
   }
 
+  console.log(`Fetch started by ${triggeredBy}`);
+
   try {
     const sources = db.prepare('SELECT * FROM news_sources WHERE is_active = 1').all();
+    console.log(`Found ${sources.length} active sources`);
+    
     const results = [];
     for (const source of sources) {
+      console.log(`Fetching: ${source.name} (${source.url})`);
       try {
         const result = await fetchAndSave(db, source.id, triggeredBy);
+        console.log(`  Result: ${result.newCount} new, ${result.dupCount} dup, error: ${result.error || 'none'}`);
         results.push({ sourceId: source.id, name: source.name, ...result });
       } catch (err) {
+        console.log(`  Error: ${err.message}`);
         results.push({ sourceId: source.id, name: source.name, error: err.message });
         // Continue with next source — isolation
       }

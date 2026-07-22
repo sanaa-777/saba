@@ -69,6 +69,7 @@
   <div style="display:flex;gap:8px">
     <button class="btn-fetch-all" id="fetchAllBtn" onclick="fetchAllSources()">⚡ جلب الكل الآن</button>
     <button class="btn btn-sm btn-primary" onclick="openAddModal()">＋ إضافة مصدر</button>
+      <form method="POST" action="/admin/sources/reset" style="display:inline;"><button class="btn btn-sm btn-secondary" type="submit" onclick="return confirm('إعادة تعيين المصادر الافتراضية؟')">🔄 إعادة تعيين</button></form>
   </div>
 </div>
 
