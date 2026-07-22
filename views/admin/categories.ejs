@@ -1,7 +1,21 @@
 <%- include('header') %>
 
 <div class="admin-card">
-  <div class="admin-card-header"><h3>إدارة التصنيفات</h3></div>
+  <div class="admin-card-header">
+    <h3>إدارة التصنيفات</h3>
+    <div style="display:flex;gap:8px;">
+      <form method="POST" action="/admin/categories/reclassify" style="display:inline;">
+        <button class="btn btn-sm btn-primary" type="submit" onclick="return confirm('إعادة تصنيف جميع الأخبار غير المصنفة؟')">🤖 إعادة التصنيف الذكي</button>
+      </form>
+    </div>
+  </div>
+
+  <% if (typeof req !== 'undefined' && req.query && req.query.reclassified) { %>
+  <div style="background:#d1fae5;color:#065f46;padding:12px 20px;border-radius:8px;margin:0 20px 10px;">
+    ✅ تم إعادة تصنيف <%= req.query.reclassified %> خبر بنجاح
+  </div>
+  <% } %>
+
   <div class="admin-card-body">
     <form method="POST" action="/admin/categories/create" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
       <input type="text" name="name_ar" placeholder="الاسم بالعربية" required style="flex:1;padding:10px;border:1px solid #ddd;border-radius:6px;">
@@ -10,20 +24,42 @@
       <input type="number" name="sort_order" placeholder="الترتيب" value="0" style="width:80px;padding:10px;border:1px solid #ddd;border-radius:6px;">
       <button type="submit" class="btn btn-primary">إضافة</button>
     </form>
+
+    <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px;">
+      <h4 style="margin:0 0 8px;color:#1a237e;">📊 إحصائيات التصنيف</h4>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:14px;">
+        <span>إجمالي التصنيفات: <strong><%= categories.length %></strong></span>
+        <span>إجمالي الأخبار: <strong><%= categories.reduce((sum, c) => sum + (c.news_count || 0), 0) %></strong></span>
+      </div>
+      <p style="margin:8px 0 0;font-size:12px;color:#64748b;">
+        🤖 نظام التصنيف الذكي يصنف تلقائيًا حسب: الرياضة (لاعبين/أندية/مباريات)، الاقتصاد (عملات/نفط/بورصة)، السياسة ( governments/parliaments)، وغيرها.
+      </p>
+    </div>
+
     <table class="admin-table">
-      <thead><tr><th>#</th><th>الاسم بالعربية</th><th>الاسم بالإنجليزية</th><th>الرابط</th><th>الترتيب</th><th>الأخبار</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+      <thead><tr><th>#</th><th>التصنيف</th><th>الرابط</th><th>الترتيب</th><th>الأخبار</th><th>الحالة</th><th>إجراءات</th></tr></thead>
       <tbody>
         <% categories.forEach(cat => { %>
         <tr>
           <td><%= cat.id %></td>
-          <td><%= cat.name_ar %></td>
-          <td><%= cat.name_en || '-' %></td>
-          <td><%= cat.slug %></td>
+          <td>
+            <strong><%= cat.name_ar %></strong>
+            <% if (cat.name_en) { %><br><span style="color:#64748b;font-size:12px;"><%= cat.name_en %></span><% } %>
+          </td>
+          <td><code><%= cat.slug %></code></td>
           <td><%= cat.sort_order %></td>
-          <td><%= cat.news_count || 0 %></td>
-          <td><%= cat.is_active ? 'مفعل' : 'معطل' %></td>
+          <td><span class="badge badge-info"><%= cat.news_count || 0 %></span></td>
+          <td><span class="badge <%= cat.is_active ? 'badge-success' : 'badge-warning' %>"><%= cat.is_active ? 'مفعل' : 'معطل' %></span></td>
           <td class="actions">
-            <form method="POST" action="/admin/categories/delete/<%= cat.id %>" style="display:inline;" onsubmit="return confirm('حذف التصنيف؟')">
+            <form method="POST" action="/admin/categories/edit/<%= cat.id %>" style="display:inline;">
+              <input type="hidden" name="name_ar" value="<%= cat.name_ar %>">
+              <input type="hidden" name="name_en" value="<%= cat.name_en || '' %>">
+              <input type="hidden" name="slug" value="<%= cat.slug %>">
+              <input type="hidden" name="sort_order" value="<%= cat.sort_order %>">
+              <input type="hidden" name="is_active" value="<%= cat.is_active ? 0 : 1 %>">
+              <button class="btn btn-sm <%= cat.is_active ? 'btn-warning' : 'btn-success' %>" type="submit"><%= cat.is_active ? 'تعطيل' : 'تفعيل' %></button>
+            </form>
+            <form method="POST" action="/admin/categories/delete/<%= cat.id %>" style="display:inline;" onsubmit="return confirm('حذف التصنيف '<%= cat.name_ar %>'؟ سيتم إلغاء تصنيف جميع الأخبار المرتبطة.')">
               <button class="btn btn-sm btn-danger">حذف</button>
             </form>
           </td>

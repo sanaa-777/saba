@@ -8,15 +8,15 @@ function seedData(db) {
     ['اقتصاد', 'Economy', 'economy', 4],
     ['رياضة', 'Sports', 'sports', 5],
     ['ثقافة', 'Culture', 'culture', 6],
-    ['متفرقات', 'Miscellaneous', 'misc', 7],
-    ['قائد الثورة', 'Revolution Leader', 'revolution-leader', 8],
-    ['رئيس الجمهورية', 'President', 'president', 9],
-    ['العدوان الأمريكي السعودي', 'US-Saudi Aggression', 'us-saudi-aggression', 10],
-    ['الزراعة', 'Agriculture', 'agriculture', 11],
-    ['التنمية والمبادرات المجتمعية', 'Development', 'development', 12],
-    ['أحزاب ومنظمات', 'Parties', 'parties', 13],
-    ['سياحة', 'Tourism', 'tourism', 14],
-    ['خدمات ومشاريع', 'Services', 'services', 15]
+    ['تكنولوجيا', 'Technology', 'technology', 7],
+    ['صحة', 'Health', 'health', 8],
+    ['تعليم', 'Education', 'education', 9],
+    ['علوم', 'Science', 'science', 10],
+    ['بيئة', 'Environment', 'environment', 11],
+    ['حقوق إنسان', 'Human Rights', 'human-rights', 12],
+    ['آراء ومقالات', 'Opinion', 'opinion', 13],
+    ['منوعات', 'Miscellaneous', 'misc', 14],
+    ['خدمات', 'Services', 'services', 15]
   ];
   for (const cat of categories) {
     insertCat.run(...cat);

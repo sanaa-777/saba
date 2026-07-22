@@ -425,6 +425,7 @@ function isDuplicate(article, db) {
 // ─── Save Article (skips if manually edited, stores fingerprint) ───
 function saveArticle(article, source, db) {
   const crypto = require('crypto');
+  const { classifyArticle } = require('./categorizer');
   
   // Check if a manually edited version exists with the same title
   try {
@@ -432,7 +433,14 @@ function saveArticle(article, source, db) {
     if (manuallyEdited) return null; // Don't overwrite manual edits
   } catch(e) {}
 
-  const categoryId = source.category_id || null;
+  // Smart categorization: use source category first, then AI classification
+  let categoryId = source.category_id || null;
+  if (!categoryId) {
+    try {
+      categoryId = classifyArticle(article.title, article.content, article.summary, db);
+    } catch(e) {}
+  }
+
   const status = source.auto_publish ? 1 : 0;
   const { makeSlug } = require('../utils/slug');
   const slug = makeSlug(article.title);

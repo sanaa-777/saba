@@ -290,6 +290,29 @@ router.post('/categories/delete/:id', requireAuth, (req, res) => {
   res.redirect('/admin/categories');
 });
 
+// Reclassify all uncategorized articles
+router.post('/categories/reclassify', requireAuth, (req, res) => {
+  const db = getDb();
+  const { classifyArticle, resolveCategoryIds } = require('../services/categorizer');
+  resolveCategoryIds(db);
+  
+  const articles = db.prepare('SELECT id, title, summary, content FROM news WHERE category_id IS NULL AND deleted_at IS NULL').all();
+  let classified = 0;
+  
+  for (const article of articles) {
+    try {
+      const categoryId = classifyArticle(article.title, article.content, article.summary, db);
+      if (categoryId) {
+        db.prepare('UPDATE news SET category_id = ? WHERE id = ?').run(categoryId, article.id);
+        classified++;
+      }
+    } catch(e) {}
+  }
+  
+  logAction(db, { admin: req.session.admin?.username, action: 'reclassify', entityType: 'news', newValues: { total: articles.length, classified }, ip: req.ip });
+  res.redirect('/admin/categories?reclassified=' + classified);
+});
+
 // Tags
 router.get('/tags', requireAuth, (req, res) => {
   const db = getDb();

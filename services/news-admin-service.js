@@ -88,6 +88,7 @@ function setManualField(db, newsId, fields) {
 
 // ─── Create ───
 function createNews(db, payload) {
+  const { classifyArticle } = require('./categorizer');
   const status = normalizeStatus(payload.status, 1);
   const isBreaking = normalizeFlag(payload.is_breaking);
   const isSlider = normalizeFlag(payload.is_slider);
@@ -95,6 +96,14 @@ function createNews(db, payload) {
   const publishedAt = buildPublishedAt(status, null);
   const slug = makeSlug(payload.title);
   const hash = contentHash(payload.title);
+
+  // Smart categorization if no category provided
+  let categoryId = payload.category_id || null;
+  if (!categoryId) {
+    try {
+      categoryId = classifyArticle(payload.title, payload.content, payload.summary, db);
+    } catch(e) {}
+  }
 
   const result = db.prepare(`INSERT INTO news (title, summary, content, image, category_id, source, is_breaking, is_slider, is_featured, status, published_at, created_at, updated_at, meta_title, meta_description, slug, content_hash, manual_fields) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, '')`).run(
     payload.title, payload.summary || '', payload.content, payload.image || null,
