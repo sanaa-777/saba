@@ -215,8 +215,8 @@ router.get('/category/:id', (req, res) => {
 
 // Article page — supports both /news/:id and /news/:id-slug
 router.get('/news/:id', (req, res) => {
+  try {
   const db = getDb();
-  // Extract numeric ID from '123' or '123-some-slug'
   const idStr = String(req.params.id).split('-')[0];
   const articleId = parseInt(idStr, 10);
   if (!articleId || isNaN(articleId)) return res.status(404).render('404', { title: 'الصفحة غير موجودة' });
@@ -224,7 +224,6 @@ router.get('/news/:id', (req, res) => {
   const article = db.prepare(`SELECT n.*, c.name_ar as category_name, c.id as cat_id FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.id = ? AND n.status = 1`).get(articleId);
   if (!article) return res.status(404).render('404', { title: 'الصفحة غير موجودة' });
 
-  // Redirect to canonical slug URL if visiting old numeric URL
   const expectedSlug = article.slug || makeSlug(article.title);
   const requestedSlug = String(req.params.id).includes('-') ? String(req.params.id).split('-').slice(1).join('-') : '';
   if (!requestedSlug || requestedSlug !== expectedSlug) {
@@ -263,6 +262,10 @@ router.get('/news/:id', (req, res) => {
     prevArticle,
     nextArticle
   });
+  } catch (err) {
+    console.error('Article page error:', err.message);
+    res.status(500).render('error', { title: 'خطأ', error: 'حدث خطأ في تحميل المقال' });
+  }
 });
 
 // Search page
