@@ -263,8 +263,8 @@ router.get('/news/:id', (req, res) => {
     nextArticle
   });
   } catch (err) {
-    console.error('Article page error:', err.message);
-    res.status(500).render('error', { title: 'خطأ', error: 'حدث خطأ في تحميل المقال' });
+    console.error('Article page error:', err.message, err.stack);
+    res.status(500).render('error', { title: 'خطأ', error: process.env.NODE_ENV === 'production' ? err.message : err.stack });
   }
 });
 
