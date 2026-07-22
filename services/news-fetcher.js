@@ -470,8 +470,20 @@ async function fetchAndSave(db, sourceId, triggeredBy = 'unknown') {
   const source = db.prepare('SELECT * FROM news_sources WHERE id = ?').get(sourceId);
   if (!source) throw new Error('Source not found');
 
-  const logResult = db.prepare('INSERT INTO fetch_logs (source_id, status, triggered_by) VALUES (?, ?, ?)').run(sourceId, 'running', triggeredBy);
-  const logId = logResult.lastInsertRowid;
+  // Create log entry (handle missing triggered_by column)
+  let logId = null;
+  try {
+    const logResult = db.prepare('INSERT INTO fetch_logs (source_id, status, triggered_by) VALUES (?, ?, ?)').run(sourceId, 'running', triggeredBy);
+    logId = logResult.lastInsertRowid;
+  } catch(e) {
+    // triggered_by column doesn't exist, try without it
+    try {
+      const logResult = db.prepare('INSERT INTO fetch_logs (source_id, status) VALUES (?, ?)').run(sourceId, 'running');
+      logId = logResult.lastInsertRowid;
+    } catch(e2) {
+      console.log('Could not create fetch log:', e2.message);
+    }
+  }
 
   let newCount = 0;
   let dupCount = 0;
@@ -519,13 +531,29 @@ async function fetchAndSave(db, sourceId, triggeredBy = 'unknown') {
     }
 
     db.prepare(`UPDATE news_sources SET last_fetched_at = CURRENT_TIMESTAMP, next_fetch_at = CURRENT_TIMESTAMP + INTERVAL '1 second' * ?, last_fetch_status = 'success', last_error = NULL, total_fetched = total_fetched + ?, total_duplicates = total_duplicates + ?, last_new_count = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(source.fetch_interval, newCount, dupCount, newCount, sourceId);
-    db.prepare(`UPDATE fetch_logs SET finished_at = CURRENT_TIMESTAMP, status = 'success', new_count = ?, duplicate_count = ?, image_count = ?, details = ? WHERE id = ?`).run(newCount, dupCount, imageCount, details, logId);
+    
+    // Update log (handle missing image_count column)
+    if (logId) {
+      try {
+        db.prepare(`UPDATE fetch_logs SET finished_at = CURRENT_TIMESTAMP, status = 'success', new_count = ?, duplicate_count = ?, image_count = ?, details = ? WHERE id = ?`).run(newCount, dupCount, imageCount, details, logId);
+      } catch(e) {
+        db.prepare(`UPDATE fetch_logs SET finished_at = CURRENT_TIMESTAMP, status = 'success', new_count = ?, duplicate_count = ?, details = ? WHERE id = ?`).run(newCount, dupCount, details, logId);
+      }
+    }
 
   } catch (err) {
     error = err.message || 'Unknown error';
     details += `\nError: ${error}`;
     db.prepare(`UPDATE news_sources SET last_fetched_at = CURRENT_TIMESTAMP, next_fetch_at = CURRENT_TIMESTAMP + INTERVAL '1 second' * ?, last_fetch_status = 'error', last_error = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(source.fetch_interval, error, sourceId);
-    db.prepare(`UPDATE fetch_logs SET finished_at = CURRENT_TIMESTAMP, status = 'error', error_message = ?, details = ?, image_count = ? WHERE id = ?`).run(error, details, imageCount, logId);
+    
+    // Update log (handle missing image_count column)
+    if (logId) {
+      try {
+        db.prepare(`UPDATE fetch_logs SET finished_at = CURRENT_TIMESTAMP, status = 'error', error_message = ?, details = ?, image_count = ? WHERE id = ?`).run(error, details, imageCount, logId);
+      } catch(e) {
+        db.prepare(`UPDATE fetch_logs SET finished_at = CURRENT_TIMESTAMP, status = 'error', error_message = ?, details = ? WHERE id = ?`).run(error, details, logId);
+      }
+    }
   }
 
   return { newCount, dupCount, imageCount, error, details };
