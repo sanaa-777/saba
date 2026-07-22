@@ -78,7 +78,7 @@ function releaseLock(db, lockName) {
   try {
     db.prepare("DELETE FROM fetch_locks WHERE lock_name = ?").run(lockName);
   } catch (err) {
-    // Ignore lock release errors
+    // Table doesn't exist, ignore
   }
 }
 
@@ -533,26 +533,34 @@ async function fetchAndSave(db, sourceId, triggeredBy = 'unknown') {
 
 // ─── Fetch All Active Sources (with locking + isolation) ───
 async function fetchAllActive(db, triggeredBy = 'unknown') {
-  // Check for existing lock
-  const existingLock = isFetchLocked(db);
+  // Check for existing lock (gracefully handle missing table)
+  let existingLock = null;
+  try {
+    existingLock = isFetchLocked(db);
+  } catch(e) { /* table doesn't exist */ }
+  
   if (existingLock) {
     console.log(`Fetch skipped: locked by ${existingLock.locked_by}`);
     return {
       skipped: true,
-      reason: `Already locked by ${existingLock.locked_by} at ${existingLock.locked_at}`,
+      reason: `Already locked by ${existingLock.locked_by}`,
       results: []
     };
   }
 
-  // Acquire lock
-  const lock = acquireLock(db, 'global_fetch', triggeredBy);
-  if (!lock.acquired) {
-    console.log(`Fetch skipped: could not acquire lock`);
-    return {
-      skipped: true,
-      reason: `Could not acquire lock — held by ${lock.lockedBy}`,
-      results: []
-    };
+  // Try to acquire lock (gracefully handle missing table)
+  try {
+    const lock = acquireLock(db, 'global_fetch', triggeredBy);
+    if (!lock.acquired) {
+      console.log(`Fetch skipped: could not acquire lock`);
+      return {
+        skipped: true,
+        reason: `Could not acquire lock`,
+        results: []
+      };
+    }
+  } catch(e) {
+    console.log('Lock not available, proceeding without lock');
   }
 
   console.log(`Fetch started by ${triggeredBy}`);
