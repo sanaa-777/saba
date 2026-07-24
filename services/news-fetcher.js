@@ -237,21 +237,30 @@ function makeAbsolute(url, baseUrl) {
 function isTelegramChannelPhoto(imageUrl) {
   if (!imageUrl) return false;
   // Telegram CDN photo URLs: t.me/i/tgme/ or cdn*.telegram.org
-  // These are channel logos, not article images
   if (imageUrl.includes('t.me/i/tgme')) return true;
   if (imageUrl.includes('cdn1.telegram.org') || imageUrl.includes('cdn4.telegram.org')) return true;
   if (imageUrl.includes('telegram.org/file/')) return true;
-  // Pattern: https://cdn*.telegram.org/*  
   if (/cdn\d*\.telegram\.org/i.test(imageUrl)) return true;
+  // RSSHub Telegram mirror images (channel photos)
+  if (imageUrl.includes('cdn4.telegram.org/file') || imageUrl.includes('cdn.telegram.org')) return true;
+  return false;
+}
+
+// ─── Check if a source is Telegram-based (direct or via RSSHub) ───
+function isTelegramSource(source) {
+  if (source.source_type === 'telegram') return true;
+  // RSSHub Telegram mirrors
+  if (source.url && source.url.includes('rsshub') && source.url.includes('telegram')) return true;
+  if (source.url && source.url.includes('rsshub') && source.url.includes('channel/')) return true;
   return false;
 }
 
 // ─── Clean up old Telegram articles with channel logo images ───
 function cleanTelegramImages(db) {
   try {
-    // Find articles from Telegram sources that have images
+    // Find articles from Telegram sources (direct and RSSHub mirrors) that have images
     const telegramArticles = db.prepare(
-      "SELECT n.id, n.title, n.image, n.source FROM news n WHERE n.deleted_at IS NULL AND n.image IS NOT NULL AND (n.source LIKE 'Telegram:%' OR n.source LIKE '%telegram%')"
+      "SELECT n.id, n.title, n.image, n.source, ns.url as source_url FROM news n LEFT JOIN news_sources ns ON n.source = ns.name WHERE n.deleted_at IS NULL AND n.image IS NOT NULL AND (n.source LIKE 'Telegram:%' OR ns.url LIKE '%rsshub%telegram%' OR ns.url LIKE '%rsshub%channel/%')"
     ).all();
 
     let cleaned = 0;
@@ -261,6 +270,16 @@ function cleanTelegramImages(db) {
         cleaned++;
       }
     }
+
+    // Also clean articles where image is a Telegram CDN URL from any source
+    const allTgImages = db.prepare(
+      "SELECT id FROM news WHERE deleted_at IS NULL AND image IS NOT NULL AND (image LIKE '%t.me/i/tgme%' OR image LIKE '%cdn%telegram.org%')"
+    ).all();
+    for (const article of allTgImages) {
+      db.prepare('UPDATE news SET image = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(article.id);
+      cleaned++;
+    }
+
     return cleaned;
   } catch (e) {
     console.log('cleanTelegramImages error:', e.message);
@@ -533,6 +552,15 @@ async function fetchAndSave(db, sourceId, triggeredBy = 'unknown') {
       } catch(e) { /* ignore cleanup errors */ }
     }
 
+    // Auto-clean Telegram channel logo images for Telegram sources
+    const sourceIsTg = source.source_type === 'telegram' || (source.url && source.url.includes('rsshub') && (source.url.includes('telegram') || source.url.includes('channel/')));
+    if (sourceIsTg) {
+      try {
+        const cleaned = cleanTelegramImages(db);
+        if (cleaned > 0) details += ` (cleaned ${cleaned} channel logos)`;
+      } catch(e) { /* ignore cleanup errors */ }
+    }
+
     for (const article of articles) {
       if (!article.title || article.title.length < 5) continue;
 
@@ -553,11 +581,14 @@ async function fetchAndSave(db, sourceId, triggeredBy = 'unknown') {
           }
         }
 
-        // For RSS items without image, try detail page
-        if (!article.image && article.url && source.source_type === 'rss') {
+        // For RSS items without image, try detail page (but NOT for Telegram sources)
+        if (!article.image && article.url && source.source_type === 'rss' && !sourceIsTg) {
           const detail = await fetchArticleDetail(article.url, source.use_proxy && source.proxy_url ? source.proxy_url : null);
           if (detail && detail.image) article.image = detail.image;
         }
+
+        // Force null image for Telegram sources
+        if (sourceIsTg) article.image = null;
 
         if (article.image) imageCount++;
         saveArticle(article, source, db);
@@ -688,6 +719,7 @@ module.exports = {
   extractImageFromHTML,
   isValidImageUrl,
   isTelegramChannelPhoto,
+  isTelegramSource,
   cleanTelegramImages,
   acquireLock,
   releaseLock,
