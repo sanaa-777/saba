@@ -11,7 +11,19 @@
   if (!rawImage || rawImage.startsWith('data:') || rawImage.length > 500) {
     rawImage = settings.site_logo || '/images/logo.png';
   }
-  const pageImage = rawImage.startsWith('http') ? rawImage : `${siteBase}${rawImage.startsWith('/') ? '' : '/'}${rawImage}`;
+  // For external images, use proxy to ensure Facebook/social platforms can fetch them
+  let pageImage;
+  if (rawImage.startsWith('http')) {
+    // Use our proxy for external images (Facebook can't always fetch directly)
+    pageImage = `${siteBase}/api/proxy-image?url=${encodeURIComponent(rawImage)}`;
+  } else {
+    pageImage = `${siteBase}${rawImage.startsWith('/') ? '' : '/'}${rawImage}`;
+  }
+
+  // Clean URL for sharing (use only ID, no Arabic slug)
+  const cleanUrl = (typeof article !== 'undefined' && article)
+    ? `${siteBase}/news/${article.id}`
+    : pageUrl;
 
   const pageDescription = (typeof article !== 'undefined' && article)
     ? (article.meta_description || article.summary || siteDescription)
@@ -31,7 +43,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="format-detection" content="telephone=no">
-  <link rel="canonical" href="<%= pageUrl %>">
+  <link rel="canonical" href="<%= cleanUrl %>">
   <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="<%= settings.site_favicon || '/images/favicon.ico' %>">
@@ -48,7 +60,7 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="<%= (typeof article !== 'undefined' && article) ? article.title : siteName %>">
-  <meta property="og:url" content="<%= pageUrl %>">
+  <meta property="og:url" content="<%= cleanUrl %>">
   <meta property="og:type" content="<%= (typeof article !== 'undefined' && article) ? 'article' : 'website' %>">
   <meta property="og:locale" content="ar_AR">
   <% if (typeof article !== 'undefined' && article) { %>

@@ -112,12 +112,20 @@ router.get('/', (req, res) => {
     limit: 8
   });
 
-  // ── 4. Featured / Editors Pick ──
-  const featuredNews = registry.fetchSection(db, {
+  // ── 4. Featured / Editors Pick (fallback to latest if no featured) ──
+  let featuredNews = registry.fetchSection(db, {
     sql: `SELECT n.id, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.is_featured = 1 AND n.status = 1 ORDER BY n.published_at DESC LIMIT 15`,
     section: 'featured',
     limit: 4
   });
+  // Fallback: if no featured articles, use latest with images
+  if (featuredNews.length === 0) {
+    featuredNews = registry.fetchSection(db, {
+      sql: `SELECT n.id, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 AND n.image IS NOT NULL AND n.image != '' ORDER BY n.published_at DESC LIMIT 15`,
+      section: 'featured_fallback',
+      limit: 4
+    });
+  }
 
   // ── 5. Urgent News (only if category exists) ──
   let urgentNews = [];
@@ -242,9 +250,11 @@ router.get('/news/:id', (req, res) => {
 
   const expectedSlug = article.slug || makeSlug(article.title);
   const requestedSlug = String(req.params.id).includes('-') ? String(req.params.id).split('-').slice(1).join('-') : '';
-  if (!requestedSlug || requestedSlug !== expectedSlug) {
-    return res.redirect(301, `/news/${article.id}-${expectedSlug}`);
+  // If slug is wrong, redirect to clean URL with ID only (shorter for sharing)
+  if (requestedSlug && requestedSlug !== expectedSlug) {
+    return res.redirect(301, `/news/${article.id}`);
   }
+  // If no slug, that's fine — accept /news/123 directly (no redirect needed)
 
   // Increment views
   db.prepare('UPDATE news SET views = views + 1 WHERE id = ?').run(articleId);
