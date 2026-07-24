@@ -236,11 +236,14 @@ function makeAbsolute(url, baseUrl) {
 // ─── Detect Telegram channel logo/photo URLs (for cleanup) ───
 function isTelegramChannelPhoto(imageUrl) {
   if (!imageUrl) return false;
-  // Telegram CDN photo URLs: t.me/i/tgme/ or cdn*.telegram.org
+  // Telegram CDN photo URLs
   if (imageUrl.includes('t.me/i/tgme')) return true;
   if (imageUrl.includes('cdn1.telegram.org') || imageUrl.includes('cdn4.telegram.org')) return true;
   if (imageUrl.includes('telegram.org/file/')) return true;
   if (/cdn\d*\.telegram\.org/i.test(imageUrl)) return true;
+  // telesco.pe is Telegram's CDN for channel photos
+  if (imageUrl.includes('telesco.pe/')) return true;
+  if (/cdn\d*\.telesco\.pe/i.test(imageUrl)) return true;
   // RSSHub Telegram mirror images (channel photos)
   if (imageUrl.includes('cdn4.telegram.org/file') || imageUrl.includes('cdn.telegram.org')) return true;
   return false;
@@ -273,7 +276,7 @@ function cleanTelegramImages(db) {
 
     // Also clean articles where image is a Telegram CDN URL from any source
     const allTgImages = db.prepare(
-      "SELECT id FROM news WHERE deleted_at IS NULL AND image IS NOT NULL AND (image LIKE '%t.me/i/tgme%' OR image LIKE '%cdn%telegram.org%')"
+      "SELECT id FROM news WHERE deleted_at IS NULL AND image IS NOT NULL AND (image LIKE '%t.me/i/tgme%' OR image LIKE '%cdn%telegram.org%' OR image LIKE '%telesco.pe%')"
     ).all();
     for (const article of allTgImages) {
       db.prepare('UPDATE news SET image = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(article.id);
