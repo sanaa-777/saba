@@ -93,9 +93,23 @@ router.get('/', (req, res) => {
 
   // ── 3. Latest News (sidebar rail) ──
   const latestNews = registry.fetchSection(db, {
-    sql: `SELECT n.id, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 ORDER BY n.published_at DESC LIMIT 20`,
+    sql: `SELECT n.id, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 ORDER BY n.published_at DESC LIMIT 30`,
     section: 'latest',
-    limit: 10
+    limit: 15
+  });
+
+  // ── 3b. Most Read News ──
+  const mostRead = registry.fetchSection(db, {
+    sql: `SELECT n.id, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 AND n.views > 0 ORDER BY n.views DESC LIMIT 15`,
+    section: 'most_read',
+    limit: 8
+  });
+
+  // ── 3c. Latest News Grid (for hero grid area) ──
+  const latestGrid = registry.fetchSection(db, {
+    sql: `SELECT n.id, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name, c.id as category_id FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 ORDER BY n.published_at DESC LIMIT 20`,
+    section: 'latest_grid',
+    limit: 8
   });
 
   // ── 4. Featured / Editors Pick ──
@@ -126,10 +140,10 @@ router.get('/', (req, res) => {
 
   for (const cat of cats) {
     categoryNews[cat.id] = registry.fetchSection(db, {
-      sql: `SELECT n.id, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.category_id = ? AND n.status = 1 ORDER BY n.published_at DESC LIMIT 12`,
+      sql: `SELECT n.id, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.category_id = ? AND n.status = 1 ORDER BY n.published_at DESC LIMIT 20`,
       params: [cat.id],
       section: `category_${cat.slug || cat.id}`,
-      limit: 5
+      limit: 8
     });
   }
 
@@ -170,7 +184,9 @@ router.get('/', (req, res) => {
     categoryNews,
     categories: cats,
     latestNews,
+    latestGrid,
     featuredNews,
+    mostRead,
     urgentNews,
     videos,
     galleries,
