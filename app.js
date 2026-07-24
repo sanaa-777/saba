@@ -12,6 +12,9 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const server = http.createServer(app);
 
+// Trust proxy (Vercel/CDN) for secure cookies
+app.set('trust proxy', 1);
+
 // Socket.IO - optional, skip on Vercel
 let io = { emit: () => {}, on: () => {} };
 try {
@@ -47,9 +50,9 @@ app.use(cookieSession({
   name: 'awtar_session',
   keys: [process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex')],
   maxAge: 24 * 60 * 60 * 1000,
-  sameSite: 'strict',
+  sameSite: 'lax',
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production'
+  secure: 'auto'
 }));
 
 // Language middleware
