@@ -1,6 +1,10 @@
 const fs = require('fs');
+const dns = require('dns');
 const { parentPort } = require('worker_threads');
 const { Pool, types } = require('pg');
+
+// Force IPv4 resolution to avoid ENETUNREACH on IPv6-only Supabase hosts
+dns.setDefaultResultOrder('ipv4first');
 
 types.setTypeParser(20, (v) => (v === null ? null : Number(v)));
 types.setTypeParser(21, (v) => (v === null ? null : Number(v)));

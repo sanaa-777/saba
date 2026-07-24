@@ -382,8 +382,6 @@ router.post('/admin/news/toggle-status/:id', requireAuth, (req, res) => {
   }
 });
 
-module.exports = router;
-
 // POST /api/v1/admin/news/restore/:id
 router.post('/admin/news/restore/:id', requireAuth, (req, res) => {
   try {
@@ -418,7 +416,6 @@ router.post('/admin/news/permanent-delete/:id', requireAuth, (req, res) => {
     res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
   }
 });
-module.exports = router;
 
 // Debug endpoint to test fetch for a specific source
 router.get('/debug/fetch/:id', async (req, res) => {
@@ -431,3 +428,5 @@ router.get('/debug/fetch/:id', async (req, res) => {
     res.json({ success: false, error: err.message, stack: err.stack });
   }
 });
+
+module.exports = router;

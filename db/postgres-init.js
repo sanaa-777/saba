@@ -437,6 +437,12 @@ function initDatabase() {
     seedPostgres(pgdb);
   }
 
+  // Run column migration to fix missing columns
+  try {
+    const { runMigration } = require('./migrations/003_fix_missing_columns');
+    runMigration(pgdb);
+  } catch(e) { console.log('Migration 003 error:', e.message); }
+
   // Run migrations
   try {
     const sourceCount = pgdb.prepare('SELECT COUNT(*) as cnt FROM news_sources WHERE is_active = 1').get();
