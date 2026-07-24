@@ -360,31 +360,6 @@ app.get('/api/new-news-count', (req, res) => {
   res.json({ count });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).render('404', { title: res.locals.t ? res.locals.t('page_not_found') : 'الصفحة غير موجودة' });
-});
-
-// Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).render('error', {
-    title: 'خطأ في الخادم',
-    error: process.env.NODE_ENV === 'production' ? 'حدث خطأ غير متوقع' : err.message
-  });
-});
-
-function broadcastBreakingNews(data) {
-  io.emit('breaking-news', data);
-}
-
-// Start server (local only)
-if (!isVercel) {
-  server.listen(PORT, () => {
-    console.log(`Awtar News running on http://localhost:${PORT}`);
-  });
-}
-
 // One-time migration endpoint (run after deploy)
 app.get('/api/migrate', async (req, res) => {
   try {
@@ -506,6 +481,30 @@ app.get('/api/fix-sources', async (req, res) => {
   }
 });
 
+// Test fetch endpoint (no auth - for testing only)
+app.get('/api/test-fetch', async (req, res) => {
+  try {
+    const db = getDb();
+    const { fetchAllActive } = require('./services/news-fetcher');
+    const result = await fetchAllActive(db, 'test_endpoint');
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Test fetch single source
+app.get('/api/test-fetch/:id', async (req, res) => {
+  try {
+    const db = getDb();
+    const { fetchAndSave } = require('./services/news-fetcher');
+    const result = await fetchAndSave(db, parseInt(req.params.id), 'test_single');
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Debug endpoint to check sources
 app.get('/api/debug/sources', (req, res) => {
   try {
@@ -530,5 +529,30 @@ app.get('/api/debug/fetch-status', async (req, res) => {
     res.json({ success: false, error: err.message });
   }
 });
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).render('404', { title: res.locals.t ? res.locals.t('page_not_found') : 'الصفحة غير موجودة' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).render('error', {
+    title: 'خطأ في الخادم',
+    error: process.env.NODE_ENV === 'production' ? 'حدث خطأ غير متوقع' : err.message
+  });
+});
+
+function broadcastBreakingNews(data) {
+  io.emit('breaking-news', data);
+}
+
+// Start server (local only)
+if (!isVercel) {
+  server.listen(PORT, () => {
+    console.log(`Awtar News running on http://localhost:${PORT}`);
+  });
+}
 
 module.exports = app;
