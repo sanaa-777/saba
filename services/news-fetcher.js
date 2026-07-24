@@ -233,6 +233,41 @@ function makeAbsolute(url, baseUrl) {
   }
 }
 
+// ─── Detect Telegram channel logo/photo URLs (for cleanup) ───
+function isTelegramChannelPhoto(imageUrl) {
+  if (!imageUrl) return false;
+  // Telegram CDN photo URLs: t.me/i/tgme/ or cdn*.telegram.org
+  // These are channel logos, not article images
+  if (imageUrl.includes('t.me/i/tgme')) return true;
+  if (imageUrl.includes('cdn1.telegram.org') || imageUrl.includes('cdn4.telegram.org')) return true;
+  if (imageUrl.includes('telegram.org/file/')) return true;
+  // Pattern: https://cdn*.telegram.org/*  
+  if (/cdn\d*\.telegram\.org/i.test(imageUrl)) return true;
+  return false;
+}
+
+// ─── Clean up old Telegram articles with channel logo images ───
+function cleanTelegramImages(db) {
+  try {
+    // Find articles from Telegram sources that have images
+    const telegramArticles = db.prepare(
+      "SELECT n.id, n.title, n.image, n.source FROM news n WHERE n.deleted_at IS NULL AND n.image IS NOT NULL AND (n.source LIKE 'Telegram:%' OR n.source LIKE '%telegram%')"
+    ).all();
+
+    let cleaned = 0;
+    for (const article of telegramArticles) {
+      if (isTelegramChannelPhoto(article.image)) {
+        db.prepare('UPDATE news SET image = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(article.id);
+        cleaned++;
+      }
+    }
+    return cleaned;
+  } catch (e) {
+    console.log('cleanTelegramImages error:', e.message);
+    return 0;
+  }
+}
+
 // ─── RSS/Atom Fetcher ───
 async function fetchRSS(url, proxyUrl) {
   const targetUrl = proxyUrl ? `${proxyUrl}${encodeURIComponent(url)}` : url;
@@ -312,7 +347,7 @@ async function fetchWebsite(url, proxyUrl) {
   return articles.slice(0, 30);
 }
 
-// ─── Telegram Fetcher ───
+// ─── Telegram Fetcher (NO images — channel logos are not article images) ───
 async function fetchTelegram(url) {
   const channelMatch = url.match(/t\.me\/(?:s\/)?([a-zA-Z0-9_]+)/);
   if (!channelMatch) throw new Error('Invalid Telegram URL');
@@ -331,14 +366,9 @@ async function fetchTelegram(url) {
     const dateEl = $msg.find('time, .tgme_widget_message_date time');
     const dateStr = dateEl.attr('datetime') || '';
     const msgLink = $msg.find('.tgme_widget_message_date a').attr('href') || `https://t.me/${channel}`;
-    let img = null;
-    const imgEl = $msg.find('.tgme_widget_message_photo_wrap').first();
-    const bgStyle = imgEl.attr('style') || '';
-    const bgMatch = bgStyle.match(/url\(['"]?(.*?)['"]?\)/);
-    if (bgMatch) img = bgMatch[1];
-    if (!img) { const imgTag = $msg.find('img').first(); img = imgTag.attr('src') || null; }
+    // Telegram: NO images — channel logos are not article images
     const firstLine = text.split('\n')[0].substring(0, 150);
-    articles.push({ title: firstLine, content: text, summary: text.substring(0, 300), url: msgLink, image: img, author: `@${channel}`, published_at: dateStr || new Date().toISOString(), source_name: `Telegram: ${channel}` });
+    articles.push({ title: firstLine, content: text, summary: text.substring(0, 300), url: msgLink, image: null, author: `@${channel}`, published_at: dateStr || new Date().toISOString(), source_name: `Telegram: ${channel}` });
   });
   return articles.slice(0, 30);
 }
@@ -495,6 +525,14 @@ async function fetchAndSave(db, sourceId, triggeredBy = 'unknown') {
     const articles = await fetchFromSource(source);
     details = `Found ${articles.length} articles from ${source.source_type}`;
 
+    // Auto-clean Telegram channel logo images for Telegram sources
+    if (source.source_type === 'telegram') {
+      try {
+        const cleaned = cleanTelegramImages(db);
+        if (cleaned > 0) details += ` (cleaned ${cleaned} channel logos)`;
+      } catch(e) { /* ignore cleanup errors */ }
+    }
+
     for (const article of articles) {
       if (!article.title || article.title.length < 5) continue;
 
@@ -649,6 +687,8 @@ module.exports = {
   extractImageFromContent,
   extractImageFromHTML,
   isValidImageUrl,
+  isTelegramChannelPhoto,
+  cleanTelegramImages,
   acquireLock,
   releaseLock,
   isFetchLocked

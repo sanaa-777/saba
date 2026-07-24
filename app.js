@@ -505,6 +505,18 @@ app.get('/api/test-fetch/:id', async (req, res) => {
   }
 });
 
+// Clean up Telegram channel logo images
+app.get('/api/cleanup-telegram-images', async (req, res) => {
+  try {
+    const db = getDb();
+    const { cleanTelegramImages } = require('./services/news-fetcher');
+    const cleaned = cleanTelegramImages(db);
+    res.json({ success: true, cleaned, message: `Cleaned ${cleaned} Telegram channel logo images` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Debug endpoint to check sources
 app.get('/api/debug/sources', (req, res) => {
   try {
