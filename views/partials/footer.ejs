@@ -89,20 +89,32 @@
   </div>
 </div>
 
-<script src="/js/main.js?v=5" defer></script>
+<script src="/js/main.js?v=6" defer></script>
 <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map((registration) => registration.unregister()));
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((key) => caches.delete(key)));
-      }
-    } catch (_) {}
-  });
-}
+/* Lazy image loader with blur-up effect */
+(function(){
+  function lazyLoad(){
+    var imgs=document.querySelectorAll('img[data-src]');
+    if(!imgs.length) return;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if(e.isIntersecting){
+            var img=e.target;
+            img.src=img.dataset.src;
+            img.onload=function(){img.classList.add('loaded');};
+            img.onerror=function(){img.classList.add('loaded');};
+            io.unobserve(img);
+          }
+        });
+      },{rootMargin:'200px'});
+      imgs.forEach(function(img){io.observe(img);});
+    } else {
+      imgs.forEach(function(img){img.src=img.dataset.src;img.onload=function(){img.classList.add('loaded');};});
+    }
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',lazyLoad);}else{lazyLoad();}
+})();
 </script>
 </body>
 </html>
