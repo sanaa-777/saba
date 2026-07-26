@@ -75,13 +75,24 @@ async function saveFile(file) {
       });
       if (result && result.url) return result.url;
     } catch (err) {
-      console.error('Cloudinary upload failed, falling back to base64:', err.message);
+      console.error('Cloudinary upload failed, falling back to DB:', err.message);
     }
   }
 
-  // Fallback: base64 data URI (works for images, small videos, audio)
-  const base64 = file.buffer.toString('base64');
-  return `data:${file.mimetype};base64,${base64}`;
+  // Store in images table, serve via /api/images/:id
+  try {
+    const db = getDb();
+    const base64 = file.buffer.toString('base64');
+    const result = db.prepare(
+      'INSERT INTO images (filename, mime_type, data, size) VALUES (?, ?, ?, ?)'
+    ).run(file.originalname, file.mimetype, base64, file.size);
+    return '/api/images/' + result.lastInsertRowid;
+  } catch (err) {
+    console.error('DB image save error:', err.message);
+    // Last resort: tiny data URI (may fail for large files)
+    const base64 = file.buffer.toString('base64');
+    return `data:${file.mimetype};base64,${base64}`;
+  }
 }
 
 function getMediaType(mimetype) {

@@ -47,9 +47,13 @@
       <div class="form-row">
         <div class="form-group">
           <label>الصورة الرئيسية</label>
-          <input type="file" name="image" accept="image/*,video/*,audio/*" id="imageInput">
+          <input type="file" name="image" accept="image/*,video/*,audio/*" id="imageInput" onchange="previewNewsImage(this)">
+          <div id="imagePreviewBox" style="display:none;margin-top:10px;text-align:center;">
+            <img id="newImagePreview" style="max-width:250px;max-height:160px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);" src="">
+            <p id="imageFileName" style="margin:6px 0 0;font-size:.82rem;color:#64748b;"></p>
+          </div>
           <% if (article && article.image) { %>
-            <div class="current-media-preview"><img src="<%= article.image %>" id="currentImage" alt="الصورة الحالية"></div>
+            <div class="current-media-preview" style="margin-top:10px;"><img src="<%= article.image %>" id="currentImage" alt="الصورة الحالية" style="max-width:250px;border-radius:10px;"></div>
             <label class="form-check"><input type="checkbox" name="keep_image" value="1" checked id="keepImage"> الاحتفاظ بالصورة الحالية</label>
           <% } %>
         </div>
@@ -91,6 +95,13 @@
           <input type="text" name="meta_description" value="<%= article ? article.meta_description || '' : '' %>">
         </div>
       </div>
+      <!-- Upload Progress -->
+      <div id="uploadProgress" style="display:none;margin:16px 0;">
+        <div style="background:#e2e8f0;border-radius:20px;overflow:hidden;height:8px;">
+          <div id="uploadProgressFill" style="background:linear-gradient(90deg,#0f3b82,#1d4ed8);height:100%;width:0%;transition:width .3s;"></div>
+        </div>
+        <p id="uploadProgressText" style="text-align:center;margin:6px 0 0;font-size:.82rem;color:#64748b;">0%</p>
+      </div>
       <div class="form-actions">
         <button type="submit" class="btn btn-primary" id="submitBtn"><span id="btnText"><%= article ? 'حفظ التعديلات' : 'نشر الخبر' %></span><span id="btnSpinner" style="display:none"><span class="spinner"></span> جاري الحفظ...</span></button>
         <a href="/admin/news" class="btn btn-secondary">إلغاء</a>
@@ -112,31 +123,68 @@ async function parseServerResponse(response) {
   };
 }
 
-document.getElementById('newsForm').addEventListener('submit', async function(e) {
+function previewNewsImage(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var box = document.getElementById('imagePreviewBox');
+  var img = document.getElementById('newImagePreview');
+  var fname = document.getElementById('imageFileName');
+  fname.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)';
+  if (file.type.startsWith('image')) {
+    var reader = new FileReader();
+    reader.onload = function(e) { img.src = e.target.result; img.style.display = 'inline-block'; box.style.display = 'block'; };
+    reader.readAsDataURL(file);
+  } else {
+    img.style.display = 'none';
+    box.style.display = 'block';
+  }
+  // Uncheck keep_image when new file selected
+  var keep = document.getElementById('keepImage');
+  if (keep) keep.checked = false;
+}
+
+document.getElementById('newsForm').addEventListener('submit', function(e) {
   e.preventDefault();
-  const btn = document.getElementById('submitBtn');
-  const btnText = document.getElementById('btnText');
-  const btnSpinner = document.getElementById('btnSpinner');
-  const statusMsg = document.getElementById('statusMsg');
+  var btn = document.getElementById('submitBtn');
+  var btnText = document.getElementById('btnText');
+  var btnSpinner = document.getElementById('btnSpinner');
+  var statusMsg = document.getElementById('statusMsg');
+  var progressBar = document.getElementById('uploadProgress');
+  var progressFill = document.getElementById('uploadProgressFill');
+  var progressText = document.getElementById('uploadProgressText');
+
   btn.disabled = true;
   btnText.style.display = 'none';
   btnSpinner.style.display = 'inline-flex';
   statusMsg.style.display = 'none';
-  const formData = new FormData(this);
-  try {
-    const response = await fetch(this.action, {
-      method: 'POST',
-      body: formData,
-      credentials: 'same-origin',
-      headers: { 'Accept': 'application/json' }
-    });
-    const result = await parseServerResponse(response);
-    if (response.ok && result.success) {
+
+  var formData = new FormData(this);
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', this.action);
+  xhr.setRequestHeader('Accept', 'application/json');
+
+  // Show progress if file attached
+  var fileInput = document.getElementById('imageInput');
+  if (fileInput.files.length) {
+    progressBar.style.display = 'block';
+    xhr.upload.onprogress = function(ev) {
+      if (ev.lengthComputable) {
+        var pct = Math.round((ev.loaded / ev.total) * 100);
+        progressFill.style.width = pct + '%';
+        progressText.textContent = pct + '%';
+      }
+    };
+  }
+
+  xhr.onload = function() {
+    var result;
+    try { result = JSON.parse(xhr.responseText); } catch(ex) { result = { success: false, message: 'استجابة غير متوقعة' }; }
+    if (xhr.status === 200 && result.success) {
       statusMsg.className = 'status-msg success';
-      statusMsg.textContent = result.message;
+      statusMsg.textContent = result.message || 'تم الحفظ بنجاح';
       statusMsg.style.display = 'flex';
-      if (!this.action.includes('/edit/')) {
-        setTimeout(() => { window.location.href = '/admin/news'; }, 1200);
+      if (!this.action || !this.action.includes('/edit/')) {
+        setTimeout(function() { window.location.href = '/admin/news'; }, 1200);
       } else {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -145,15 +193,23 @@ document.getElementById('newsForm').addEventListener('submit', async function(e)
       statusMsg.textContent = result.message || 'حدث خطأ أثناء حفظ الخبر';
       statusMsg.style.display = 'flex';
     }
-  } catch (err) {
-    statusMsg.className = 'status-msg error';
-    statusMsg.textContent = 'تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى';
-    statusMsg.style.display = 'flex';
-  } finally {
     btn.disabled = false;
     btnText.style.display = 'inline';
     btnSpinner.style.display = 'none';
-  }
+    progressBar.style.display = 'none';
+  }.bind(this);
+
+  xhr.onerror = function() {
+    statusMsg.className = 'status-msg error';
+    statusMsg.textContent = 'تعذر الاتصال بالخادم';
+    statusMsg.style.display = 'flex';
+    btn.disabled = false;
+    btnText.style.display = 'inline';
+    btnSpinner.style.display = 'none';
+    progressBar.style.display = 'none';
+  };
+
+  xhr.send(formData);
 });
 </script>
 
