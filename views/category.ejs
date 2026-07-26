@@ -114,7 +114,43 @@
               <% }) %>
             </div>
 
-            <%- include('partials/pagination', { pagination, baseUrl: '?' }) %>
+            <% if (pagination.totalPages > 1) { %>
+            <%
+              const current = pagination.page;
+              const totalPages = pagination.totalPages;
+              function getPageRange(cur, tot) {
+                const delta = 2, range = [], withDots = [];
+                range.push(1);
+                for (let i = Math.max(2, cur - delta); i <= Math.min(tot - 1, cur + delta); i++) range.push(i);
+                if (tot > 1) range.push(tot);
+                let prev = 0;
+                for (const p of range) { if (p - prev > 1) withDots.push('...'); withDots.push(p); prev = p; }
+                return withDots;
+              }
+              const pages = getPageRange(current, totalPages);
+            %>
+            <div class="pagination">
+              <% if (current > 1) { %>
+                <a href="?page=<%= current - 1 %>" class="page-link prev-link">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                  السابق
+                </a>
+              <% } %>
+              <% pages.forEach(function(p) { %>
+                <% if (p === '...') { %>
+                  <span class="page-dots">…</span>
+                <% } else { %>
+                  <a href="?page=<%= p %>" class="page-link<%= p === current ? ' active' : '' %>"><%= p %></a>
+                <% } %>
+              <% }) %>
+              <% if (current < totalPages) { %>
+                <a href="?page=<%= current + 1 %>" class="page-link next-link">
+                  التالي
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                </a>
+              <% } %>
+            </div>
+            <% } %>
           </section>
         <% } else { %>
           <div class="no-results"><p>لا توجد أخبار في هذا التصنيف حالياً.</p></div>

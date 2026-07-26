@@ -31,7 +31,18 @@
               </article>
             <% }); %>
           </div>
-          <%- include('partials/pagination', { pagination, baseUrl: '?' }) %>
+          <% if (pagination.totalPages > 1) { %>
+          <%
+            const tCur = pagination.page, tTot = pagination.totalPages;
+            function tRange(c, t) { const d=2,r=[],w=[]; r.push(1); for(let i=Math.max(2,c-d);i<=Math.min(t-1,c+d);i++) r.push(i); if(t>1) r.push(t); let p=0; for(const x of r){if(x-p>1) w.push('...'); w.push(x); p=x;} return w; }
+            const tPages = tRange(tCur, tTot);
+          %>
+          <div class="pagination">
+            <% if (tCur > 1) { %><a href="?page=<%= tCur - 1 %>" class="page-link prev-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>السابق</a><% } %>
+            <% tPages.forEach(function(p) { %><% if (p === '...') { %><span class="page-dots">…</span><% } else { %><a href="?page=<%= p %>" class="page-link<%= p === tCur ? ' active' : '' %>"><%= p %></a><% } %><% }) %>
+            <% if (tCur < tTot) { %><a href="?page=<%= tCur + 1 %>" class="page-link next-link">التالي<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></a><% } %>
+          </div>
+          <% } %>
           <% } else { %>
           <div class="no-results"><p>لا توجد أخبار بهذا الوسم</p></div>
           <% } %>

@@ -115,8 +115,19 @@
                 <% }) %>
               </div>
 
-              <% const searchBase = '?q=' + encodeURIComponent(query.q || '') + '&category=' + (query.category || '') + '&scope=' + (query.scope || '') + '&sort=' + (query.sort || '') + '&date_from=' + (query.date_from || '') + '&date_to=' + (query.date_to || '') + '&'; %>
-              <%- include('partials/pagination', { pagination, baseUrl: searchBase }) %>
+              <% if (pagination.totalPages > 1) { %>
+              <%
+                const sCur = pagination.page, sTot = pagination.totalPages;
+                const sBase = '?q=' + encodeURIComponent(query.q || '') + '&category=' + (query.category || '') + '&scope=' + (query.scope || '') + '&sort=' + (query.sort || '') + '&date_from=' + (query.date_from || '') + '&date_to=' + (query.date_to || '') + '&';
+                function sRange(c, t) { const d=2,r=[],w=[]; r.push(1); for(let i=Math.max(2,c-d);i<=Math.min(t-1,c+d);i++) r.push(i); if(t>1) r.push(t); let p=0; for(const x of r){if(x-p>1) w.push('...'); w.push(x); p=x;} return w; }
+                const sPages = sRange(sCur, sTot);
+              %>
+              <div class="pagination">
+                <% if (sCur > 1) { %><a href="<%= sBase %>page=<%= sCur - 1 %>" class="page-link prev-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>السابق</a><% } %>
+                <% sPages.forEach(function(p) { %><% if (p === '...') { %><span class="page-dots">…</span><% } else { %><a href="<%= sBase %>page=<%= p %>" class="page-link<%= p === sCur ? ' active' : '' %>"><%= p %></a><% } %><% }) %>
+                <% if (sCur < sTot) { %><a href="<%= sBase %>page=<%= sCur + 1 %>" class="page-link next-link">التالي<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></a><% } %>
+              </div>
+              <% } %>
             <% } else { %>
               <div class="no-results"><p>لم يتم العثور على نتائج مطابقة. جرّب كلمات أخرى أو وسّع نطاق البحث.</p></div>
             <% } %>
