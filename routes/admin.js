@@ -399,6 +399,28 @@ router.post('/media/delete/:id', requireAuth, (req, res) => {
   }
 });
 
+// Debug: check ads table
+router.get('/debug-ads', requireAuth, (req, res) => {
+  try {
+    const db = getDb();
+    const ads = db.prepare('SELECT * FROM advertisements ORDER BY id DESC LIMIT 20').all();
+    const count = db.prepare('SELECT COUNT(*) as cnt FROM advertisements').get();
+    // Check if table exists
+    let tableExists = false;
+    try {
+      db.prepare("SELECT 1 FROM advertisements LIMIT 1").get();
+      tableExists = true;
+    } catch(e) { tableExists = false; }
+    res.json({
+      tableExists,
+      totalAds: count ? count.cnt : 0,
+      ads: ads.map(a => ({ id: a.id, name: a.name, position: a.position, is_active: a.is_active, hasImage: !!a.image, imageLen: a.image ? a.image.length : 0, link: a.link, start_date: a.start_date, end_date: a.end_date }))
+    });
+  } catch (err) {
+    res.json({ error: err.message, stack: err.stack });
+  }
+});
+
 // One-time migration endpoint
 router.get('/migrate', requireAuth, (req, res) => {
   const db = getDb();
