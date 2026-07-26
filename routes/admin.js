@@ -381,6 +381,31 @@ router.post('/media/delete/:id', requireAuth, (req, res) => {
   }
 });
 
+// One-time migration endpoint
+router.get('/migrate', requireAuth, (req, res) => {
+  const db = getDb();
+  const results = [];
+  const migrations = [
+    'ALTER TABLE media ADD COLUMN IF NOT EXISTS link TEXT',
+    'ALTER TABLE news ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP',
+    'ALTER TABLE news ADD COLUMN IF NOT EXISTS is_manually_edited INTEGER DEFAULT 0',
+    "ALTER TABLE news ADD COLUMN IF NOT EXISTS manual_fields TEXT DEFAULT ''",
+    'ALTER TABLE news ADD COLUMN IF NOT EXISTS source_url TEXT',
+    'ALTER TABLE news ADD COLUMN IF NOT EXISTS external_id TEXT',
+    'ALTER TABLE news ADD COLUMN IF NOT EXISTS content_hash TEXT',
+    "ALTER TABLE fetch_logs ADD COLUMN IF NOT EXISTS triggered_by TEXT DEFAULT 'unknown'",
+  ];
+  for (const sql of migrations) {
+    try {
+      db.exec(sql);
+      results.push('OK: ' + sql);
+    } catch (e) {
+      results.push('SKIP: ' + sql + ' — ' + e.message);
+    }
+  }
+  res.json({ success: true, results });
+});
+
 // Breaking news
 router.get('/breaking', requireAuth, (req, res) => {
   const db = getDb();
