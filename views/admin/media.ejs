@@ -12,7 +12,7 @@
       <form id="mediaForm" enctype="multipart/form-data">
         <!-- Drop Zone -->
         <div id="dropZone" style="cursor:pointer;padding:40px 20px;text-align:center;background:#fff;border-radius:12px;border:2px dashed #94a3b8;margin-bottom:16px;transition:all .2s;" onclick="document.getElementById('fileInput').click()">
-          <div id="uploadIcon">📁</div>
+          <div id="uploadIcon" style="font-size:48px;">📁</div>
           <p style="margin:8px 0 0;color:#64748b;font-size:.95rem;" id="dropText">اضغط لاختيار ملف أو اسحب الملف هنا</p>
           <p id="fileName" style="margin:8px 0 0;color:#0f3b82;font-weight:700;font-size:.9rem;"></p>
           <input type="file" name="file" id="fileInput" style="display:none;" accept="image/*,video/*,audio/*" onchange="handleFileSelect(this)">
@@ -27,26 +27,48 @@
 
         <!-- Progress Bar -->
         <div id="progressBar" style="display:none;margin-bottom:16px;">
-          <div style="background:#e2e8f0;border-radius:20px;overflow:hidden;height:8px;">
+          <div style="background:#e2e8f0;border-radius:20px;overflow:hidden;height:10px;">
             <div id="progressFill" style="background:linear-gradient(90deg,#0f3b82,#1d4ed8);height:100%;width:0%;transition:width .3s;border-radius:20px;"></div>
           </div>
           <p id="progressText" style="text-align:center;margin:8px 0 0;font-size:.85rem;color:#64748b;">0%</p>
         </div>
 
         <!-- Fields -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
-          <div><label style="display:block;margin-bottom:4px;font-weight:600;font-size:.85rem;">العنوان</label><input type="text" name="title" id="mediaTitle" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.9rem;" placeholder="عنوان الملف"></div>
-          <div><label style="display:block;margin-bottom:4px;font-weight:600;font-size:.85rem;">النوع</label>
-            <select name="type" id="mediaType" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.9rem;"><option value="image">صورة</option><option value="video">فيديو</option><option value="audio">صوت</option></select>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <label style="display:block;margin-bottom:4px;font-weight:700;font-size:.85rem;">العنوان *</label>
+            <input type="text" name="title" id="mediaTitle" required style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.9rem;" placeholder="أدخل عنوان الملف">
           </div>
-          <div><label style="display:block;margin-bottom:4px;font-weight:600;font-size:.85rem;">التصنيف</label><input type="text" name="category" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.9rem;" placeholder="عام"></div>
+          <div>
+            <label style="display:block;margin-bottom:4px;font-weight:700;font-size:.85rem;">النوع</label>
+            <select name="type" id="mediaType" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.9rem;">
+              <option value="image">صورة</option>
+              <option value="video">فيديو</option>
+              <option value="audio">صوت</option>
+            </select>
+          </div>
         </div>
-        <div style="margin-bottom:16px;"><label style="display:block;margin-bottom:4px;font-weight:600;font-size:.85rem;">الوصف</label><textarea name="description" rows="2" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.9rem;" placeholder="وصف اختياري"></textarea></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <label style="display:block;margin-bottom:4px;font-weight:700;font-size:.85rem;">التصنيف</label>
+            <input type="text" name="category" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.9rem;" placeholder="عام">
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:4px;font-weight:700;font-size:.85rem;">رابط اختياري</label>
+            <input type="url" name="link" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.9rem;" placeholder="https://example.com">
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block;margin-bottom:4px;font-weight:700;font-size:.85rem;">الوصف</label>
+          <textarea name="description" rows="2" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.9rem;" placeholder="وصف اختياري للملف"></textarea>
+        </div>
 
         <!-- Buttons -->
         <div style="display:flex;gap:10px;">
-          <button type="submit" id="uploadBtn" class="btn btn-primary" style="padding:10px 24px;">رفع الملف</button>
-          <button type="button" class="btn btn-secondary" onclick="toggleUpload()" style="padding:10px 24px;">إلغاء</button>
+          <button type="submit" id="uploadBtn" class="btn btn-primary" style="padding:10px 28px;">رفع الملف</button>
+          <button type="button" class="btn btn-secondary" onclick="toggleUpload()" style="padding:10px 28px;">إلغاء</button>
         </div>
 
         <!-- Status -->
@@ -68,16 +90,24 @@
       <% media.forEach(item => { %>
       <div id="media-<%= item.id %>" style="border-radius:14px;overflow:hidden;background:#fff;border:1px solid #e2e8f0;transition:all .3s;">
         <% if (item.type === 'image') { %>
-          <img src="<%= item.file_path %>" alt="<%= item.title %>" style="width:100%;height:150px;object-fit:cover;" loading="lazy" onerror="this.style.display='none'">
+          <% if (item.link) { %>
+            <a href="<%= item.link %>" target="_blank" rel="noopener">
+              <img src="<%= item.file_path %>" alt="<%= item.title %>" style="width:100%;height:150px;object-fit:cover;" loading="lazy" onerror="this.style.display='none'">
+            </a>
+          <% } else { %>
+            <img src="<%= item.file_path %>" alt="<%= item.title %>" style="width:100%;height:150px;object-fit:cover;" loading="lazy" onerror="this.style.display='none'">
+          <% } %>
         <% } else if (item.type === 'video') { %>
           <div style="height:150px;background:linear-gradient(135deg,#1e293b,#334155);display:flex;align-items:center;justify-content:center;"><span style="font-size:48px;">🎬</span></div>
         <% } else { %>
           <div style="height:150px;background:linear-gradient(135deg,#1e3a5f,#2d5a87);display:flex;align-items:center;justify-content:center;"><span style="font-size:48px;">🎵</span></div>
         <% } %>
         <div style="padding:14px;">
-          <p style="font-size:.88rem;font-weight:700;margin:0 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="<%= item.title %>"><%= item.title %></p>
-          <p style="font-size:.75rem;color:#94a3b8;margin:0 0 10px;"><%= item.type %> • <%= item.category || 'عام' %></p>
-          <button onclick="deleteMedia(<%= item.id %>)" style="width:100%;padding:8px;background:#fee2e2;color:#b91c1c;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;" onmouseover="this.background='#fecaca'" onmouseout="this.background='#fee2e2'">🗑 حذف</button>
+          <p style="font-size:.88rem;font-weight:700;margin:0 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="<%= item.title %>"><%= item.title || 'بدون عنوان' %></p>
+          <p style="font-size:.75rem;color:#94a3b8;margin:0 0 4px;"><%= item.type %> • <%= item.category || 'عام' %></p>
+          <% if (item.description) { %><p style="font-size:.75rem;color:#64748b;margin:0 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><%= item.description %></p><% } %>
+          <% if (item.link) { %><p style="font-size:.7rem;margin:0 0 8px;"><a href="<%= item.link %>" target="_blank" rel="noopener" style="color:#0f3b82;">🔗 رابط</a></p><% } %>
+          <button onclick="deleteMedia(<%= item.id %>)" style="width:100%;padding:8px;background:#fee2e2;color:#b91c1c;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;">🗑 حذف</button>
         </div>
       </div>
       <% }); %>
@@ -115,16 +145,12 @@ function handleFileSelect(input) {
 
   document.getElementById('fileName').textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)';
   document.getElementById('dropText').textContent = '✅ تم اختيار الملف';
+  document.getElementById('uploadIcon').textContent = file.type.startsWith('video') ? '🎬' : file.type.startsWith('audio') ? '🎵' : '🖼️';
 
   // Auto-detect type
   if (file.type.startsWith('video')) document.getElementById('mediaType').value = 'video';
   else if (file.type.startsWith('audio')) document.getElementById('mediaType').value = 'audio';
   else document.getElementById('mediaType').value = 'image';
-
-  // Auto-fill title
-  if (!document.getElementById('mediaTitle').value) {
-    document.getElementById('mediaTitle').value = file.name.replace(/\.[^/.]+$/, '');
-  }
 
   // Preview
   var preview = document.getElementById('previewArea');
@@ -175,12 +201,19 @@ document.getElementById('mediaForm').addEventListener('submit', function(e) {
     return;
   }
 
+  var title = document.getElementById('mediaTitle').value.trim();
+  if (!title) {
+    showStatus('❌ أدخل عنوان الملف', 'error');
+    return;
+  }
+
   var formData = new FormData();
   formData.append('file', fileInput.files[0]);
-  formData.append('title', document.getElementById('mediaTitle').value);
+  formData.append('title', title);
   formData.append('type', document.getElementById('mediaType').value);
   formData.append('category', this.querySelector('[name="category"]').value);
   formData.append('description', this.querySelector('[name="description"]').value);
+  formData.append('link', this.querySelector('[name="link"]').value);
 
   var btn = document.getElementById('uploadBtn');
   var progressBar = document.getElementById('progressBar');
@@ -191,15 +224,16 @@ document.getElementById('mediaForm').addEventListener('submit', function(e) {
   btn.textContent = 'جاري الرفع...';
   progressBar.style.display = 'block';
   progressFill.style.width = '0%';
+  showStatus('', 'clear');
 
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/admin/media/upload');
 
-  xhr.upload.onprogress = function(e) {
-    if (e.lengthComputable) {
-      var pct = Math.round((e.loaded / e.total) * 100);
+  xhr.upload.onprogress = function(ev) {
+    if (ev.lengthComputable) {
+      var pct = Math.round((ev.loaded / ev.total) * 100);
       progressFill.style.width = pct + '%';
-      progressText.textContent = pct + '% (' + (e.loaded / 1024 / 1024).toFixed(1) + ' / ' + (e.total / 1024 / 1024).toFixed(1) + ' MB)';
+      progressText.textContent = pct + '% — ' + (ev.loaded / 1024 / 1024).toFixed(1) + ' / ' + (ev.total / 1024 / 1024).toFixed(1) + ' MB';
     }
   };
 
@@ -208,7 +242,9 @@ document.getElementById('mediaForm').addEventListener('submit', function(e) {
       showStatus('✅ تم الرفع بنجاح!', 'success');
       setTimeout(function() { location.reload(); }, 1000);
     } else {
-      showStatus('❌ خطأ في الرفع: ' + xhr.statusText, 'error');
+      var msg = 'خطأ في الرفع';
+      try { var r = JSON.parse(xhr.responseText); msg = r.message || msg; } catch(ex) {}
+      showStatus('❌ ' + msg, 'error');
     }
     btn.disabled = false;
     btn.textContent = 'رفع الملف';
@@ -225,6 +261,7 @@ document.getElementById('mediaForm').addEventListener('submit', function(e) {
 
 function showStatus(msg, type) {
   var s = document.getElementById('uploadStatus');
+  if (type === 'clear') { s.style.display = 'none'; return; }
   s.style.display = 'block';
   s.textContent = msg;
   s.style.background = type === 'success' ? '#dcfce7' : '#fee2e2';

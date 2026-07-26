@@ -446,6 +446,7 @@ function initDatabase() {
     'ALTER TABLE news ADD COLUMN IF NOT EXISTS external_id TEXT',
     'ALTER TABLE news ADD COLUMN IF NOT EXISTS content_hash TEXT',
     "ALTER TABLE fetch_logs ADD COLUMN IF NOT EXISTS triggered_by TEXT DEFAULT 'unknown'",
+    'ALTER TABLE media ADD COLUMN IF NOT EXISTS link TEXT',
   ];
   for (const sql of alterStatements) {
     try { pgdb.exec(sql); } catch(e) { /* column may already exist */ }

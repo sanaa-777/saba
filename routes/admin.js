@@ -61,7 +61,7 @@ const upload = multer({
   }
 });
 
-// Helper: save uploaded file — Cloudinary if configured, else base64 fallback
+// Helper: save uploaded file — Cloudinary if configured, else DB fallback
 const cloudinaryService = require('../services/cloudinary-service');
 
 async function saveFile(file) {
@@ -75,24 +75,13 @@ async function saveFile(file) {
       });
       if (result && result.url) return result.url;
     } catch (err) {
-      console.error('Cloudinary upload failed, falling back to DB:', err.message);
+      console.error('Cloudinary upload failed:', err.message);
     }
   }
 
-  // Store in images table, serve via /api/images/:id
-  try {
-    const db = getDb();
-    const base64 = file.buffer.toString('base64');
-    const result = db.prepare(
-      'INSERT INTO images (filename, mime_type, data, size) VALUES (?, ?, ?, ?)'
-    ).run(file.originalname, file.mimetype, base64, file.size);
-    return '/api/images/' + result.lastInsertRowid;
-  } catch (err) {
-    console.error('DB image save error:', err.message);
-    // Last resort: tiny data URI (may fail for large files)
-    const base64 = file.buffer.toString('base64');
-    return `data:${file.mimetype};base64,${base64}`;
-  }
+  // Store directly as data URI in media table
+  const base64 = file.buffer.toString('base64');
+  return `data:${file.mimetype};base64,${base64}`;
 }
 
 function getMediaType(mimetype) {
@@ -373,12 +362,12 @@ router.post('/media/upload', requireAuth, upload.single('file'), asyncHandler(as
     }
     return res.redirect('/admin/media');
   }
-  const { title, description, category, type } = req.body;
+  const { title, description, category, type, link } = req.body;
   const filePath = await saveFile(req.file);
   const mediaType = type || getMediaType(req.file.mimetype);
 
-  db.prepare('INSERT INTO media (type, title, file_path, description, category, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)').run(
-    mediaType, title || req.file.originalname, filePath, description || '', category || ''
+  db.prepare('INSERT INTO media (type, title, file_path, description, category, link, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)').run(
+    mediaType, title || '', filePath, description || '', category || '', link || ''
   );
 
   if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
