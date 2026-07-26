@@ -24,7 +24,7 @@
               <% files.forEach(file => { %>
                 <article class="news-list-item">
                   <div class="list-item-image">
-                    <img src="<%= file.thumbnail || file.file_path %>" alt="<%= file.title %>" loading="lazy">
+                    <img src="<%= proxyImg(file.thumbnail || file.file_path) %>" alt="<%= file.title %>" loading="lazy">
                   </div>
                   <div class="list-item-content">
                     <span class="eyebrow">ملف</span>

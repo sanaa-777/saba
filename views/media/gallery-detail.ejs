@@ -20,7 +20,7 @@
 
           <div class="gallery-detail">
             <div class="gallery-main-image">
-              <img src="<%= gallery.file_path %>" alt="<%= gallery.title %>" id="mainGalleryImage">
+              <img src="<%= proxyImg(gallery.file_path) %>" alt="<%= gallery.title %>" id="mainGalleryImage">
             </div>
             <% if (gallery.description) { %>
             <div class="gallery-description">
@@ -37,7 +37,7 @@
               <% relatedImages.forEach(img => { %>
                 <a href="/gallery/<%= img.id %>" class="gallery-card">
                   <div class="gallery-thumbnail">
-                    <img src="<%= img.thumbnail || img.file_path %>" alt="<%= img.title %>" loading="lazy">
+                    <img src="<%= proxyImg(img.thumbnail || img.file_path) %>" alt="<%= img.title %>" loading="lazy">
                   </div>
                   <h4><%= img.title %></h4>
                 </a>

@@ -69,6 +69,14 @@ app.use((req, res, next) => {
     res.locals.currentPath = req.path;
     res.locals.session = req.session;
 
+    // Image proxy helper — routes external images through our proxy to avoid hotlink blocking
+    res.locals.proxyImg = function(url) {
+      if (!url) return '';
+      if (url.startsWith('data:') || url.startsWith('/')) return url;
+      if (url.startsWith('http')) return '/api/proxy-image?url=' + encodeURIComponent(url);
+      return url;
+    };
+
     try {
       res.locals.activePoll = db.prepare("SELECT * FROM polls WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1").get();
       if (res.locals.activePoll) {

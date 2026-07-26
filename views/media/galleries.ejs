@@ -24,7 +24,7 @@
               <% galleries.forEach(gallery => { %>
                 <article class="media-card" onclick="openImageModal('<%= gallery.file_path %>', '<%= gallery.title %>')">
                   <div class="media-card-image">
-                    <img src="<%= gallery.file_path %>" alt="<%= gallery.title %>" loading="lazy">
+                    <img src="<%= proxyImg(gallery.file_path) %>" alt="<%= gallery.title %>" loading="lazy">
                   </div>
                   <div class="media-card-body">
                     <span class="eyebrow">صورة</span>

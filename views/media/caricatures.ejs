@@ -24,7 +24,7 @@
               <% caricatures.forEach(item => { %>
                 <article class="media-card" onclick="openImageModal('<%= item.file_path %>', '<%= item.title %>')">
                   <div class="media-card-image">
-                    <img src="<%= item.file_path %>" alt="<%= item.title %>" loading="lazy">
+                    <img src="<%= proxyImg(item.file_path) %>" alt="<%= item.title %>" loading="lazy">
                   </div>
                   <div class="media-card-body">
                     <span class="eyebrow">كاريكاتير</span>

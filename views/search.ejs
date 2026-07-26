@@ -97,7 +97,7 @@
                   <article class="news-list-item">
                     <div class="list-item-image">
                       <a href="/news/<%= item.id %>">
-                        <% if (item.image) { %><img src="<%= item.image %>" alt="<%= item.title %><% } %>" loading="lazy">
+                        <% if (item.image) { %><img src="<%= proxyImg(item.image) %>" alt="<%= item.title %>" loading="lazy"><% } %>
                       </a>
                     </div>
                     <div class="list-item-content">
