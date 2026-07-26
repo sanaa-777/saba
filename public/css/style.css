@@ -1143,25 +1143,54 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  margin-top: 18px;
+  margin-top: 24px;
+  padding: 16px 0;
 }
 .page-link {
-  min-width: 42px;
-  height: 42px;
-  padding-inline: 14px;
-  border-radius: 14px;
+  min-width: 40px;
+  height: 40px;
+  padding-inline: 12px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   border: 1px solid var(--border);
   background: var(--surface-2);
   color: var(--text-soft);
-  font-weight: 800;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.2s;
 }
 .page-link.active,
-.page-link:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.page-link:hover { background: var(--primary); color: #fff; border-color: var(--primary); transform: translateY(-1px); }
+.page-dots {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 40px;
+  color: var(--text-muted, #94a3b8);
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.prev-link,
+.next-link {
+  background: transparent;
+  border-color: transparent;
+  color: var(--primary);
+  font-size: 0.85rem;
+}
+.prev-link:hover,
+.next-link:hover {
+  background: var(--primary);
+  color: #fff;
+}
+.prev-link svg,
+.next-link svg { flex-shrink: 0; }
 
 /* ===== Search / forms ===== */
 .search-form {

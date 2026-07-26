@@ -115,19 +115,8 @@
                 <% }) %>
               </div>
 
-              <% if (pagination.totalPages > 1) { %>
-              <div class="pagination">
-                <% if (pagination.page > 1) { %>
-                  <a href="?q=<%= query.q %>&category=<%= query.category || '' %>&scope=<%= query.scope || '' %>&sort=<%= query.sort || '' %>&date_from=<%= query.date_from || '' %>&date_to=<%= query.date_to || '' %>&page=<%= pagination.page - 1 %>" class="page-link">السابق</a>
-                <% } %>
-                <% for (let i = 1; i <= pagination.totalPages; i++) { %>
-                  <a href="?q=<%= query.q %>&category=<%= query.category || '' %>&scope=<%= query.scope || '' %>&sort=<%= query.sort || '' %>&date_from=<%= query.date_from || '' %>&date_to=<%= query.date_to || '' %>&page=<%= i %>" class="page-link <%= i === pagination.page ? 'active' : '' %>"><%= i %></a>
-                <% } %>
-                <% if (pagination.page < pagination.totalPages) { %>
-                  <a href="?q=<%= query.q %>&category=<%= query.category || '' %>&scope=<%= query.scope || '' %>&sort=<%= query.sort || '' %>&date_from=<%= query.date_from || '' %>&date_to=<%= query.date_to || '' %>&page=<%= pagination.page + 1 %>" class="page-link">التالي</a>
-                <% } %>
-              </div>
-              <% } %>
+              <% const searchBase = '?q=' + encodeURIComponent(query.q || '') + '&category=' + (query.category || '') + '&scope=' + (query.scope || '') + '&sort=' + (query.sort || '') + '&date_from=' + (query.date_from || '') + '&date_to=' + (query.date_to || '') + '&'; %>
+              <%- include('partials/pagination', { pagination, baseUrl: searchBase }) %>
             <% } else { %>
               <div class="no-results"><p>لم يتم العثور على نتائج مطابقة. جرّب كلمات أخرى أو وسّع نطاق البحث.</p></div>
             <% } %>

@@ -31,13 +31,7 @@
               </article>
             <% }); %>
           </div>
-          <% if (pagination.totalPages > 1) { %>
-          <div class="pagination">
-            <% for (let i = 1; i <= pagination.totalPages; i++) { %>
-              <a href="?page=<%= i %>" class="page-link <%= i === pagination.page ? 'active' : '' %>"><%= i %></a>
-            <% } %>
-          </div>
-          <% } %>
+          <%- include('partials/pagination', { pagination, baseUrl: '?' }) %>
           <% } else { %>
           <div class="no-results"><p>لا توجد أخبار بهذا الوسم</p></div>
           <% } %>

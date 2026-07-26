@@ -1,0 +1,68 @@
+<%#
+  Smart Pagination Component
+  Usage: <%- include('partials/pagination', { pagination, baseUrl }) %>
+  pagination = { page, totalPages, total }
+  baseUrl = base URL for page links (e.g. "?category=1&")
+%>
+<% if (pagination.totalPages > 1) { %>
+<%
+  const current = pagination.page;
+  const total = pagination.totalPages;
+  const base = baseUrl || '?';
+
+  // Build smart page range
+  function getPageRange(current, total) {
+    const delta = 2; // pages around current
+    const range = [];
+    const rangeWithDots = [];
+
+    // Always include first page
+    range.push(1);
+
+    // Pages around current
+    for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
+      range.push(i);
+    }
+
+    // Always include last page
+    if (total > 1) range.push(total);
+
+    // Add dots between gaps
+    let prev = 0;
+    for (const page of range) {
+      if (page - prev > 1) {
+        rangeWithDots.push('...');
+      }
+      rangeWithDots.push(page);
+      prev = page;
+    }
+
+    return rangeWithDots;
+  }
+
+  const pages = getPageRange(current, total);
+%>
+<div class="pagination">
+  <% if (current > 1) { %>
+    <a href="<%= base %>page=<%= current - 1 %>" class="page-link prev-link" aria-label="السابق">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      السابق
+    </a>
+  <% } %>
+
+  <% pages.forEach(function(p) { %>
+    <% if (p === '...') { %>
+      <span class="page-dots">…</span>
+    <% } else { %>
+      <a href="<%= base %>page=<%= p %>" class="page-link<%= p === current ? ' active' : '' %>"><%= p %></a>
+    <% } %>
+  <% }) %>
+
+  <% if (current < total) { %>
+    <a href="<%= base %>page=<%= current + 1 %>" class="page-link next-link" aria-label="التالي">
+      التالي
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+  <% } %>
+</div>
+<% } %>

@@ -114,19 +114,7 @@
               <% }) %>
             </div>
 
-            <% if (pagination.totalPages > 1) { %>
-            <div class="pagination">
-              <% if (pagination.page > 1) { %>
-                <a href="?page=<%= pagination.page - 1 %>" class="page-link">السابق</a>
-              <% } %>
-              <% for (let i = 1; i <= pagination.totalPages; i++) { %>
-                <a href="?page=<%= i %>" class="page-link <%= i === pagination.page ? 'active' : '' %>"><%= i %></a>
-              <% } %>
-              <% if (pagination.page < pagination.totalPages) { %>
-                <a href="?page=<%= pagination.page + 1 %>" class="page-link">التالي</a>
-              <% } %>
-            </div>
-            <% } %>
+            <%- include('partials/pagination', { pagination, baseUrl: '?' }) %>
           </section>
         <% } else { %>
           <div class="no-results"><p>لا توجد أخبار في هذا التصنيف حالياً.</p></div>
