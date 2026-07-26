@@ -18,7 +18,7 @@
     const slug = item.slug || (item.news_title || item.title || '').replace(/[^a-zA-Z0-9\u0600-\u06FF]+/g, '-').substring(0, 80);
     return '/news/' + id + '-' + slug;
   }
-  function articleTitle(item) { return item.news_title || item.title; }
+  function articleTitle(item) { return cleanEmoji(item.news_title || item.title || ''); }
   function truncate(str, len) { if (!str) return ''; return str.length > len ? str.substring(0, len) + '...' : str; }
 %>
 
@@ -71,16 +71,13 @@
     </section>
     <% } %>
 
-    <%/* ═══ BREAKING NEWS TICKER ═══ */%>
-    <% if (urgentNews && urgentNews.length > 0) { %>
-    <section class="breaking-strip" aria-label="أخبار عاجلة">
-      <div class="breaking-label"><span class="pulse-dot"></span> عاجل</div>
-      <div class="breaking-scroll">
-        <% urgentNews.slice(0, 6).forEach(item => { %>
-        <a href="/news/<%= item.id %>" class="breaking-item"><%= truncate(item.title, 100) %></a>
-        <% }) %>
-      </div>
-    </section>
+    <%/* ═══ CATEGORIES NAV ═══ */%>
+    <% if (categories && categories.length > 0) { %>
+    <nav class="categories-strip" aria-label="الأقسام">
+      <% categories.forEach(cat => { %>
+        <a href="/category/<%= cat.id %>" class="cat-chip"><%= cat.name_ar %></a>
+      <% }) %>
+    </nav>
     <% } %>
 
     <%/* ═══ MAIN CONTENT + SIDEBAR LAYOUT ═══ */%>
@@ -107,7 +104,7 @@
                 <% } %>
                 <div class="news-card-body">
                   <span class="cat-badge-sm"><%= item.category_name || '' %></span>
-                  <h4><%= truncate(item.title, 90) %></h4>
+                  <h4><%= truncate(cleanEmoji(item.title), 90) %></h4>
                   <span class="time-ago"><%= timeAgo(item.published_at) %></span>
                 </div>
               </a>
@@ -134,7 +131,7 @@
                 </div>
                 <% } %>
                 <div class="featured-card-body">
-                  <h3><%= truncate(item.title, 100) %></h3>
+                  <h3><%= truncate(cleanEmoji(item.title), 100) %></h3>
                   <% if (item.summary) { %><p><%= truncate(item.summary, 120) %></p><% } %>
                   <span class="time-ago"><%= timeAgo(item.published_at) %></span>
                 </div>
@@ -165,7 +162,7 @@
                     </div>
                     <% } %>
                     <div class="cat-lead-body">
-                      <h3><%= items[0].title %></h3>
+                      <h3><%= cleanEmoji(items[0].title) %></h3>
                       <% if (items[0].summary) { %><p><%= truncate(items[0].summary, 150) %></p><% } %>
                       <span class="time-ago"><%= timeAgo(items[0].published_at) %></span>
                     </div>
@@ -182,7 +179,7 @@
                     </a>
                     <% } %>
                     <div class="cat-list-body">
-                      <h4><a href="/news/<%= item.id %>"><%= truncate(item.title, 80) %></a></h4>
+                      <h4><a href="/news/<%= item.id %>"><%= truncate(cleanEmoji(item.title), 80) %></a></h4>
                       <span class="time-ago"><%= timeAgo(item.published_at) %></span>
                     </div>
                   </article>
@@ -225,7 +222,7 @@
             <article class="live-item">
               <span class="live-num"><%= i + 1 %></span>
               <div class="live-item-body">
-                <h4><a href="/news/<%= item.id %>"><%= truncate(item.title, 80) %></a></h4>
+                <h4><a href="/news/<%= item.id %>"><%= truncate(cleanEmoji(item.title), 80) %></a></h4>
                 <span class="time-ago"><%= timeAgo(item.published_at) %></span>
               </div>
             </article>
@@ -245,8 +242,7 @@
             <article class="most-read-item">
               <span class="rank rank-<%= i + 1 %>"><%= i + 1 %></span>
               <div class="most-read-body">
-                <h4><a href="/news/<%= item.id %>"><%= truncate(item.title, 70) %></a></h4>
-                <span class="views-count"><%= item.views %> مشاهدة</span>
+                <h4><a href="/news/<%= item.id %>"><%= truncate(cleanEmoji(item.title), 70) %></a></h4>
               </div>
             </article>
             <% }) %>
@@ -264,7 +260,7 @@
             <% urgentNews.slice(0, 5).forEach(item => { %>
             <article class="breaking-sidebar-item">
               <a href="/news/<%= item.id %>">
-                <h4><%= truncate(item.title, 80) %></h4>
+                <h4><%= truncate(cleanEmoji(item.title), 80) %></h4>
                 <span class="time-ago"><%= timeAgo(item.published_at) %></span>
               </a>
             </article>

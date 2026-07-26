@@ -646,7 +646,7 @@ select:focus {
   align-items: center;
   gap: 28px;
   white-space: nowrap;
-  animation: ticker-move 34s linear infinite;
+  animation: ticker-move 80s linear infinite;
 }
 .ticker-scroll:hover { animation-play-state: paused; }
 .ticker-scroll a { color: inherit; font-weight: 600; opacity: 0.95; }
@@ -2495,8 +2495,38 @@ a:focus-visible, button:focus-visible {
 }
 .breaking-item:hover { opacity: 1; text-decoration: underline; }
 
+/* Categories Strip */
+.categories-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 0;
+  margin-bottom: 20px;
+}
+.cat-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 18px;
+  border-radius: 24px;
+  background: var(--surface-2, #f1f5f9);
+  color: var(--text-strong, #1e293b);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--border, #e2e8f0);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.cat-chip:hover {
+  background: var(--primary, #0f3b82);
+  color: #fff;
+  border-color: var(--primary, #0f3b82);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15,59,130,0.2);
+}
+
 /* Main Layout */
-.main-layout {
+.main-layout { 
   display: grid; grid-template-columns: 1fr 340px; gap: 28px;
   margin-bottom: 32px;
 }

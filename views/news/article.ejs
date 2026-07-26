@@ -8,7 +8,7 @@
       <span class="separator">/</span>
       <a href="/category/<%= article.cat_id %>"><%= article.category_name %></a>
       <span class="separator">/</span>
-      <span class="current"><%= article.title.length > 70 ? article.title.substring(0, 70) + '…' : article.title %></span>
+      <span class="current"><%= cleanEmoji(article.title).length > 70 ? cleanEmoji(article.title).substring(0, 70) + '…' : cleanEmoji(article.title) %></span>
     </nav>
 
     <div class="content-grid">
@@ -16,7 +16,7 @@
         <article class="article-page">
           <header class="article-header">
             <span class="article-category"><%= article.category_name %></span>
-            <h1 class="article-title"><%= article.title %></h1>
+            <h1 class="article-title"><%= cleanEmoji(article.title) %></h1>
 <%
   function timeAgo(dateStr) {
     if (!dateStr) return '';
@@ -139,7 +139,7 @@
                   <% } %>
                   <div class="card-content">
                     <span class="eyebrow"><%= item.category_name || article.category_name %></span>
-                    <h4><a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>"><%= item.title %></a></h4>
+                    <h4><a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>"><%= cleanEmoji(item.title) %></a></h4>
                     <span class="card-date"><%= timeAgo(item.published_at) %></span>
                   </div>
                 </article>

@@ -75,6 +75,13 @@ app.use((req, res, next) => {
       if (url.startsWith('data:') || url.startsWith('/')) return url;
       if (url.startsWith('http')) return '/api/proxy-image?url=' + encodeURIComponent(url);
       return url;
+;
+    };
+
+    // Clean emojis from text — replace 🔁🖼 and 🖼 with 🔴
+    res.locals.cleanEmoji = function(text) {
+      if (!text) return '';
+      return text.replace(/🔁🖼/g, '🔴').replace(/🖼/g, '🔴');
     };
 
     try {

@@ -21,7 +21,7 @@
               <article class="news-list-item">
                 <% if (item.image) { %><div class="list-item-image"><a href="/news/<%= item.id %>"><img src="<%= proxyImg(item.image) %>" alt="<%= item.title %>" loading="lazy"></a></div><% } %>
                 <div class="list-item-content">
-                  <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
+                  <h3><a href="/news/<%= item.id %>"><%= cleanEmoji(item.title) %></a></h3>
                   <p><%= item.summary %></p>
                   <div class="card-meta">
                     <span class="card-category"><%= item.category_name %></span>

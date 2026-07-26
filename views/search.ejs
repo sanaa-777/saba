@@ -104,11 +104,11 @@
                     <% } %>
                     <div class="list-item-content">
                       <span class="eyebrow"><%= item.category_name || 'عام' %></span>
-                      <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>
+                      <h3><a href="/news/<%= item.id %>"><%= cleanEmoji(item.title) %></a></h3>
                       <% if (item.summary) { %><p><%= item.summary %></p><% } %>
                       <div class="card-meta">
                         <span><%= timeAgo(item.published_at) %></span>
-                        <span><%= item.views %> مشاهدة</span>
+
                       </div>
                     </div>
                   </article>
