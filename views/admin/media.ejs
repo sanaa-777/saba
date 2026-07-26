@@ -10,6 +10,7 @@
     <!-- Upload Section -->
     <div id="uploadSection" style="display:none;margin-bottom:24px;padding:24px;background:#f8fafc;border-radius:16px;border:2px dashed #cbd5e1;">
       <form id="mediaForm" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <!-- Drop Zone -->
         <div id="dropZone" style="cursor:pointer;padding:40px 20px;text-align:center;background:#fff;border-radius:12px;border:2px dashed #94a3b8;margin-bottom:16px;transition:all .2s;" onclick="document.getElementById('fileInput').click()">
           <div id="uploadIcon" style="font-size:48px;">📁</div>
@@ -229,6 +230,7 @@ document.getElementById('mediaForm').addEventListener('submit', function(e) {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/admin/media/upload');
   xhr.setRequestHeader('Accept', 'application/json');
+  xhr.setRequestHeader('X-CSRF-Token', document.querySelector('[name=_csrf]').value);
 
   xhr.upload.onprogress = function(ev) {
     if (ev.lengthComputable) {
@@ -275,7 +277,7 @@ function deleteMedia(id) {
 
   fetch('/admin/media/delete/' + id, {
     method: 'POST',
-    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-Token': document.querySelector('[name=_csrf]').value }
   }).then(function(r) { return r.json(); }).then(function(data) {
     if (data.success) {
       var el = document.getElementById('media-' + id);
