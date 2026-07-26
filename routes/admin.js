@@ -527,22 +527,40 @@ router.post('/slider/delete/:id', requireAuth, (req, res) => {
 
 // Advertisements
 router.get('/ads', requireAuth, (req, res) => {
-  const db = getDb();
-  const ads = db.prepare('SELECT * FROM advertisements ORDER BY position').all();
-  res.render('admin/ads', { title: 'إدارة الإعلانات', admin: req.session.admin, ads });
+  try {
+    const db = getDb();
+    const ads = db.prepare('SELECT * FROM advertisements ORDER BY id DESC').all();
+    console.log('[Ads] Loaded', ads.length, 'ads');
+    res.render('admin/ads', { title: 'إدارة الإعلانات', admin: req.session.admin, ads });
+  } catch (err) {
+    console.error('[Ads] Load error:', err.message);
+    res.render('admin/ads', { title: 'إدارة الإعلانات', admin: req.session.admin, ads: [] });
+  }
 });
 
 router.post('/ads/create', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
   try {
     const db = getDb();
     const { name, position, code, link, start_date, end_date, is_active } = req.body;
-    const image = req.file ? saveFile(req.file) : null;
-    db.prepare('INSERT INTO advertisements (name, position, code, image, link, start_date, end_date, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
-      name || '', position || 'header', code || '', image, link || '', start_date || null, end_date || null, is_active ? 1 : 0
+    let image = null;
+    if (req.file) {
+      try {
+        image = saveFile(req.file);
+        console.log('[Ads] Image saved, size:', image.length);
+      } catch (imgErr) {
+        console.error('[Ads] Image save error:', imgErr.message);
+      }
+    }
+    const result = db.prepare('INSERT INTO advertisements (name, position, code, image, link, start_date, end_date, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
+      name || '', position || 'header', code || '', image, link || '', (start_date && start_date.trim()) || null, (end_date && end_date.trim()) || null, is_active ? 1 : 0
     );
+    console.log('[Ads] Created ad id:', result.lastInsertRowid);
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.json({ success: true, message: 'تم إضافة الإعلان بنجاح', id: result.lastInsertRowid });
+    }
     res.redirect('/admin/ads');
   } catch (err) {
-    console.error('Ad create error:', err.message);
+    console.error('[Ads] Create error:', err.message);
     res.status(500).render('error', { title: 'خطأ', error: 'فشل إنشاء الإعلان: ' + err.message });
   }
 }));
@@ -566,9 +584,19 @@ router.post('/ads/edit/:id', requireAuth, upload.single('image'), asyncHandler(a
 }));
 
 router.post('/ads/delete/:id', requireAuth, (req, res) => {
-  const db = getDb();
-  db.prepare('DELETE FROM advertisements WHERE id = ?').run(req.params.id);
-  res.redirect('/admin/ads');
+  try {
+    const db = getDb();
+    db.prepare('DELETE FROM advertisements WHERE id = ?').run(req.params.id);
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.json({ success: true });
+    }
+    res.redirect('/admin/ads');
+  } catch (err) {
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+    res.redirect('/admin/ads');
+  }
 });
 
 // Settings
