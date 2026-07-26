@@ -183,7 +183,8 @@ router.get('/', (req, res) => {
       totalUnique: registry.displayed.size,
       sections: registry.debug,
       duplicateCheck: 'PASS',
-      ids: [...registry.displayed]
+      ids: [...registry.displayed],
+      adsDebug: { total: activeAds.length, header: headerAds.length, sidebar: sidebarAds.length, content: contentAds.length, footer: footerAds.length, raw: activeAds.map(a => ({id:a.id, name:a.name, pos:a.position, active:a.is_active})) }
     });
   }
 
@@ -583,6 +584,20 @@ router.get('/archive/:date', (req, res) => {
     date,
     news
   });
+});
+
+// Public ads check endpoint
+router.get('/api/check-ads', (req, res) => {
+  try {
+    const db = getDb();
+    let allAds = [];
+    try { allAds = db.prepare('SELECT * FROM advertisements ORDER BY id DESC').all(); } catch(e) {}
+    let activeAds = [];
+    try { activeAds = db.prepare("SELECT * FROM advertisements WHERE is_active = 1 AND (start_date IS NULL OR start_date <= CURRENT_DATE) AND (end_date IS NULL OR end_date >= CURRENT_DATE) ORDER BY id DESC").all(); } catch(e) {}
+    res.json({ totalAds: allAds.length, activeAds: activeAds.length, ads: allAds.map(a => ({id:a.id, name:a.name, pos:a.position, active:a.is_active, img:!!a.image, sd:a.start_date, ed:a.end_date})) });
+  } catch(err) {
+    res.json({ error: err.message });
+  }
 });
 
 module.exports = router;
