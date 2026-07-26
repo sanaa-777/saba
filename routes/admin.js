@@ -64,22 +64,22 @@ const upload = multer({
 // Helper: save uploaded file — Cloudinary if configured, else base64 fallback
 const cloudinaryService = require('../services/cloudinary-service');
 
-async function saveImage(file) {
+async function saveFile(file) {
   if (!file) return null;
-  
-  // Try Cloudinary first
-  if (cloudinaryService.isConfigured()) {
+
+  // Try Cloudinary for images
+  if (file.mimetype.startsWith('image') && cloudinaryService.isConfigured()) {
     try {
       const result = await cloudinaryService.uploadImage(file.buffer, {
-        folder: 'awtar-news/articles'
+        folder: 'awtar-news/media'
       });
       if (result && result.url) return result.url;
     } catch (err) {
       console.error('Cloudinary upload failed, falling back to base64:', err.message);
     }
   }
-  
-  // Fallback: base64 data URI
+
+  // Fallback: base64 data URI (works for images, small videos, audio)
   const base64 = file.buffer.toString('base64');
   return `data:${file.mimetype};base64,${base64}`;
 }
@@ -184,7 +184,7 @@ router.get('/news/create', requireAuth, (req, res) => {
 router.post('/news/create', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
   const db = getDb();
   const { title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags } = req.body;
-  const image = await saveImage(req.file);
+  const image = await saveFile(req.file);
 
   const newsId = createNews(db, {
     title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags, image
@@ -211,7 +211,7 @@ router.post('/news/edit/:id', requireAuth, upload.single('image'), asyncHandler(
   const { title, summary, content, category_id, source, is_breaking, is_slider, is_featured, status, meta_title, meta_description, tags, keep_image } = req.body;
   const existing = db.prepare('SELECT image FROM news WHERE id = ?').get(req.params.id);
   let image = existing ? existing.image : null;
-  if (req.file) image = await saveImage(req.file);
+  if (req.file) image = await saveFile(req.file);
   if (!keep_image && !req.file) image = null;
 
   updateNews(db, req.params.id, {
@@ -356,21 +356,40 @@ router.get('/media', requireAuth, (req, res) => {
 
 router.post('/media/upload', requireAuth, upload.single('file'), asyncHandler(async (req, res) => {
   const db = getDb();
-  if (!req.file) return res.redirect('/admin/media');
+  if (!req.file) {
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.status(400).json({ success: false, message: 'لم يتم اختيار ملف' });
+    }
+    return res.redirect('/admin/media');
+  }
   const { title, description, category, type } = req.body;
-  const filePath = await saveImage(req.file);
+  const filePath = await saveFile(req.file);
   const mediaType = type || getMediaType(req.file.mimetype);
 
   db.prepare('INSERT INTO media (type, title, file_path, description, category, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)').run(
     mediaType, title || req.file.originalname, filePath, description || '', category || ''
   );
+
+  if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+    return res.json({ success: true, message: 'تم الرفع بنجاح' });
+  }
   res.redirect('/admin/media');
 }));
 
 router.post('/media/delete/:id', requireAuth, (req, res) => {
   const db = getDb();
-  db.prepare('DELETE FROM media WHERE id = ?').run(req.params.id);
-  res.redirect('/admin/media');
+  try {
+    db.prepare('DELETE FROM media WHERE id = ?').run(req.params.id);
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.json({ success: true });
+    }
+    res.redirect('/admin/media');
+  } catch (err) {
+    if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+    res.redirect('/admin/media');
+  }
 });
 
 // Breaking news
@@ -444,7 +463,7 @@ router.post('/slider/create', requireAuth, upload.single('image'), asyncHandler(
   const db = getDb();
   const { news_id, title, summary, link, sort_order, is_active } = req.body;
   let image = null;
-  if (req.file) image = await saveImage(req.file);
+  if (req.file) image = await saveFile(req.file);
   else if (news_id) {
     const n = db.prepare('SELECT image FROM news WHERE id = ?').get(news_id);
     if (n) image = n.image;
@@ -460,7 +479,7 @@ router.post('/slider/edit/:id', requireAuth, upload.single('image'), asyncHandle
   const { news_id, title, summary, link, sort_order, is_active, keep_image } = req.body;
   const existing = db.prepare('SELECT image FROM slider WHERE id = ?').get(req.params.id);
   let image = existing ? existing.image : null;
-  if (req.file) image = await saveImage(req.file);
+  if (req.file) image = await saveFile(req.file);
   if (!keep_image && !req.file) image = null;
   db.prepare('UPDATE slider SET news_id=?, image=?, title=?, summary=?, link=?, sort_order=?, is_active=? WHERE id=?').run(
     news_id || null, image, title, summary, link, sort_order || 0, is_active ? 1 : 0, req.params.id
@@ -484,7 +503,7 @@ router.get('/ads', requireAuth, (req, res) => {
 router.post('/ads/create', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
   const db = getDb();
   const { name, position, code, link, start_date, end_date, is_active } = req.body;
-  const image = await saveImage(req.file);
+  const image = await saveFile(req.file);
   db.prepare('INSERT INTO advertisements (name, position, code, image, link, start_date, end_date, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
     name, position, code, image, link, start_date, end_date, is_active ? 1 : 0
   );
@@ -496,7 +515,7 @@ router.post('/ads/edit/:id', requireAuth, upload.single('image'), asyncHandler(a
   const { name, position, code, link, start_date, end_date, is_active, keep_image } = req.body;
   const existing = db.prepare('SELECT image FROM advertisements WHERE id = ?').get(req.params.id);
   let image = existing ? existing.image : null;
-  if (req.file) image = await saveImage(req.file);
+  if (req.file) image = await saveFile(req.file);
   if (!keep_image && !req.file) image = null;
   db.prepare('UPDATE advertisements SET name=?, position=?, code=?, image=?, link=?, start_date=?, end_date=?, is_active=? WHERE id=?').run(
     name, position, code, image, link, start_date, end_date, is_active ? 1 : 0, req.params.id

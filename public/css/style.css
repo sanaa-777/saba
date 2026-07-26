@@ -2495,33 +2495,45 @@ a:focus-visible, button:focus-visible {
 }
 .breaking-item:hover { opacity: 1; text-decoration: underline; }
 
-/* Categories Strip */
+/* Categories Strip — horizontal scroll */
 .categories-strip {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
-  padding: 14px 0;
+  padding: 16px 0;
   margin-bottom: 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
 }
+.categories-strip::-webkit-scrollbar { display: none; }
 .cat-chip {
   display: inline-flex;
   align-items: center;
-  padding: 8px 18px;
-  border-radius: 24px;
+  padding: 9px 20px;
+  border-radius: 26px;
   background: var(--surface-2, #f1f5f9);
   color: var(--text-strong, #1e293b);
-  font-size: 0.85rem;
+  font-size: .84rem;
   font-weight: 600;
   text-decoration: none;
   border: 1px solid var(--border, #e2e8f0);
-  transition: all 0.2s;
+  transition: all .2s;
   white-space: nowrap;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-x;
 }
-.cat-chip:hover {
+.cat-chip:hover,
+.cat-chip.active {
   background: var(--primary, #0f3b82);
   color: #fff;
   border-color: var(--primary, #0f3b82);
-  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(15,59,130,.25);
+  transform: none;
   box-shadow: 0 4px 12px rgba(15,59,130,0.2);
 }
 
@@ -2853,40 +2865,6 @@ a:focus-visible, button:focus-visible {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-/* ── Categories Strip ── */
-.categories-strip {
-  display: flex;
-  gap: 8px;
-  padding: 16px 0;
-  margin-bottom: 20px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-.categories-strip::-webkit-scrollbar { display: none; }
-.cat-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 9px 20px;
-  border-radius: 26px;
-  background: var(--surface-2, #f1f5f9);
-  color: var(--text-strong, #1e293b);
-  font-size: .84rem;
-  font-weight: 600;
-  text-decoration: none;
-  border: 1px solid var(--border, #e2e8f0);
-  transition: all .2s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.cat-chip:hover,
-.cat-chip.active {
-  background: var(--primary, #0f3b82);
-  color: #fff;
-  border-color: var(--primary, #0f3b82);
-  box-shadow: 0 4px 14px rgba(15,59,130,.25);
 }
 
 /* ── News Grid ── */
