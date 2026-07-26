@@ -228,6 +228,7 @@ document.getElementById('mediaForm').addEventListener('submit', function(e) {
 
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/admin/media/upload');
+  xhr.setRequestHeader('Accept', 'application/json');
 
   xhr.upload.onprogress = function(ev) {
     if (ev.lengthComputable) {
