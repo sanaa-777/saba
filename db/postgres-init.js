@@ -450,7 +450,12 @@ function initDatabase() {
     'ALTER TABLE media ADD COLUMN IF NOT EXISTS link TEXT',
   ];
   for (const sql of alterStatements) {
-    try { pgdb.exec(sql); } catch(e) { /* column may already exist */ }
+    try {
+      pgdb.exec(sql);
+      console.log('[DB] Migration OK:', sql.substring(0, 60));
+    } catch(e) {
+      console.log('[DB] Migration:', e.message);
+    }
   }
   // Create missing tables and indexes
   const extraSql = [

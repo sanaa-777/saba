@@ -354,9 +354,17 @@ router.post('/media/upload', requireAuth, upload.single('file'), asyncHandler(as
     const filePath = saveFile(req.file);
     const mediaType = type || getMediaType(req.file.mimetype);
 
-    db.prepare('INSERT INTO media (type, title, file_path, description, category, link, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)').run(
-      mediaType, title.trim(), filePath, description || '', category || '', link || ''
-    );
+    try {
+      db.prepare('INSERT INTO media (type, title, file_path, description, category, link, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)').run(
+        mediaType, title.trim(), filePath, description || '', category || '', link || ''
+      );
+    } catch (insertErr) {
+      // Fallback if link column doesn't exist
+      console.error('Insert with link failed, trying without:', insertErr.message);
+      db.prepare('INSERT INTO media (type, title, file_path, description, category, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)').run(
+        mediaType, title.trim(), filePath, description || '', category || ''
+      );
+    }
 
     return res.json({ success: true, message: 'تم الرفع بنجاح' });
   } catch (err) {
