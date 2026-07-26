@@ -603,8 +603,17 @@ router.get('/api/check-ads', (req, res) => {
     const db = getDb();
     let allAds = [];
     try { allAds = db.prepare('SELECT * FROM advertisements ORDER BY id DESC').all(); } catch(e) {}
-    let activeAds = [];
-    try { activeAds = db.prepare("SELECT * FROM advertisements WHERE is_active = 1 AND (start_date IS NULL OR start_date <= CURRENT_DATE) AND (end_date IS NULL OR end_date >= CURRENT_DATE) ORDER BY id DESC").all(); } catch(e) {}
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const activeAds = allAds.filter(a => {
+      if (!a.is_active) return false;
+      if (!a.start_date && !a.end_date) return true;
+      const sd = a.start_date ? new Date(a.start_date) : null;
+      const ed = a.end_date ? new Date(a.end_date) : null;
+      if (sd && sd > today) return false;
+      if (ed && ed < today) return false;
+      return true;
+    });
     res.json({ totalAds: allAds.length, activeAds: activeAds.length, ads: allAds.map(a => ({id:a.id, name:a.name, pos:a.position, active:a.is_active, img:!!a.image, sd:a.start_date, ed:a.end_date})) });
   } catch(err) {
     res.json({ error: err.message });
