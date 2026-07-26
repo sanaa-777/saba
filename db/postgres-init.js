@@ -184,6 +184,7 @@ function createSchema(pgdb) {
       thumbnail TEXT,
       description TEXT,
       category TEXT,
+      link TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
     `CREATE TABLE IF NOT EXISTS breaking_news (

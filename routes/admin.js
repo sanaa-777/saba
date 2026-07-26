@@ -61,27 +61,14 @@ const upload = multer({
   }
 });
 
-// Helper: save uploaded file — Cloudinary if configured, else DB fallback
+// Helper: save uploaded file
 const cloudinaryService = require('../services/cloudinary-service');
 
-async function saveFile(file) {
+function saveFile(file) {
   if (!file) return null;
-
-  // Try Cloudinary for images
-  if (file.mimetype.startsWith('image') && cloudinaryService.isConfigured()) {
-    try {
-      const result = await cloudinaryService.uploadImage(file.buffer, {
-        folder: 'awtar-news/media'
-      });
-      if (result && result.url) return result.url;
-    } catch (err) {
-      console.error('Cloudinary upload failed:', err.message);
-    }
-  }
-
-  // Store directly as data URI in media table
+  // Store as data URI
   const base64 = file.buffer.toString('base64');
-  return `data:${file.mimetype};base64,${base64}`;
+  return 'data:' + file.mimetype + ';base64,' + base64;
 }
 
 function getMediaType(mimetype) {
@@ -355,25 +342,27 @@ router.get('/media', requireAuth, (req, res) => {
 });
 
 router.post('/media/upload', requireAuth, upload.single('file'), asyncHandler(async (req, res) => {
-  const db = getDb();
-  if (!req.file) {
-    if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+  try {
+    const db = getDb();
+    if (!req.file) {
       return res.status(400).json({ success: false, message: 'لم يتم اختيار ملف' });
     }
-    return res.redirect('/admin/media');
-  }
-  const { title, description, category, type, link } = req.body;
-  const filePath = await saveFile(req.file);
-  const mediaType = type || getMediaType(req.file.mimetype);
+    const { title, description, category, type, link } = req.body;
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, message: 'أدخل عنوان الملف' });
+    }
+    const filePath = saveFile(req.file);
+    const mediaType = type || getMediaType(req.file.mimetype);
 
-  db.prepare('INSERT INTO media (type, title, file_path, description, category, link, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)').run(
-    mediaType, title || '', filePath, description || '', category || '', link || ''
-  );
+    db.prepare('INSERT INTO media (type, title, file_path, description, category, link, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)').run(
+      mediaType, title.trim(), filePath, description || '', category || '', link || ''
+    );
 
-  if (req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))) {
     return res.json({ success: true, message: 'تم الرفع بنجاح' });
+  } catch (err) {
+    console.error('Media upload error:', err.message);
+    return res.status(500).json({ success: false, message: 'خطأ: ' + err.message });
   }
-  res.redirect('/admin/media');
 }));
 
 router.post('/media/delete/:id', requireAuth, (req, res) => {

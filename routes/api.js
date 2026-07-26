@@ -274,29 +274,10 @@ const upload = multer({
 
 const cloudinaryService = require('../services/cloudinary-service');
 
-async function saveImage(file) {
+function saveImage(file) {
   if (!file) return null;
-  if (cloudinaryService.isConfigured()) {
-    try {
-      const result = await cloudinaryService.uploadImage(file.buffer, { folder: 'awtar-news/api' });
-      if (result && result.url) return result.url;
-    } catch (err) {
-      console.error('Cloudinary upload failed:', err.message);
-    }
-  }
-  // Store in images table, serve via /api/images/:id
-  try {
-    const db = getDb();
-    const base64 = file.buffer.toString('base64');
-    const result = db.prepare(
-      'INSERT INTO images (filename, mime_type, data, size) VALUES (?, ?, ?, ?)'
-    ).run(file.originalname, file.mimetype, base64, file.size);
-    return '/api/images/' + result.lastInsertRowid;
-  } catch (err) {
-    console.error('DB image save error:', err.message);
-    const base64 = file.buffer.toString('base64');
-    return `data:${file.mimetype};base64,${base64}`;
-  }
+  const base64 = file.buffer.toString('base64');
+  return 'data:' + file.mimetype + ';base64,' + base64;
 }
 
 // POST /api/v1/admin/news/create
