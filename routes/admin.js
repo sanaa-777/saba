@@ -523,26 +523,36 @@ router.get('/ads', requireAuth, (req, res) => {
 });
 
 router.post('/ads/create', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
-  const db = getDb();
-  const { name, position, code, link, start_date, end_date, is_active } = req.body;
-  const image = await saveFile(req.file);
-  db.prepare('INSERT INTO advertisements (name, position, code, image, link, start_date, end_date, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
-    name, position, code, image, link, start_date, end_date, is_active ? 1 : 0
-  );
-  res.redirect('/admin/ads');
+  try {
+    const db = getDb();
+    const { name, position, code, link, start_date, end_date, is_active } = req.body;
+    const image = req.file ? saveFile(req.file) : null;
+    db.prepare('INSERT INTO advertisements (name, position, code, image, link, start_date, end_date, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
+      name || '', position || 'header', code || '', image, link || '', start_date || null, end_date || null, is_active ? 1 : 0
+    );
+    res.redirect('/admin/ads');
+  } catch (err) {
+    console.error('Ad create error:', err.message);
+    res.status(500).render('error', { title: 'خطأ', error: 'فشل إنشاء الإعلان: ' + err.message });
+  }
 }));
 
 router.post('/ads/edit/:id', requireAuth, upload.single('image'), asyncHandler(async (req, res) => {
-  const db = getDb();
-  const { name, position, code, link, start_date, end_date, is_active, keep_image } = req.body;
-  const existing = db.prepare('SELECT image FROM advertisements WHERE id = ?').get(req.params.id);
-  let image = existing ? existing.image : null;
-  if (req.file) image = await saveFile(req.file);
-  if (!keep_image && !req.file) image = null;
-  db.prepare('UPDATE advertisements SET name=?, position=?, code=?, image=?, link=?, start_date=?, end_date=?, is_active=? WHERE id=?').run(
-    name, position, code, image, link, start_date, end_date, is_active ? 1 : 0, req.params.id
-  );
-  res.redirect('/admin/ads');
+  try {
+    const db = getDb();
+    const { name, position, code, link, start_date, end_date, is_active, keep_image } = req.body;
+    const existing = db.prepare('SELECT image FROM advertisements WHERE id = ?').get(req.params.id);
+    let image = existing ? existing.image : null;
+    if (req.file) image = saveFile(req.file);
+    if (!keep_image && !req.file) image = null;
+    db.prepare('UPDATE advertisements SET name=?, position=?, code=?, image=?, link=?, start_date=?, end_date=?, is_active=? WHERE id=?').run(
+      name || '', position || 'header', code || '', image, link || '', start_date || null, end_date || null, is_active ? 1 : 0, req.params.id
+    );
+    res.redirect('/admin/ads');
+  } catch (err) {
+    console.error('Ad edit error:', err.message);
+    res.status(500).render('error', { title: 'خطأ', error: 'فشل تعديل الإعلان: ' + err.message });
+  }
 }));
 
 router.post('/ads/delete/:id', requireAuth, (req, res) => {

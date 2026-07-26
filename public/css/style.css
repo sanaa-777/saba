@@ -3214,3 +3214,38 @@ a:focus-visible, button:focus-visible {
   .featured-card a { flex-direction: column; }
   .featured-card-img { width: 100%; height: 150px; }
 }
+
+/* ═══ Ad Blocks ═══ */
+.ad-block {
+  margin: 20px 0;
+  text-align: center;
+}
+.ad-item {
+  display: inline-block;
+  max-width: 100%;
+}
+.ad-item img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+.ad-item a {
+  display: block;
+}
+.header-ad {
+  margin-bottom: 16px;
+}
+.content-ad {
+  margin: 24px 0;
+}
+.footer-ad {
+  margin-top: 24px;
+}
+.ad-box {
+  padding: 0;
+  overflow: hidden;
+}
+.ad-box img {
+  width: 100%;
+  display: block;
+}

@@ -25,6 +25,19 @@
 <main class="home-page">
   <div class="container">
 
+    <%/* ═══ HEADER ADS ═══ */%>
+    <% if (typeof headerAds !== 'undefined' && headerAds.length > 0) { %>
+    <div class="ad-block header-ad">
+      <% headerAds.forEach(ad => { %>
+        <div class="ad-item">
+          <% if (ad.link) { %><a href="<%= ad.link %>" target="_blank" rel="noopener noreferrer"><% } %>
+          <% if (ad.image) { %><img src="<%= ad.image.startsWith('data:') ? ad.image : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" loading="lazy" style="max-width:100%;border-radius:10px;"><% } %>
+          <% if (ad.link) { %></a><% } %>
+        </div>
+      <% }) %>
+    </div>
+    <% } %>
+
     <%/* ═══ CATEGORIES NAV ═══ */%>
     <% if (categories && categories.length > 0) { %>
     <nav class="categories-strip" aria-label="الأقسام">
@@ -251,6 +264,16 @@
         </div>
         <% } %>
 
+        <% if (typeof sidebarAds !== 'undefined' && sidebarAds.length > 0) { %>
+        <% sidebarAds.forEach(ad => { %>
+        <div class="sidebar-box ad-box">
+          <% if (ad.link) { %><a href="<%= ad.link %>" target="_blank" rel="noopener noreferrer"><% } %>
+          <% if (ad.image) { %><img src="<%= ad.image.startsWith('data:') ? ad.image : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" loading="lazy" style="width:100%;border-radius:10px;"><% } %>
+          <% if (ad.link) { %></a><% } %>
+        </div>
+        <% }) %>
+        <% } %>
+
         <div class="sidebar-box newsletter-box">
           <h3>📬 النشرة البريدية</h3>
           <p>احصل على آخر الأخبار مباشرة في بريدك</p>
@@ -262,6 +285,19 @@
 
       </aside>
     </div>
+
+    <%/* ═══ CONTENT ADS ═══ */%>
+    <% if (typeof contentAds !== 'undefined' && contentAds.length > 0) { %>
+    <div class="ad-block content-ad">
+      <% contentAds.forEach(ad => { %>
+        <div class="ad-item">
+          <% if (ad.link) { %><a href="<%= ad.link %>" target="_blank" rel="noopener noreferrer"><% } %>
+          <% if (ad.image) { %><img src="<%= ad.image.startsWith('data:') ? ad.image : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" loading="lazy" style="max-width:100%;border-radius:10px;"><% } %>
+          <% if (ad.link) { %></a><% } %>
+        </div>
+      <% }) %>
+    </div>
+    <% } %>
 
     <%/* ═══ MEDIA SECTION ═══ */%>
     <% if ((videos && videos.length) || (galleries && galleries.length)) { %>
@@ -298,6 +334,22 @@
         <% }) %>
       </div>
     </section>
+    <% } %>
+
+  </div>
+</main>
+
+    <%/* ═══ FOOTER ADS ═══ */%>
+    <% if (typeof footerAds !== 'undefined' && footerAds.length > 0) { %>
+    <div class="ad-block footer-ad">
+      <% footerAds.forEach(ad => { %>
+        <div class="ad-item">
+          <% if (ad.link) { %><a href="<%= ad.link %>" target="_blank" rel="noopener noreferrer"><% } %>
+          <% if (ad.image) { %><img src="<%= ad.image.startsWith('data:') ? ad.image : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" loading="lazy" style="max-width:100%;border-radius:10px;"><% } %>
+          <% if (ad.link) { %></a><% } %>
+        </div>
+      <% }) %>
+    </div>
     <% } %>
 
   </div>
