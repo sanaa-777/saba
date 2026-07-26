@@ -94,12 +94,14 @@
             <% if (results.length > 0) { %>
               <div class="news-list">
                 <% results.forEach(item => { %>
-                  <article class="news-list-item">
+                  <article class="news-list-item<%= !item.image ? ' no-image' : '' %>">
+                    <% if (item.image) { %>
                     <div class="list-item-image">
                       <a href="/news/<%= item.id %>">
-                        <% if (item.image) { %><img src="<%= proxyImg(item.image) %>" alt="<%= item.title %>" loading="lazy"><% } %>
+                        <img src="<%= proxyImg(item.image) %>" alt="<%= item.title %>" loading="lazy">
                       </a>
                     </div>
+                    <% } %>
                     <div class="list-item-content">
                       <span class="eyebrow"><%= item.category_name || 'عام' %></span>
                       <h3><a href="/news/<%= item.id %>"><%= item.title %></a></h3>

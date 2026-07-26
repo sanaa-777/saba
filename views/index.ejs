@@ -98,7 +98,7 @@
           </div>
           <div class="news-grid-4">
             <% latestGrid.forEach(item => { %>
-            <article class="news-card">
+            <article class="news-card<%= !item.image ? ' no-image' : '' %>">
               <a href="/news/<%= item.id %>">
                 <% if (item.image) { %>
                 <div class="news-card-img">
@@ -126,7 +126,7 @@
           </div>
           <div class="featured-grid">
             <% featuredNews.forEach(item => { %>
-            <article class="featured-card">
+            <article class="featured-card<%= !item.image ? ' no-image' : '' %>">
               <a href="/news/<%= item.id %>">
                 <% if (item.image) { %>
                 <div class="featured-card-img">
@@ -157,7 +157,7 @@
               </div>
               <div class="cat-layout">
                 <%/* Lead article */%>
-                <article class="cat-lead">
+                <article class="cat-lead<%= !items[0].image ? ' no-image' : '' %>">
                   <a href="/news/<%= items[0].id %>">
                     <% if (items[0].image) { %>
                     <div class="cat-lead-img">
@@ -175,7 +175,7 @@
                 <% if (items.length > 1) { %>
                 <div class="cat-list">
                   <% items.slice(1, 6).forEach(item => { %>
-                  <article class="cat-list-item">
+                  <article class="cat-list-item<%= !item.image ? ' no-image' : '' %>">
                     <% if (item.image) { %>
                     <a href="/news/<%= item.id %>" class="cat-list-img">
                       <img src="<%= proxyImg(item.image) %>" alt="<%= item.title %>" loading="lazy" decoding="async">
