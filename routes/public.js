@@ -484,38 +484,54 @@ router.get('/rss', (req, res) => {
   res.send(feed.xml({ indent: true }));
 });
 
-// Sitemap
-router.get('/sitemap.xml', (req, res) => {
-  const db = getDb();
-  const baseUrl = (res.locals.settings.site_url || `https://${req.get('host')}`).replace(/\/$/, '');
+// Sitemap index and paginated content sitemaps keep every published article discoverable.
+function sitemapBase(res, req) {
+  return (res.locals.settings.site_url || `https://${req.get('host')}`).replace(/\/$/, '');
+}
+
+function buildContentSitemap(db, baseUrl, page) {
+  const limit = 1000;
+  const offset = Math.max(0, (page - 1) * limit);
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
   xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
-
-  // Homepage
-  xml += `  <url><loc>${baseUrl}/</loc><lastmod>${new Date().toISOString().split('T')[0]}</lastmod><changefreq>always</changefreq><priority>1.0</priority></url>\n`;
-
-  // Static pages
-  ['/about', '/contact', '/privacy', '/terms', '/services', '/subscribe'].forEach(p => {
-    xml += `  <url><loc>${baseUrl}${p}</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>\n`;
-  });
-
-  // Categories
-  const categories = db.prepare('SELECT * FROM categories WHERE is_active = 1').all();
-  for (const cat of categories) {
-    xml += `  <url><loc>${baseUrl}/category/${cat.id}</loc><changefreq>daily</changefreq><priority>0.8</priority></url>\n`;
+  if (page === 1) {
+    xml += `  <url><loc>${baseUrl}/</loc><lastmod>${new Date().toISOString().split('T')[0]}</lastmod><changefreq>always</changefreq><priority>1.0</priority></url>\n`;
+    ['/about', '/contact', '/privacy', '/terms', '/services', '/subscribe'].forEach(path => {
+      xml += `  <url><loc>${baseUrl}${path}</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>\n`;
+    });
+    const categories = db.prepare('SELECT id FROM categories WHERE is_active = 1').all();
+    for (const category of categories) xml += `  <url><loc>${baseUrl}/category/${category.id}</loc><changefreq>daily</changefreq><priority>0.8</priority></url>\n`;
   }
-
-  // News articles
-  const news = db.prepare('SELECT id, image, updated_at, published_at FROM news WHERE status = 1 ORDER BY published_at DESC LIMIT 1000').all();
+  const news = db.prepare('SELECT id, image, updated_at, published_at FROM news WHERE status = 1 ORDER BY published_at DESC LIMIT ? OFFSET ?').all(limit, offset);
   for (const item of news) {
     const imageUrl = absolutePublicUrl(baseUrl, item.image);
     const lastmod = new Date(item.updated_at || item.published_at || Date.now()).toISOString();
     xml += `  <url><loc>${baseUrl}/news/${item.id}</loc><lastmod>${lastmod}</lastmod><changefreq>daily</changefreq><priority>0.7</priority>${imageUrl ? `<image:image><image:loc>${xmlEscape(imageUrl)}</image:loc></image:image>` : ''}</url>\n`;
   }
+  return `${xml}</urlset>`;
+}
 
-  xml += '</urlset>';
-  res.set('Content-Type', 'application/xml');
+router.get('/sitemap.xml', (req, res) => {
+  const db = getDb();
+  const baseUrl = sitemapBase(res, req);
+  const total = Number(db.prepare('SELECT COUNT(*) AS cnt FROM news WHERE status = 1').get().cnt || 0);
+  const pages = Math.max(1, Math.ceil(total / 1000));
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+  for (let page = 1; page <= pages; page += 1) xml += `  <sitemap><loc>${baseUrl}/sitemap-${page}.xml</loc></sitemap>\n`;
+  xml += `  <sitemap><loc>${baseUrl}/news-sitemap.xml</loc></sitemap>\n</sitemapindex>`;
+  res.set('Content-Type', 'application/xml; charset=utf-8');
+  res.set('Cache-Control', 'public, s-maxage=300, max-age=60');
   res.send(xml);
+});
+
+router.get('/sitemap-:page.xml', (req, res) => {
+  const page = parseInt(req.params.page, 10);
+  if (!page || page < 1) return res.status(404).send('Not found');
+  const db = getDb();
+  const baseUrl = sitemapBase(res, req);
+  res.set('Content-Type', 'application/xml; charset=utf-8');
+  res.set('Cache-Control', 'public, s-maxage=300, max-age=60');
+  res.send(buildContentSitemap(db, baseUrl, page));
 });
 
 // AI-readable site summary for crawlers and assistants.
