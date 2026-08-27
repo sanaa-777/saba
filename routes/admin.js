@@ -139,7 +139,8 @@ router.get('/', requireAuth, (req, res) => {
     totalCategories: db.prepare('SELECT COUNT(*) as cnt FROM categories').get().cnt,
     totalTags: db.prepare('SELECT COUNT(*) as cnt FROM tags').get().cnt,
     totalMedia: db.prepare('SELECT COUNT(*) as cnt FROM media').get().cnt,
-    totalViews: db.prepare('SELECT COALESCE(SUM(views), 0) as total FROM news').get().total,
+    // Verified views only: raw legacy counters are not presented as analytics.
+    totalViews: db.prepare('SELECT COUNT(*) as total FROM article_view_events').get().total,
     breakingNews: db.prepare('SELECT COUNT(*) as cnt FROM breaking_news WHERE is_active = 1').get().cnt,
     totalComments: db.prepare('SELECT COUNT(*) as cnt FROM comments').get().cnt,
     pendingComments: db.prepare('SELECT COUNT(*) as cnt FROM comments WHERE status = 0').get().cnt,
@@ -152,7 +153,7 @@ router.get('/', requireAuth, (req, res) => {
     uniqueWeek: Number(analytics.period.unique_week || 0),
     uniqueMonth: Number(analytics.period.unique_month || 0)
   };
-  const recentNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id ORDER BY n.created_at DESC LIMIT 10`).all();
+  const recentNews = db.prepare(`SELECT n.*, c.name_ar as category_name, COALESCE((SELECT COUNT(*) FROM article_view_events e WHERE e.news_id = n.id), 0) AS verified_views FROM news n LEFT JOIN categories c ON n.category_id = c.id ORDER BY n.created_at DESC LIMIT 10`).all();
   res.render('admin/dashboard', { title: 'لوحة التحكم', admin: req.session.admin, stats, analytics, recentNews });
 });
 
