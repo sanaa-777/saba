@@ -216,6 +216,19 @@ app.get('/api/ads-image/:id', (req, res) => {
   }
 });
 
+// Serve Base64 media thumbnails independently for lightweight HTML responses.
+app.get('/api/media-image/:id', (req, res) => {
+  try {
+    const media = getDb().prepare('SELECT file_path, thumbnail FROM media WHERE id = ?').get(req.params.id);
+    const source = (media && typeof media.thumbnail === 'string' && media.thumbnail.startsWith('data:')) ? media.thumbnail : media?.file_path;
+    const match = typeof source === 'string' && source.match(/^data:([\w/+.-]+);base64,(.+)$/s);
+    if (!match) return res.status(404).send('Image not found');
+    res.set('Content-Type', match[1]);
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(Buffer.from(match[2], 'base64'));
+  } catch (error) { res.status(404).send('Image not found'); }
+});
+
 // ============================================================
 // Image Proxy — SSRF-safe, open to external news image sources
 // ============================================================
