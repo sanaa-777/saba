@@ -33,7 +33,8 @@ const CACHE_TTL = 45 * 1000;
 
 // Initialize database (with error handling for Vercel)
 try {
-  initDatabase();
+  // Supabase production is migrated separately; avoid running the full schema/seed routine on every serverless cold start.
+  if (!isVercel || process.env.RUN_DB_INIT === '1') initDatabase();
 } catch (err) {
   console.error('Database initialization failed:', err.message);
 }
