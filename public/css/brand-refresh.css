@@ -142,7 +142,14 @@ img { content-visibility: auto; }
 
 /* Continuous breaking-news rail: two equal groups, no blank reset gap. */
 .breaking-ticker { contain: layout paint; }
-.ticker-marquee { min-width: 0; overflow: hidden; }
+.ticker-marquee {
+  min-width: 0;
+  overflow: hidden;
+  direction: ltr;
+  display: flex;
+  justify-content: flex-start;
+  text-align: left;
+}
 .ticker-scroll {
   direction: ltr;
   display: flex;
@@ -152,6 +159,7 @@ img { content-visibility: auto; }
   gap: 0;
   animation: ticker-continuous 44s linear infinite;
   transform: translate3d(-50%, 0, 0);
+  margin: 0;
 }
 .ticker-group {
   direction: rtl;
