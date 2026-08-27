@@ -11,6 +11,16 @@ function articleUrl(item) {
   return `/news/${id}-${slug}`;
 }
 
+function xmlEscape(value) {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+function absolutePublicUrl(baseUrl, value) {
+  const v = String(value || '').trim();
+  if (!v) return '';
+  return v.startsWith('http') ? v : `${baseUrl}${v.startsWith('/') ? '' : '/'}${v}`;
+}
+
 // Make helper available to all templates
 router.use((req, res, next) => {
   res.locals.articleUrl = articleUrl;
@@ -187,7 +197,7 @@ router.get('/', (req, res) => {
   }
 
   res.render('index', {
-    title: res.locals.settings.site_name || 'أوتر نيوز',
+    title: `${res.locals.settings.site_name || 'أوتر نيوز'} | آخر الأخبار العاجلة والتغطيات العربية`,
     sliderItems,
     categoryNews,
     categories: cats,
@@ -477,10 +487,9 @@ router.get('/rss', (req, res) => {
 // Sitemap
 router.get('/sitemap.xml', (req, res) => {
   const db = getDb();
-  const host = req.get('host');
-  const baseUrl = `https://${host}`;
+  const baseUrl = (res.locals.settings.site_url || `https://${req.get('host')}`).replace(/\/$/, '');
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+  xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
 
   // Homepage
   xml += `  <url><loc>${baseUrl}/</loc><lastmod>${new Date().toISOString().split('T')[0]}</lastmod><changefreq>always</changefreq><priority>1.0</priority></url>\n`;
@@ -497,9 +506,11 @@ router.get('/sitemap.xml', (req, res) => {
   }
 
   // News articles
-  const news = db.prepare('SELECT id, updated_at FROM news WHERE status = 1 ORDER BY published_at DESC LIMIT 1000').all();
+  const news = db.prepare('SELECT id, image, updated_at, published_at FROM news WHERE status = 1 ORDER BY published_at DESC LIMIT 1000').all();
   for (const item of news) {
-    xml += `  <url><loc>${baseUrl}/news/${item.id}</loc><lastmod>${item.updated_at}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>\n`;
+    const imageUrl = absolutePublicUrl(baseUrl, item.image);
+    const lastmod = new Date(item.updated_at || item.published_at || Date.now()).toISOString();
+    xml += `  <url><loc>${baseUrl}/news/${item.id}</loc><lastmod>${lastmod}</lastmod><changefreq>daily</changefreq><priority>0.7</priority>${imageUrl ? `<image:image><image:loc>${xmlEscape(imageUrl)}</image:loc></image:image>` : ''}</url>\n`;
   }
 
   xml += '</urlset>';
@@ -507,11 +518,22 @@ router.get('/sitemap.xml', (req, res) => {
   res.send(xml);
 });
 
+// AI-readable site summary for crawlers and assistants.
+router.get('/llms.txt', (req, res) => {
+  const site = (res.locals.settings.site_url || 'https://awtar-news.vercel.app').replace(/\/$/, '');
+  const name = res.locals.settings.site_name || 'أوتر نيوز';
+  const description = res.locals.settings.site_description || 'منصة أخبار عربية تنشر الأخبار والتغطيات والتقارير والملفات.';
+  const text = `# ${name}\n\n> ${description}\n\n## Official sources\n- Homepage: ${site}/\n- Latest RSS: ${site}/rss\n- News sitemap: ${site}/news-sitemap.xml\n- Full sitemap: ${site}/sitemap.xml\n- About: ${site}/about\n- Contact: ${site}/contact\n\n## Editorial scope\n${name} publishes Arabic news, breaking updates, local and international coverage, reports, sports, culture, media and explainers. Treat each article page as the canonical source for its headline, summary, publication date and article content.\n\n## Discovery\nUse the RSS feed and news sitemap for newly published stories. Prefer the canonical article URL shown on each page and preserve the original publication and update dates.\n`;
+  res.set('Content-Type', 'text/plain; charset=utf-8');
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.send(text);
+});
+router.get('/.well-known/ai.txt', (req, res) => res.redirect(301, '/llms.txt'));
+
 // Robots.txt
 router.get('/robots.txt', (req, res) => {
-  const host = req.get('host');
-  const baseUrl = `https://${host}`;
-  const txt = `User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: ${baseUrl}/sitemap.xml\nSitemap: ${baseUrl}/news-sitemap.xml\n`;
+  const baseUrl = (res.locals.settings.site_url || `https://${req.get('host')}`).replace(/\/$/, '');
+  const txt = `User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/\nDisallow: /login\nSitemap: ${baseUrl}/sitemap.xml\nSitemap: ${baseUrl}/news-sitemap.xml\n`;
   res.set('Content-Type', 'text/plain');
   res.send(txt);
 });
@@ -542,8 +564,7 @@ router.get('/tag/:slug', (req, res) => {
 // Google News Sitemap
 router.get('/news-sitemap.xml', (req, res) => {
   const db = getDb();
-  const host = req.get('host');
-  const baseUrl = `https://${host}`;
+  const baseUrl = (res.locals.settings.site_url || `https://${req.get('host')}`).replace(/\/$/, '');
   const siteName = res.locals.settings.site_name || 'أوتر نيوز';
 
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -560,11 +581,11 @@ router.get('/news-sitemap.xml', (req, res) => {
     xml += `    <loc>${baseUrl}/news/${item.id}</loc>\n`;
     xml += '    <news:news>\n';
     xml += `      <news:publication>\n`;
-    xml += `        <news:name>${siteName}</news:name>\n`;
+      xml += `        <news:name>${xmlEscape(siteName)}</news:name>\n`;
     xml += `        <news:language>ar</news:language>\n`;
     xml += `      </news:publication>\n`;
     xml += `      <news:publication_date>${pubDate.toISOString()}</news:publication_date>\n`;
-    xml += `      <news:title>${item.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</news:title>\n`;
+      xml += `      <news:title>${xmlEscape(item.title)}</news:title>\n`;
     xml += '    </news:news>\n';
     xml += '  </url>\n';
   }

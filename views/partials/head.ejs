@@ -2,9 +2,9 @@
 <%
   const siteName = settings.site_name || 'أوتر نيوز';
   const siteDescription = settings.site_description || 'أوتر نيوز - منصة أخبار عربية حديثة';
-  const siteBase = settings.site_url || 'https://awtar-news.vercel.app';
+  const siteBase = (settings.site_url || 'https://awtar-news.vercel.app').replace(/\/$/, '');
   const pageUrl = `${siteBase}${currentPath || '/'}`;
-  const pageTitle = `${title} | ${siteName}`;
+  const pageTitle = !title ? siteName : (String(title).includes(siteName) ? title : `${title} | ${siteName}`);
 
   // Normalize image to absolute URL for social sharing
   let rawImage = (typeof article !== 'undefined' && article && article.image) ? article.image : null;
@@ -30,6 +30,33 @@
     : siteDescription;
   // Truncate description for social platforms (max 200 chars)
   const socialDescription = (pageDescription || '').substring(0, 200).replace(/["<>]/g, '');
+  const absoluteAsset = (value) => {
+    const v = String(value || '').trim();
+    if (!v) return `${siteBase}/images/logo.png`;
+    return v.startsWith('http') ? v : `${siteBase}${v.startsWith('/') ? '' : '/'}${v}`;
+  };
+  const logoUrl = absoluteAsset(settings.site_logo || '/images/logo.png');
+  const articleImage = absoluteAsset((typeof article !== 'undefined' && article && article.image && !String(article.image).startsWith('data:')) ? article.image : '/images/logo.png');
+  const articleCanonical = (typeof article !== 'undefined' && article) ? `${siteBase}/news/${article.id}` : pageUrl;
+  const jsonLd = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
+  const organizationSchema = {
+    '@context': 'https://schema.org', '@type': 'NewsMediaOrganization', name: siteName, alternateName: ['أوتر نيوز', 'Awtar News'], url: siteBase,
+    logo: { '@type': 'ImageObject', url: logoUrl },
+    sameAs: [settings.facebook, settings.twitter, settings.youtube, settings.telegram].filter(Boolean)
+  };
+  const websiteSchema = {
+    '@context': 'https://schema.org', '@type': 'WebSite', name: siteName, url: siteBase,
+    potentialAction: { '@type': 'SearchAction', target: `${siteBase}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string' }
+  };
+  const articleSchema = (typeof article !== 'undefined' && article) ? {
+    '@context': 'https://schema.org', '@type': 'NewsArticle', headline: article.title,
+    description: article.summary || pageDescription, image: [articleImage], datePublished: article.published_at,
+    dateModified: article.updated_at || article.published_at, articleSection: article.category_name || undefined,
+    keywords: (typeof tags !== 'undefined' && tags || []).map(tag => tag.name).filter(Boolean),
+    author: { '@type': 'Organization', name: siteName, url: siteBase },
+    publisher: { '@id': `${siteBase}/#organization` },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': articleCanonical }, isAccessibleForFree: true
+  } : null;
 %>
 <html lang="<%= lang || 'ar' %>" dir="rtl">
 <head>
@@ -37,14 +64,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title><%= pageTitle %></title>
   <meta name="description" content="<%= pageDescription %>">
-  <meta name="keywords" content="<%= settings.site_keywords || 'أوتر نيوز, أخبار, اليمن, أخبار عربية' %>">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="keywords" content="<%= settings.site_keywords || 'أوتر نيوز, أخبار اليمن, أخبار عربية, عاجل, أخبار العالم' %>">
   <meta name="author" content="<%= siteName %>">
   <meta name="theme-color" content="#123c4a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="format-detection" content="telephone=no">
   <link rel="canonical" href="<%= cleanUrl %>">
-  <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss">
+  <link rel="alternate" hreflang="ar" href="<%= cleanUrl %>">
+  <link rel="alternate" hreflang="x-default" href="<%= cleanUrl %>">
+  <link rel="alternate" type="application/rss+xml" title="أوتر نيوز RSS" href="<%= siteBase %>/rss">
+  <link rel="me" href="<%= siteBase %>/about">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="<%= settings.site_favicon || '/images/favicon.ico' %>">
   <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
@@ -68,7 +100,8 @@
   <meta property="og:image:alt" content="<%= (typeof article !== 'undefined' && article) ? article.title : siteName %>">
   <meta property="og:url" content="<%= cleanUrl %>">
   <meta property="og:type" content="<%= (typeof article !== 'undefined' && article) ? 'article' : 'website' %>">
-  <meta property="og:locale" content="ar_AR">
+  <meta property="og:locale" content="ar_YE">
+  <meta property="og:updated_time" content="<%= (typeof article !== 'undefined' && article) ? (article.updated_at || article.published_at) : new Date().toISOString() %>">
   <% if (typeof article !== 'undefined' && article) { %>
   <meta property="article:published_time" content="<%= article.published_at %>">
   <meta property="article:modified_time" content="<%= article.updated_at || article.published_at %>">
@@ -94,56 +127,18 @@
     })();
   </script>
 
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "NewsMediaOrganization",
-    "name": "<%= siteName %>",
-    "url": "<%= siteBase %>",
-    "logo": "<%= settings.site_logo || '/images/logo.png' %>",
-    "sameAs": [
-      "<%= settings.facebook || '' %>",
-      "<%= settings.twitter || '' %>",
-      "<%= settings.youtube || '' %>",
-      "<%= settings.telegram || '' %>"
-    ],
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "telephone": "<%= settings.contact_phone || '' %>",
-      "contactType": "customer service",
-      "email": "<%= settings.contact_email || '' %>"
-    }
-  }
-  </script>
+  <script type="application/ld+json"><%- jsonLd({ ...organizationSchema, '@id': `${siteBase}/#organization` }) %></script>
+  <script type="application/ld+json"><%- jsonLd(websiteSchema) %></script>
 
-  <% if (typeof article !== 'undefined' && article) { %>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "NewsArticle",
-    "headline": "<%= article.title %>",
-    "description": "<%= article.summary || pageDescription %>",
-    "image": ["<%= article.image || pageImage %>"],
-    "datePublished": "<%= article.published_at %>",
-    "dateModified": "<%= article.updated_at || article.published_at %>",
-    "author": {
-      "@type": "Organization",
-      "name": "<%= siteName %>"
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "<%= siteName %>",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "<%= settings.site_logo || '/images/logo.png' %>"
-      }
-    },
-    "mainEntityOfPage": {
-      "@type": "WebPage",
-      "@id": "<%= pageUrl %>"
-    }
-  }
-  </script>
+  <% if (articleSchema) { %>
+  <script type="application/ld+json"><%- jsonLd(articleSchema) %></script>
+  <script type="application/ld+json"><%- jsonLd({
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: siteName, item: siteBase },
+      { '@type': 'ListItem', position: 2, name: article.category_name || 'أخبار', item: `${siteBase}/category/${article.cat_id || ''}` },
+      { '@type': 'ListItem', position: 3, name: article.title, item: articleCanonical }
+    ]
+  }) %></script>
   <% } %>
 </head>
 <body class="site-shell">
