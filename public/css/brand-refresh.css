@@ -154,7 +154,8 @@ img { content-visibility: auto; }
   direction: ltr;
   display: flex;
   width: max-content;
-  min-width: 100%;
+  min-width: max-content;
+  flex: 0 0 max-content;
   align-items: center;
   gap: 0;
   animation: ticker-continuous 44s linear infinite;
