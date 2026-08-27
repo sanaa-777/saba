@@ -39,7 +39,7 @@
   <meta name="description" content="<%= pageDescription %>">
   <meta name="keywords" content="<%= settings.site_keywords || 'أوتر نيوز, أخبار, اليمن, أخبار عربية' %>">
   <meta name="author" content="<%= siteName %>">
-  <meta name="theme-color" content="#0f3b82">
+  <meta name="theme-color" content="#123c4a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="format-detection" content="telephone=no">
@@ -48,10 +48,9 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="<%= settings.site_favicon || '/images/favicon.ico' %>">
   <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=5">
+  <!-- No third-party font dependency: fast first paint on weak networks -->
+  <link rel="stylesheet" href="/css/style.css?v=6">
+  <link rel="stylesheet" href="/css/brand-refresh.css?v=1">
   <style>
     /* Critical CSS — instant render */
     .img-placeholder{background:linear-gradient(135deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;min-height:100px;border-radius:inherit}

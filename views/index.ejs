@@ -56,7 +56,7 @@
         <a href="<%= articleLink(heroItems[0]) %>">
           <div class="hero-main-img">
             <% if (heroItems[0].image) { %>
-              <img src="<%= proxyImg(heroItems[0].image) %>" alt="<%= t(heroItems[0]) %>" decoding="async">
+              <img src="<%= proxyImg(heroItems[0].image) %>" alt="<%= t(heroItems[0]) %>" width="1280" height="720" fetchpriority="high" decoding="async">
             <% } else { %>
               <div class="img-placeholder"></div>
             <% } %>

@@ -364,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
      Live News Checker — polls for new articles every 2 minutes
      ============================================ */
   let lastCheckedAt = new Date().toISOString();
-  const newsCheckerInterval = 120000; // 2 minutes
+  const newsCheckerInterval = 300000; // 5 minutes; avoids needless radio/battery use
 
   function checkForNewNews() {
     fetch(`/api/new-news-count?since=${encodeURIComponent(lastCheckedAt)}`)
@@ -404,8 +404,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 15000);
   }
 
-  // Start checking only on homepage
-  if (window.location.pathname === '/') {
+  // Keep live polling opt-in for constrained connections; refresh manually remains instant.
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const constrained = connection && (connection.saveData || /2g/.test(connection.effectiveType || ''));
+  if (window.location.pathname === '/' && !constrained) {
     setInterval(checkForNewNews, newsCheckerInterval);
   }
 
@@ -413,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.key === 'Escape') {
       closeModal(videoModal);
       closeModal(imageModal);
-      closeNav();
+      if (typeof closeNav === 'function') closeNav();
       langDropdown?.classList.remove('open');
     }
   });

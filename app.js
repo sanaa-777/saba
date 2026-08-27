@@ -27,6 +27,10 @@ try {
 const PORT = process.env.PORT || 3000;
 const isVercel = !!process.env.VERCEL;
 
+// Small in-memory cache keeps public requests responsive on slow connections and serverless cold starts.
+const runtimeCache = { categories: { value: [], expires: 0 }, settings: { value: {}, expires: 0 } };
+const CACHE_TTL = 45 * 1000;
+
 // Initialize database (with error handling for Vercel)
 try {
   initDatabase();
@@ -62,10 +66,19 @@ app.use(languageMiddleware);
 app.use((req, res, next) => {
   try {
     const db = getDb();
-    res.locals.categories = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order').all();
-    res.locals.settings = {};
-    const settings = db.prepare('SELECT * FROM settings').all();
-    settings.forEach(s => { res.locals.settings[s.key] = s.value; });
+    const now = Date.now();
+    if (runtimeCache.categories.expires < now) {
+      runtimeCache.categories.value = db.prepare('SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order').all();
+      runtimeCache.categories.expires = now + CACHE_TTL;
+    }
+    if (runtimeCache.settings.expires < now) {
+      const settings = db.prepare('SELECT * FROM settings').all();
+      runtimeCache.settings.value = {};
+      settings.forEach(s => { runtimeCache.settings.value[s.key] = s.value; });
+      runtimeCache.settings.expires = now + CACHE_TTL;
+    }
+    res.locals.categories = runtimeCache.categories.value;
+    res.locals.settings = runtimeCache.settings.value;
     res.locals.currentPath = req.path;
     res.locals.session = req.session;
 
@@ -155,12 +168,12 @@ app.use((req, res, next) => {
   const staticPrefixes = ['/css/', '/js/', '/images/', '/manifest.json', '/favicon', '/robots.txt'];
   const isStatic = staticPrefixes.some(prefix => req.path.startsWith(prefix));
   if (isStatic) {
-    res.set('Cache-Control', 'public, max-age=604800, immutable');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+  } else if (req.method === 'GET' && !req.path.startsWith('/admin') && !req.headers.cookie) {
+    // Public HTML can be briefly cached at the edge without caching logged-in/admin pages.
+    res.set('Cache-Control', 'public, max-age=15, stale-while-revalidate=60');
   } else {
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-    res.set('Surrogate-Control', 'no-store');
+    res.set('Cache-Control', 'private, no-cache, must-revalidate');
   }
   next();
 });
