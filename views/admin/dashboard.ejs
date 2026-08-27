@@ -26,6 +26,43 @@
   <div class="stat-card"><div class="stat-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><path d="m22 6-10 7L2 6"></path></svg></div><div class="stat-info"><h3><%= stats.totalSubscribers %></h3><p>مشتركو البريد</p></div></div>
 </div>
 
+<section class="analytics-dashboard" aria-label="تحليلات الموقع الحقيقية">
+  <div class="admin-card analytics-main-card">
+    <div class="admin-card-header">
+      <div><span class="admin-kicker">بيانات فعلية</span><h3>حركة الجمهور</h3></div>
+      <span class="analytics-note">الزيارات المسجلة فعليًا</span>
+    </div>
+    <div class="analytics-period-grid">
+      <div class="analytics-period"><span>اليوم</span><strong><%= stats.viewsToday.toLocaleString() %></strong><small><%= stats.uniqueToday.toLocaleString() %> زائر فريد</small></div>
+      <div class="analytics-period"><span>آخر 7 أيام</span><strong><%= stats.viewsWeek.toLocaleString() %></strong><small><%= stats.uniqueWeek.toLocaleString() %> زائر فريد</small></div>
+      <div class="analytics-period"><span>هذا الشهر</span><strong><%= stats.viewsMonth.toLocaleString() %></strong><small><%= stats.uniqueMonth.toLocaleString() %> زائر فريد</small></div>
+    </div>
+    <% const maxDaily = Math.max(1, ...(analytics.daily || []).map(day => Number(day.views || 0))); %>
+    <div class="analytics-chart" role="img" aria-label="المشاهدات اليومية خلال آخر 30 يومًا">
+      <% (analytics.daily || []).forEach(day => { %>
+        <div class="chart-row"><time datetime="<%= day.day %>"><%= day.day.slice(5) %></time><div class="chart-track"><span style="width:<%= Math.max(2, Math.round(Number(day.views || 0) / maxDaily * 100)) %>%"></span></div><b><%= Number(day.views || 0).toLocaleString() %></b></div>
+      <% }); %>
+    </div>
+  </div>
+
+  <div class="admin-card top-stories-card">
+    <div class="admin-card-header"><div><span class="admin-kicker">الأداء</span><h3>الأخبار الأكثر مشاهدة</h3></div><span class="analytics-note">آخر 30 يومًا</span></div>
+    <div class="top-stories-list">
+      <% if ((analytics.topStories || []).length) { (analytics.topStories || []).forEach((story, index) => { %>
+        <a class="top-story-row" href="/news/<%= story.id %>" target="_blank"><i><%= index + 1 %></i><span><%= story.title %></span><b><%= Number(story.period_views || 0).toLocaleString() %></b></a>
+      <% }); } else { %><p class="analytics-empty">لا توجد زيارات مسجلة بعد. ستظهر البيانات هنا عند بدء الجمهور بقراءة الأخبار.</p><% } %>
+    </div>
+  </div>
+
+  <div class="admin-card analytics-breakdown-card">
+    <div class="admin-card-header"><div><span class="admin-kicker">فهم الجمهور</span><h3>الأجهزة ومصادر الوصول</h3></div></div>
+    <div class="breakdown-columns">
+      <div><h4>الأجهزة</h4><% (analytics.devices || []).forEach(item => { %><div class="breakdown-row"><span><%= item.device === 'mobile' ? 'هاتف' : item.device === 'tablet' ? 'جهاز لوحي' : item.device === 'desktop' ? 'حاسوب' : item.device %></span><b><%= Number(item.views || 0).toLocaleString() %></b></div><% }); %></div>
+      <div><h4>المصادر</h4><% (analytics.referrers || []).forEach(item => { %><div class="breakdown-row"><span><%= item.source %></span><b><%= Number(item.views || 0).toLocaleString() %></b></div><% }); %></div>
+    </div>
+  </div>
+</section>
+
 <div class="admin-card">
   <div class="admin-card-header">
     <h3>إجراءات سريعة</h3>

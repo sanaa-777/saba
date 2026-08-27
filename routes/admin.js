@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { getDb } = require('../db/init');
+const { getAnalytics } = require('../services/analytics');
 const { requireAuth } = require('../middleware/auth');
 const { createNews, updateNews, deleteNews } = require('../services/news-admin-service');
 const { logAction } = require('../services/audit-service');
@@ -129,6 +130,8 @@ router.use(csrfMiddleware);
 // Dashboard
 router.get('/', requireAuth, (req, res) => {
   const db = getDb();
+  let analytics = { period: { today: 0, week: 0, month: 0, unique_today: 0, unique_week: 0, unique_month: 0 }, daily: [], topStories: [], devices: [], referrers: [] };
+  try { analytics = getAnalytics(db); } catch (error) { console.error('[analytics] dashboard read failed:', error.message); }
   const stats = {
     totalNews: db.prepare('SELECT COUNT(*) as cnt FROM news').get().cnt,
     publishedNews: db.prepare('SELECT COUNT(*) as cnt FROM news WHERE status = 1').get().cnt,
@@ -141,10 +144,16 @@ router.get('/', requireAuth, (req, res) => {
     totalComments: db.prepare('SELECT COUNT(*) as cnt FROM comments').get().cnt,
     pendingComments: db.prepare('SELECT COUNT(*) as cnt FROM comments WHERE status = 0').get().cnt,
     totalPolls: db.prepare('SELECT COUNT(*) as cnt FROM polls').get().cnt,
-    totalSubscribers: db.prepare('SELECT COUNT(*) as cnt FROM newsletter_subscribers WHERE is_active = 1').get().cnt
+    totalSubscribers: db.prepare('SELECT COUNT(*) as cnt FROM newsletter_subscribers WHERE is_active = 1').get().cnt,
+    viewsToday: Number(analytics.period.today || 0),
+    viewsWeek: Number(analytics.period.week || 0),
+    viewsMonth: Number(analytics.period.month || 0),
+    uniqueToday: Number(analytics.period.unique_today || 0),
+    uniqueWeek: Number(analytics.period.unique_week || 0),
+    uniqueMonth: Number(analytics.period.unique_month || 0)
   };
   const recentNews = db.prepare(`SELECT n.*, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id ORDER BY n.created_at DESC LIMIT 10`).all();
-  res.render('admin/dashboard', { title: 'لوحة التحكم', admin: req.session.admin, stats, recentNews });
+  res.render('admin/dashboard', { title: 'لوحة التحكم', admin: req.session.admin, stats, analytics, recentNews });
 });
 
 // News list

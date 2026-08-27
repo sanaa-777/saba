@@ -3,6 +3,7 @@ const router = express.Router();
 const { getDb } = require('../db/init');
 const { makeSlug } = require('../utils/slug');
 const RSS = require('rss');
+const { recordArticleView } = require('../services/analytics');
 
 function articleUrl(item) {
   const id = item.news_id || item.id;
@@ -255,9 +256,13 @@ router.get('/news/:id', (req, res) => {
   }
   // If no slug, that's fine — accept /news/123 directly (no redirect needed)
 
-  // Increment views
-  db.prepare('UPDATE news SET views = views + 1 WHERE id = ?').run(articleId);
-  article.views += 1;
+  // Count only a real, non-bot visit once per visitor/article within 30 minutes.
+  try {
+    const view = recordArticleView(db, req, articleId);
+    if (view.counted) article.views = Number(article.views || 0) + 1;
+  } catch (viewError) {
+    console.error('[analytics] view not recorded:', viewError.message);
+  }
 
   // Tags
   const tags = db.prepare(`SELECT t.* FROM tags t JOIN news_tags nt ON t.id = nt.tag_id WHERE nt.news_id = ?`).all(article.id);

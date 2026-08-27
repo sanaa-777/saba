@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getDb } = require('../db/init');
+const { recordArticleView } = require('../services/analytics');
 const { createNews, updateNews, deleteNews } = require('../services/news-admin-service');
 const { logAction } = require('../services/audit-service');
 
@@ -45,9 +46,13 @@ router.get('/news/:id', (req, res) => {
 
   if (!article) return res.status(404).json({ success: false, message: 'Article not found' });
 
-  // Increment views
-  db.prepare('UPDATE news SET views = views + 1 WHERE id = ?').run(req.params.id);
-  article.views += 1;
+  // Keep API views consistent with page views and count only real visitors.
+  try {
+    const view = recordArticleView(db, req, Number(req.params.id));
+    if (view.counted) article.views = Number(article.views || 0) + 1;
+  } catch (viewError) {
+    console.error('[analytics] API view not recorded:', viewError.message);
+  }
 
   // Get tags
   const tags = db.prepare(`SELECT t.* FROM tags t JOIN news_tags nt ON t.id = nt.tag_id WHERE nt.news_id = ?`).all(article.id);
