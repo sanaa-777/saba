@@ -144,6 +144,7 @@ img { content-visibility: auto; }
 .breaking-ticker { contain: layout paint; }
 .ticker-marquee { min-width: 0; overflow: hidden; }
 .ticker-scroll {
+  direction: ltr;
   display: flex;
   width: max-content;
   min-width: 100%;
@@ -153,6 +154,7 @@ img { content-visibility: auto; }
   transform: translate3d(-50%, 0, 0);
 }
 .ticker-group {
+  direction: rtl;
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
