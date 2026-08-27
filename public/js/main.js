@@ -105,6 +105,76 @@ document.addEventListener('DOMContentLoaded', () => {
   updateDates();
 
   /* ============================================
+     Continuous breaking-news ticker
+     ============================================ */
+  const tickerTrack = $('[data-ticker-track]');
+  const tickerViewport = $('.ticker-marquee');
+  let tickerSignature = '';
+
+  function renderTicker(items) {
+    if (!tickerTrack || !tickerViewport || !Array.isArray(items) || !items.length) return;
+    const normalized = items.slice(0, 10).map((item) => ({
+      text: String(item.text || '').trim(),
+      link: String(item.link || '#')
+    })).filter((item) => item.text);
+    if (!normalized.length) return;
+    const signature = normalized.map((item) => `${item.text}|${item.link}`).join('||');
+    if (signature === tickerSignature) return;
+    tickerSignature = signature;
+
+    const makeGroup = (hidden = false) => {
+      const group = document.createElement('div');
+      group.className = 'ticker-group';
+      if (hidden) group.setAttribute('aria-hidden', 'true');
+      normalized.forEach((item) => {
+        const link = document.createElement('a');
+        link.href = item.link;
+        link.textContent = item.text;
+        if (hidden) link.tabIndex = -1;
+        group.appendChild(link);
+      });
+      // Keep a full viewport of headlines even when titles are unusually short.
+      let guard = 0;
+      while (group.scrollWidth < tickerViewport.clientWidth * 1.15 && guard < 4) {
+        Array.from(group.children).forEach((source) => {
+          const copy = source.cloneNode(true);
+          if (hidden) copy.tabIndex = -1;
+          group.appendChild(copy);
+        });
+        guard += 1;
+      }
+      return group;
+    };
+
+    tickerTrack.replaceChildren(makeGroup(false), makeGroup(true));
+    tickerTrack.style.animation = 'none';
+    void tickerTrack.offsetWidth;
+    tickerTrack.style.animation = '';
+  }
+
+  async function refreshTicker() {
+    try {
+      const response = await fetch('/api/breaking-news', {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store'
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      renderTicker(data.items);
+    } catch (error) { /* keep the server-rendered headlines when offline */ }
+  }
+
+  if (tickerTrack) {
+    // Server-rendered content appears immediately; this refresh picks up new news silently.
+    tickerSignature = Array.from(tickerTrack.querySelectorAll('.ticker-group:first-child a'))
+      .map((link) => `${link.textContent.trim()}|${link.getAttribute('href') || '#'}`).join('||');
+    refreshTicker();
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const refreshDelay = connection?.saveData ? 300000 : 120000;
+    window.setInterval(refreshTicker, refreshDelay);
+  }
+
+  /* ============================================
      Sidebar tabs
      ============================================ */
   $$('.sidebar-widget').forEach((widget) => {

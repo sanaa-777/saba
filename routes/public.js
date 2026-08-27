@@ -71,10 +71,6 @@ router.get('/', (req, res) => {
   const registry = new NewsRegistry();
   const isDebug = req.query._debug === '1';
 
-  // ── 1. Breaking News (ticker — doesn't consume from registry) ──
-  let breakingNews = [];
-  try { breakingNews = db.prepare('SELECT * FROM breaking_news WHERE is_active = 1 ORDER BY sort_order').all(); } catch(e) {}
-
   // ── 2. Hero / Slider — Latest news with images ──
   const sliderItems = registry.fetchSection(db, {
     sql: `SELECT n.id, n.id as news_id, n.title as news_title, n.title, n.summary, n.image, n.published_at, n.views, c.name_ar as category_name FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.status = 1 AND n.image IS NOT NULL AND n.image != '' ORDER BY n.published_at DESC LIMIT 8`,
@@ -191,7 +187,6 @@ router.get('/', (req, res) => {
 
   res.render('index', {
     title: res.locals.settings.site_name || 'أوتر نيوز',
-    breakingNews,
     sliderItems,
     categoryNews,
     categories: cats,

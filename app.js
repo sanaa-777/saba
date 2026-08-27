@@ -31,6 +31,29 @@ const isVercel = !!process.env.VERCEL;
 const runtimeCache = { categories: { value: [], expires: 0 }, settings: { value: {}, expires: 0 } };
 const CACHE_TTL = 45 * 1000;
 
+function readBreakingNews(db) {
+  const manual = db.prepare("SELECT id, text, link, sort_order, created_at, created_at AS published_at FROM breaking_news WHERE is_active = 1").all();
+  const latest = db.prepare(`
+    SELECT n.id, n.title AS text, '/news/' || n.id AS link,
+           0 AS sort_order, n.created_at, COALESCE(n.published_at, n.created_at) AS published_at
+    FROM news n
+    LEFT JOIN categories c ON c.id = n.category_id
+    WHERE n.status = 1 AND (n.is_breaking = 1 OR c.slug = 'breaking' OR c.name_ar = 'عاجل')
+    ORDER BY COALESCE(n.published_at, n.created_at) DESC
+    LIMIT 10
+  `).all();
+  const seen = new Set();
+  return [...manual, ...latest]
+    .filter(item => {
+      const key = String(item.text || '').trim();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => new Date(b.published_at || b.created_at || 0) - new Date(a.published_at || a.created_at || 0))
+    .slice(0, 10);
+}
+
 // Initialize database (with error handling for Vercel)
 try {
   // Supabase production is migrated separately; avoid running the full schema/seed routine on every serverless cold start.
@@ -109,32 +132,8 @@ app.use((req, res, next) => {
     }
 
     try {
-      // Get manual breaking news
-      const manualBreaking = db.prepare("SELECT id, text, link, sort_order, created_at FROM breaking_news WHERE is_active = 1").all();
-      // Auto-sync: add recent urgent news to breaking_news if not already there
-      let autoBreaking = [];
-      try {
-        const urgentCat = (res.locals.categories || []).find(c => c.slug === 'breaking');
-        if (urgentCat) {
-          const recentUrgent = db.prepare('SELECT id, title FROM news WHERE category_id = ? AND status = 1 ORDER BY published_at DESC LIMIT 10').all(urgentCat.id);
-          for (const n of recentUrgent) {
-            const exists = db.prepare('SELECT id FROM breaking_news WHERE link = ?').get('/news/' + n.id);
-            if (!exists) {
-              db.prepare('INSERT INTO breaking_news (text, link, is_active, sort_order) VALUES (?, ?, 1, 999)').run(n.title, '/news/' + n.id);
-            }
-          }
-        }
-        // Re-fetch all active breaking news after auto-sync
-        autoBreaking = db.prepare("SELECT id, text, link, sort_order, created_at FROM breaking_news WHERE is_active = 1").all();
-      } catch(e) {}
-      // Combine and deduplicate, limit to 10
-      const allBreaking = [...manualBreaking, ...autoBreaking];
-      const seen = new Set();
-      res.locals.breakingNews = allBreaking.filter(item => {
-        if (seen.has(item.text)) return false;
-        seen.add(item.text);
-        return true;
-      }).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).slice(0, 10);
+      // One consistent, newest-first feed shared by homepage, articles, and the live ticker.
+      res.locals.breakingNews = readBreakingNews(db);
     } catch (e) {
       res.locals.breakingNews = [];
     }
@@ -189,6 +188,16 @@ app.use('/', publicRoutes);
 app.use('/admin', adminRoutes);
 app.use('/api', featuresRoutes);
 app.use('/api/v1', apiRoutes);
+
+// Lightweight feed used by the ticker to refresh without reloading the article page.
+app.get('/api/breaking-news', (req, res) => {
+  try {
+    res.set('Cache-Control', 'public, max-age=15, stale-while-revalidate=45');
+    res.json({ success: true, items: readBreakingNews(getDb()) });
+  } catch (error) {
+    res.json({ success: true, items: [] });
+  }
+});
 
 // Image serving endpoint (from database)
 app.get('/api/images/:id', (req, res) => {

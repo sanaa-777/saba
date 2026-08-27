@@ -169,13 +169,17 @@
       عاجل
     </span>
     <div class="ticker-marquee">
-      <div class="ticker-scroll">
-        <% breakingNews.forEach(item => { %>
-          <a href="<%= item.link || '#' %>"><%= cleanEmoji(item.text) %></a>
-        <% }); %>
-        <% breakingNews.forEach(item => { %>
-          <a href="<%= item.link || '#' %>"><%= cleanEmoji(item.text) %></a>
-        <% }); %>
+      <div class="ticker-scroll" data-ticker-track>
+        <div class="ticker-group">
+          <% breakingNews.forEach(item => { %>
+            <a href="<%= item.link || '#' %>"><%= cleanEmoji(item.text) %></a>
+          <% }); %>
+        </div>
+        <div class="ticker-group" aria-hidden="true">
+          <% breakingNews.forEach(item => { %>
+            <a href="<%= item.link || '#' %>" tabindex="-1"><%= cleanEmoji(item.text) %></a>
+          <% }); %>
+        </div>
       </div>
     </div>
   </div>
