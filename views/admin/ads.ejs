@@ -81,7 +81,7 @@
       <div id="ad-<%= ad.id %>" style="border-radius:14px;overflow:hidden;background:#fff;border:1px solid #e2e8f0;">
         <div style="height:120px;background:linear-gradient(135deg,#f1f5f9,#e2e8f0);display:flex;align-items:center;justify-content:center;position:relative;">
           <% if (ad.image) { %>
-            <img src="<%= ad.image.startsWith('data:') ? ad.image : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+            <img src="<%= ad.image.startsWith('data:') ? '/api/ads-image/' + ad.id : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
           <% } else { %>
             <span style="font-size:48px;">📢</span>
           <% } %>

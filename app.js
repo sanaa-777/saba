@@ -201,6 +201,20 @@ app.get('/api/images/:id', (req, res) => {
   res.send(buffer);
 });
 
+// Serve Base64 ad images as independent cached resources instead of embedding megabytes in HTML.
+app.get('/api/ads-image/:id', (req, res) => {
+  try {
+    const ad = getDb().prepare('SELECT image FROM advertisements WHERE id = ?').get(req.params.id);
+    const match = ad && typeof ad.image === 'string' && ad.image.match(/^data:([\w/+.-]+);base64,(.+)$/s);
+    if (!match) return res.status(404).send('Image not found');
+    res.set('Content-Type', match[1]);
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(Buffer.from(match[2], 'base64'));
+  } catch (error) {
+    res.status(404).send('Image not found');
+  }
+});
+
 // ============================================================
 // Image Proxy — SSRF-safe, open to external news image sources
 // ============================================================

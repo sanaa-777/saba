@@ -31,7 +31,7 @@
       <% headerAds.forEach(ad => { %>
         <div class="ad-item">
           <% if (ad.link) { %><a href="<%= ad.link %>" target="_blank" rel="noopener noreferrer"><% } %>
-          <% if (ad.image) { %><img src="<%= ad.image.startsWith('data:') ? ad.image : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" loading="lazy" style="max-width:100%;border-radius:10px;"><% } %>
+          <% if (ad.image) { %><img src="<%= ad.image.startsWith('data:') ? '/api/ads-image/' + ad.id : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" loading="lazy" style="max-width:100%;border-radius:10px;"><% } %>
           <% if (ad.link) { %></a><% } %>
         </div>
       <% }) %>
@@ -268,7 +268,7 @@
         <% sidebarAds.forEach(ad => { %>
         <div class="sidebar-box ad-box">
           <% if (ad.link) { %><a href="<%= ad.link %>" target="_blank" rel="noopener noreferrer"><% } %>
-          <% if (ad.image) { %><img src="<%= ad.image.startsWith('data:') ? ad.image : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" loading="lazy" style="width:100%;border-radius:10px;"><% } %>
+          <% if (ad.image) { %><img src="<%= ad.image.startsWith('data:') ? '/api/ads-image/' + ad.id : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" loading="lazy" style="width:100%;border-radius:10px;"><% } %>
           <% if (ad.link) { %></a><% } %>
         </div>
         <% }) %>
@@ -292,7 +292,7 @@
       <% contentAds.forEach(ad => { %>
         <div class="ad-item">
           <% if (ad.link) { %><a href="<%= ad.link %>" target="_blank" rel="noopener noreferrer"><% } %>
-          <% if (ad.image) { %><img src="<%= ad.image.startsWith('data:') ? ad.image : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" loading="lazy" style="max-width:100%;border-radius:10px;"><% } %>
+          <% if (ad.image) { %><img src="<%= ad.image.startsWith('data:') ? '/api/ads-image/' + ad.id : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" loading="lazy" style="max-width:100%;border-radius:10px;"><% } %>
           <% if (ad.link) { %></a><% } %>
         </div>
       <% }) %>
@@ -345,7 +345,7 @@
       <% footerAds.forEach(ad => { %>
         <div class="ad-item">
           <% if (ad.link) { %><a href="<%= ad.link %>" target="_blank" rel="noopener noreferrer"><% } %>
-          <% if (ad.image) { %><img src="<%= ad.image.startsWith('data:') ? ad.image : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" loading="lazy" style="max-width:100%;border-radius:10px;"><% } %>
+          <% if (ad.image) { %><img src="<%= ad.image.startsWith('data:') ? '/api/ads-image/' + ad.id : '/api/proxy-image?url=' + encodeURIComponent(ad.image) %>" alt="<%= ad.name %>" loading="lazy" style="max-width:100%;border-radius:10px;"><% } %>
           <% if (ad.link) { %></a><% } %>
         </div>
       <% }) %>
