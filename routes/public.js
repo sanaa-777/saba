@@ -4,7 +4,7 @@ const { getDb } = require('../db/init');
 const { makeSlug } = require('../utils/slug');
 const RSS = require('rss');
 const { recordArticleView } = require('../services/analytics');
-const { enrichArticleIfNeeded } = require('../services/article-content');
+const { enrichArticleIfNeeded, needsFullContent } = require('../services/article-content');
 
 function articleUrl(item) {
   const id = item.news_id || item.id;
@@ -197,6 +197,8 @@ router.get('/', (req, res) => {
     });
   }
 
+  // CDN cache for the public homepage reduces repeated database work on slow networks.
+  res.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120, max-age=10');
   res.render('index', {
     title: `${res.locals.settings.site_name || 'أوتر نيوز'} | آخر الأخبار العاجلة والتغطيات العربية`,
     sliderItems,
@@ -258,9 +260,16 @@ router.get('/news/:id', async (req, res) => {
 
   const article = db.prepare(`SELECT n.*, c.name_ar as category_name, c.id as cat_id FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.id = ? AND n.status = 1`).get(articleId);
     if (!article) return res.status(404).render('404', { title: 'الصفحة غير موجودة' });
-  // Some RSS feeds store only a one-line excerpt. Enrich it from the canonical source on first read.
-  const enrichment = await enrichArticleIfNeeded(db, article);
-  if (enrichment && enrichment.article) Object.assign(article, enrichment.article);
+  // Normal users get the page immediately; crawlers wait for full content for indexability.
+  const crawler = /bot|crawler|spider|slurp|facebookexternalhit|google|bingpreview/i.test(req.get('user-agent') || '');
+  const articleNeedsEnrichment = needsFullContent(article);
+  if (articleNeedsEnrichment && crawler) {
+    const enrichment = await enrichArticleIfNeeded(db, article);
+    if (enrichment && enrichment.article) Object.assign(article, enrichment.article);
+  } else if (articleNeedsEnrichment) {
+    // The browser will refresh the body asynchronously through the public API.
+    enrichArticleIfNeeded(db, article).catch(error => console.error('[article] background enrichment:', error.message));
+  }
   const expectedSlug = article.slug || makeSlug(article.title);
   const requestedSlug = String(req.params.id).includes('-') ? String(req.params.id).split('-').slice(1).join('-') : '';
   // If slug is wrong, redirect to clean URL with ID only (shorter for sharing)
@@ -297,6 +306,7 @@ router.get('/news/:id', async (req, res) => {
   res.render('news/article', {
     title: article.title,
     article,
+    articleNeedsEnrichment: needsFullContent(article),
     tags,
     comments,
     commentCount,

@@ -57,14 +57,13 @@
           </div>
           <% } %>
 
-          <% const articleBody = String(article.content || '').trim(); %>
-          <% if (articleBody) { %>
-          <div class="article-content" itemprop="articleBody"><%- articleBody %></div>
-          <% } else { %>
-          <div class="article-content article-content-unavailable">
+          <% const articleBody = String(article.content || article.summary || '').trim(); %>
+          <div id="articleBody" class="article-content<%= articleNeedsEnrichment ? ' article-content-loading' : '' %>" itemprop="articleBody" data-news-id="<%= article.id %>" data-needs-refresh="<%= articleNeedsEnrichment ? '1' : '0' %>" aria-busy="<%= articleNeedsEnrichment ? 'true' : 'false' %>">
+            <% if (articleBody) { %><%- articleBody %><% } else { %>
             <p>تعذر تحميل تفاصيل الخبر من المصدر في هذه اللحظة.</p>
+            <% } %>
+            <% if (articleNeedsEnrichment) { %><span class="article-loading-note" role="status">جاري استكمال تفاصيل الخبر…</span><% } %>
           </div>
-          <% } %>
           <% if (article.source_url) { %>
           <div class="article-source-attribution">
             <span>المصدر الأصلي:</span>

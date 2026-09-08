@@ -589,3 +589,86 @@ function showToast(msg) {
   document.body.appendChild(toast);
   setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 300ms'; setTimeout(() => toast.remove(), 300); }, 2000);
 }
+
+/* ============================================
+   Fast article hydration + per-browser read state
+   ============================================ */
+(function initFastArticleAndReadState() {
+  const READ_KEY = 'awtar:read-news:v1';
+  const readIds = () => {
+    try {
+      const value = JSON.parse(localStorage.getItem(READ_KEY) || '[]');
+      return new Set(Array.isArray(value) ? value.map(String) : []);
+    } catch (_) { return new Set(); }
+  };
+  const saveReadIds = (ids) => {
+    try { localStorage.setItem(READ_KEY, JSON.stringify(Array.from(ids).slice(-500))); } catch (_) {}
+  };
+  const newsIdFromHref = (href) => {
+    const match = String(href || '').match(/\/news\/(\d+)(?:[-/?#]|$)/);
+    return match ? match[1] : null;
+  };
+  const paintRead = (link) => {
+    link.classList.add('news-read');
+    const card = link.closest('.news-card, .featured-card, .hero-side-card, .cat-list-item, .most-read-item, .live-item, .news-list-item');
+    if (!card) return;
+    card.classList.add('news-card-read');
+    const heading = card.querySelector('h1, h2, h3, h4, .news-card-title, .card-title');
+    if (heading) heading.classList.add('news-read-title');
+  };
+  const applyReadState = () => {
+    const ids = readIds();
+    document.querySelectorAll('a[href*="/news/"]').forEach(link => {
+      const id = newsIdFromHref(link.getAttribute('href'));
+      if (id && ids.has(id)) paintRead(link);
+    });
+  };
+  const bindReadState = () => {
+    const ids = readIds();
+    const current = window.location.pathname.match(/^\/news\/(\d+)/);
+    if (current) ids.add(current[1]);
+    saveReadIds(ids);
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest && event.target.closest('a[href*="/news/"]');
+      if (!link) return;
+      const id = newsIdFromHref(link.getAttribute('href'));
+      if (!id) return;
+      ids.add(id);
+      saveReadIds(ids);
+      paintRead(link);
+    }, { passive: true });
+  };
+  const hydrateArticle = async () => {
+    const body = document.getElementById('articleBody');
+    if (!body || body.dataset.needsRefresh !== '1' || !body.dataset.newsId) return;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 14000);
+    try {
+      const response = await fetch(`/api/v1/news/${encodeURIComponent(body.dataset.newsId)}`, {
+        headers: { Accept: 'application/json' }, credentials: 'same-origin', signal: controller.signal
+      });
+      if (!response.ok) return;
+      const payload = await response.json();
+      const content = payload && payload.data && payload.data.content;
+      if (!content) return;
+      const currentLength = (body.textContent || '').replace(/\s+/g, ' ').trim().length;
+      const nextLength = String(content).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().length;
+      if (nextLength <= currentLength + 80) return;
+      body.innerHTML = content;
+      body.dataset.needsRefresh = '0';
+      body.setAttribute('aria-busy', 'false');
+      body.classList.remove('article-content-loading');
+    } catch (_) {
+      // The summary remains visible if the connection is slow or offline.
+    } finally { clearTimeout(timeout); }
+  };
+  const start = () => {
+    applyReadState();
+    bindReadState();
+    const run = () => hydrateArticle();
+    if ('requestIdleCallback' in window) window.requestIdleCallback(run, { timeout: 1200 });
+    else setTimeout(run, 350);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+  else start();
+})();
