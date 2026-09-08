@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getDb } = require('../db/init');
 const { recordArticleView } = require('../services/analytics');
+const { enrichArticleIfNeeded } = require('../services/article-content');
 const { createNews, updateNews, deleteNews } = require('../services/news-admin-service');
 const { logAction } = require('../services/audit-service');
 
@@ -36,7 +37,7 @@ router.get('/news', (req, res) => {
 });
 
 // GET /api/v1/news/:id - Single article
-router.get('/news/:id', (req, res) => {
+router.get('/news/:id', async (req, res) => {
   const db = getDb();
   const article = db.prepare(`
     SELECT n.*, c.name_ar as category_name, c.name_en as category_name_en, c.id as cat_id
@@ -45,6 +46,9 @@ router.get('/news/:id', (req, res) => {
   `).get(req.params.id);
 
   if (!article) return res.status(404).json({ success: false, message: 'Article not found' });
+
+  const enrichment = await enrichArticleIfNeeded(db, article);
+  if (enrichment && enrichment.article) Object.assign(article, enrichment.article);
 
   // Keep API views consistent with page views and count only real visitors.
   try {

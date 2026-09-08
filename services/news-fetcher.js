@@ -397,41 +397,101 @@ async function fetchTelegram(url) {
 
 // ─── Article Detail Fetcher ───
 async function fetchArticleDetail(url, proxyUrl) {
-  try {
-    const targetUrl = proxyUrl ? `${proxyUrl}${encodeURIComponent(url)}` : url;
-    const res = await fetchWithRetry(targetUrl, { timeout: 12000 });
-    const html = await res.text();
-    const $ = cheerio.load(html);
-    let image = extractImageFromHTML(html, url);
-    const ogTitle = $('meta[property="og:title"]').attr('content') || '';
-    const ogDesc = $('meta[property="og:description"]').attr('content') || '';
-    let jsonLd = null;
-    $('script[type="application/ld+json"]').each((_, el) => {
-      try {
-        const data = JSON.parse($(el).html());
-        if (data['@type'] === 'NewsArticle' || data['@type'] === 'Article') jsonLd = data;
-      } catch (e) {}
-    });
-    const contentSelectors = ['article', '.article-body', '.article-content', '.post-content', '.entry-content', '.story-body', '.news-content', '.content-area', 'main .content', '.article-text'];
-    let content = '';
-    for (const sel of contentSelectors) {
-      const el = $(sel).first();
-      if (el.length && el.text().trim().length > 100) {
-        el.find('script, style, nav, header, footer, .ads, .sidebar, .related, .comments').remove();
-        content = el.html() || '';
-        break;
+  if (!url || !/^https?:\/\//i.test(url)) return null;
+  const targets = [];
+  const addTarget = (prefix) => {
+    const target = prefix ? `${prefix}${encodeURIComponent(url)}` : url;
+    if (!targets.includes(target)) targets.push(target);
+  };
+  addTarget(proxyUrl);
+  addTarget(null);
+  // Source pages frequently return a shell or block server requests without a proxy.
+  PROXY_SERVICES.forEach(addTarget);
+
+  for (const targetUrl of targets) {
+    try {
+      const res = await fetchWithRetry(targetUrl, { timeout: 10000 }, 0);
+      if (!res.ok) continue;
+      const html = await res.text();
+      if (!html || html.length < 500) continue;
+      const $ = cheerio.load(html);
+      let image = extractImageFromHTML(html, url);
+      const ogTitle = $('meta[property="og:title"]').attr('content') || '';
+      const ogDesc = $('meta[property="og:description"]').attr('content') || '';
+      let jsonLd = null;
+      $('script[type="application/ld+json"]').each((_, el) => {
+        try {
+          const parsed = JSON.parse($(el).html() || '');
+          const nodes = Array.isArray(parsed) ? parsed : [parsed];
+          const candidate = nodes.find(node => node && (node['@type'] === 'NewsArticle' || node['@type'] === 'Article' || node.articleBody));
+          if (candidate && (!jsonLd || String(candidate.articleBody || '').length > String(jsonLd.articleBody || '').length)) jsonLd = candidate;
+        } catch (e) {}
+      });
+
+      const removeNoise = (root) => {
+        root.find('script, style, noscript, nav, header, footer, aside, form, iframe, .ads, .ad, .advert, .advertisement, .sidebar, .related, .comments, .comment, .share, .social, .newsletter, [class*="related"], [class*="recommend"], [class*="sidebar"], [class*="advert"]').remove();
+      };
+      const contentSelectors = [
+        '[itemprop="articleBody"]', '.article-body', '.article-content', '.sna-article-body', '.post-content', '.entry-content', '.story-body', '.news-content', '.content-area', '.article-text', 'article'
+      ];
+      const candidates = [];
+      for (const selector of contentSelectors) {
+        $(selector).each((index, node) => {
+          const clone = $(node).clone();
+          removeNoise(clone);
+          const text = clone.text().replace(/\s+/g, ' ').trim();
+          const placeholders = (text.match(/\{\{[^}]+\}\}/g) || []).length;
+          const selectorPenalty = selector === 'article' ? 160 : (selector === '.article-content' ? 0 : 40);
+          const score = text.length - placeholders * 600 - selectorPenalty;
+          if (text.length >= 180) candidates.push({ textLength: text.length, score, html: sanitizeArticleHtml(clone.html() || '', url), selector, index });
+        });
       }
+      if (jsonLd && jsonLd.articleBody && String(jsonLd.articleBody).trim().length >= 180) {
+        const paragraphs = String(jsonLd.articleBody).split(/\n{2,}|\r\n|(?<=[.!؟])\s{2,}/).map(p => p.trim()).filter(Boolean);
+        candidates.push({ textLength: String(jsonLd.articleBody).length, score: String(jsonLd.articleBody).length + 100, html: paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join(''), selector: 'jsonld.articleBody', index: 0 });
+      }
+      candidates.sort((a, b) => (b.score || b.textLength) - (a.score || a.textLength));
+      const best = candidates[0];
+      const content = best ? best.html : '';
+      const authorValue = jsonLd && jsonLd.author;
+      const author = authorValue ? (typeof authorValue === 'string' ? authorValue : authorValue.name || '') : $('meta[name="author"]').attr('content') || '';
+      const datePublished = (jsonLd && jsonLd.datePublished) || $('meta[property="article:published_time"]').attr('content') || $('time').first().attr('datetime') || '';
+      if (!image) {
+        image = (jsonLd && jsonLd.image) ? (typeof jsonLd.image === 'string' ? jsonLd.image : Array.isArray(jsonLd.image) ? jsonLd.image[0] : jsonLd.image.url) : $('meta[property="og:image"]').attr('content') || $('article img, .article img, .content img').first().attr('src') || null;
+        if (image) image = makeAbsolute(image, url);
+      }
+      if (content && content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length >= 220) {
+        return { title: ogTitle || (jsonLd && (jsonLd.headline || jsonLd.name)) || '', content, summary: ogDesc || (jsonLd && jsonLd.description) || '', image: image || null, author, published_at: datePublished || new Date().toISOString(), source_url: url, extractor: best.selector };
+      }
+    } catch (err) {
+      // Try the next proxy/source path.
     }
-    const author = (jsonLd && jsonLd.author) ? (typeof jsonLd.author === 'string' ? jsonLd.author : jsonLd.author.name || '') : $('meta[name="author"]').attr('content') || '';
-    const datePublished = (jsonLd && jsonLd.datePublished) || $('meta[property="article:published_time"]').attr('content') || $('time').first().attr('datetime') || '';
-    if (!image) {
-      image = (jsonLd && jsonLd.image) ? (typeof jsonLd.image === 'string' ? jsonLd.image : Array.isArray(jsonLd.image) ? jsonLd.image[0] : jsonLd.image.url) : $('meta[property="og:image"]').attr('content') || $('article img, .article img, .content img').first().attr('src') || null;
-      if (image) image = makeAbsolute(image, url);
-    }
-    return { title: ogTitle || (jsonLd && jsonLd.headline) || '', content: content || ogDesc || '', summary: ogDesc || (jsonLd && jsonLd.description) || '', image: image || null, author, published_at: datePublished || new Date().toISOString() };
-  } catch (err) {
-    return null;
   }
+  return null;
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function sanitizeArticleHtml(html, baseUrl) {
+  const $ = cheerio.load(`<div data-article-root="1">${html}</div>`, { decodeEntities: false });
+  const root = $('[data-article-root]');
+  root.find('script, style, noscript, iframe, object, embed, form, input, button, svg, canvas, video, audio, source').remove();
+  root.find('*').each((_, node) => {
+    const el = $(node);
+    for (const name of Object.keys(node.attribs || {})) {
+      const lower = name.toLowerCase();
+      if (lower.startsWith('on') || ['style', 'srcset', 'integrity', 'nonce'].includes(lower)) el.removeAttr(name);
+    }
+    for (const attr of ['href', 'src']) {
+      const value = el.attr(attr);
+      if (!value) continue;
+      if (/^javascript:/i.test(value)) el.removeAttr(attr);
+      else if (/^\//.test(value) || !/^https?:|^mailto:|^tel:/i.test(value)) el.attr(attr, makeAbsolute(value, baseUrl));
+    }
+  });
+  return root.html() || '';
 }
 
 // ─── Main Fetch Dispatcher ───

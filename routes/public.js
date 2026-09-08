@@ -4,6 +4,7 @@ const { getDb } = require('../db/init');
 const { makeSlug } = require('../utils/slug');
 const RSS = require('rss');
 const { recordArticleView } = require('../services/analytics');
+const { enrichArticleIfNeeded } = require('../services/article-content');
 
 function articleUrl(item) {
   const id = item.news_id || item.id;
@@ -248,7 +249,7 @@ router.get('/category/:id', (req, res) => {
 });
 
 // Article page — supports both /news/:id and /news/:id-slug
-router.get('/news/:id', (req, res) => {
+router.get('/news/:id', async (req, res) => {
   try {
   const db = getDb();
   const idStr = String(req.params.id).split('-')[0];
@@ -256,8 +257,10 @@ router.get('/news/:id', (req, res) => {
   if (!articleId || isNaN(articleId)) return res.status(404).render('404', { title: 'الصفحة غير موجودة' });
 
   const article = db.prepare(`SELECT n.*, c.name_ar as category_name, c.id as cat_id FROM news n LEFT JOIN categories c ON n.category_id = c.id WHERE n.id = ? AND n.status = 1`).get(articleId);
-  if (!article) return res.status(404).render('404', { title: 'الصفحة غير موجودة' });
-
+    if (!article) return res.status(404).render('404', { title: 'الصفحة غير موجودة' });
+  // Some RSS feeds store only a one-line excerpt. Enrich it from the canonical source on first read.
+  const enrichment = await enrichArticleIfNeeded(db, article);
+  if (enrichment && enrichment.article) Object.assign(article, enrichment.article);
   const expectedSlug = article.slug || makeSlug(article.title);
   const requestedSlug = String(req.params.id).includes('-') ? String(req.params.id).split('-').slice(1).join('-') : '';
   // If slug is wrong, redirect to clean URL with ID only (shorter for sharing)

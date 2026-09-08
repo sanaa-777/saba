@@ -57,7 +57,20 @@
           </div>
           <% } %>
 
-          <div class="article-content"><%- article.content %></div>
+          <% const articleBody = String(article.content || '').trim(); %>
+          <% if (articleBody) { %>
+          <div class="article-content" itemprop="articleBody"><%- articleBody %></div>
+          <% } else { %>
+          <div class="article-content article-content-unavailable">
+            <p>تعذر تحميل تفاصيل الخبر من المصدر في هذه اللحظة.</p>
+          </div>
+          <% } %>
+          <% if (article.source_url) { %>
+          <div class="article-source-attribution">
+            <span>المصدر الأصلي:</span>
+            <a href="<%= article.source_url %>" target="_blank" rel="noopener nofollow external"><%= article.source %> أو فتح المصدر</a>
+          </div>
+          <% } %>
 
           <% if (tags && tags.length > 0) { %>
           <div class="article-tags">
