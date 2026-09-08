@@ -37,8 +37,12 @@ function languageMiddleware(req, res, next) {
   // Get all translations for current language (for templates)
   res.locals.translations = translations[lang] || translations[defaultLang] || {};
 
-  // Set cookie for persistence
-  res.cookie('lang', lang, { maxAge: 365 * 24 * 60 * 60 * 1000, httpOnly: true });
+  // Do not emit Set-Cookie for every anonymous visitor: it prevents edge caching.
+  // Persist only an explicit language choice; the default remains stateless and cacheable.
+  if (req.query.lang && supportedLangs.includes(req.query.lang)) {
+    res.cookie('lang', lang, { maxAge: 365 * 24 * 60 * 60 * 1000, httpOnly: true });
+  }
+  res.vary('Accept-Language');
 
   // Set RTL direction
   res.locals.isRTL = ['ar', 'fa'].includes(lang);
