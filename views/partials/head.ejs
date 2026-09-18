@@ -6,9 +6,14 @@
   const pageUrl = `${siteBase}${currentPath || '/'}`;
   const pageTitle = !title ? siteName : (String(title).includes(siteName) ? title : `${title} | ${siteName}`);
 
-  // Normalize image to absolute URL for social sharing
-  let rawImage = (typeof article !== 'undefined' && article && article.image) ? article.image : null;
-  if (!rawImage || rawImage.startsWith('data:') || rawImage.length > 500) {
+  // Normalize image to an absolute URL for social sharing. Uploaded article
+  // images are stored as Base64 in the database; expose them through the
+  // lightweight image endpoint instead of falling back to the site logo.
+  let rawImage = (typeof article !== 'undefined' && article && article.image) ? String(article.image) : null;
+  const isDataImage = !!rawImage && /^data:image\/[\w.+-]+;base64,/i.test(rawImage);
+  if (isDataImage && typeof article !== 'undefined' && article && article.id) {
+    rawImage = `${siteBase}/api/news-image/${article.id}`;
+  } else if (!rawImage || rawImage.startsWith('data:') || rawImage.length > 500) {
     rawImage = settings.site_logo || '/images/logo.png';
   }
   // For external images, use proxy to ensure Facebook/social platforms can fetch them
@@ -36,7 +41,9 @@
     return v.startsWith('http') ? v : `${siteBase}${v.startsWith('/') ? '' : '/'}${v}`;
   };
   const logoUrl = absoluteAsset(settings.site_logo || '/images/logo.png');
-  const articleImage = absoluteAsset((typeof article !== 'undefined' && article && article.image && !String(article.image).startsWith('data:')) ? article.image : '/images/logo.png');
+  const articleImage = (typeof article !== 'undefined' && article && isDataImage && article.id)
+    ? `${siteBase}/api/news-image/${article.id}`
+    : absoluteAsset((typeof article !== 'undefined' && article && article.image && !String(article.image).startsWith('data:')) ? article.image : '/images/logo.png');
   const articleCanonical = (typeof article !== 'undefined' && article) ? `${siteBase}/news/${article.id}` : pageUrl;
   const jsonLd = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
   const organizationSchema = {

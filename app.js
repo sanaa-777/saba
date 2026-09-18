@@ -238,6 +238,22 @@ app.get('/api/media-image/:id', (req, res) => {
   } catch (error) { res.status(404).send('Image not found'); }
 });
 
+// Serve uploaded article images independently so social crawlers can fetch
+// them without parsing a large Base64 value embedded in the HTML document.
+app.get('/api/news-image/:id', (req, res) => {
+  try {
+    const article = getDb().prepare('SELECT image FROM news WHERE id = ? AND status = 1').get(req.params.id);
+    const match = article && typeof article.image === 'string'
+      && article.image.match(/^data:(image\/[\w.+-]+);base64,(.+)$/s);
+    if (!match) return res.status(404).send('Image not found');
+    res.set('Content-Type', match[1]);
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(Buffer.from(match[2], 'base64'));
+  } catch (error) {
+    res.status(404).send('Image not found');
+  }
+});
+
 // ============================================================
 // Image Proxy — SSRF-safe, open to external news image sources
 // ============================================================
