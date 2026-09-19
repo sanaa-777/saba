@@ -19,7 +19,7 @@
   }
   // For external images, use proxy to ensure Facebook/social platforms can fetch them
   let pageImage;
-  if (rawImage.startsWith('http')) {
+  if (rawImage.startsWith('http') && !rawImage.startsWith(siteBase + '/')) {
     // Use our proxy for external images (Facebook can't always fetch directly)
     pageImage = `${siteBase}/api/proxy-image?url=${encodeURIComponent(rawImage)}`;
   } else {
