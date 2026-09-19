@@ -22,6 +22,8 @@
   if (rawImage.startsWith('http') && !rawImage.startsWith(siteBase + '/')) {
     // Use our proxy for external images (Facebook can't always fetch directly)
     pageImage = `${siteBase}/api/proxy-image?url=${encodeURIComponent(rawImage)}`;
+  } else if (rawImage.startsWith(siteBase + '/')) {
+    pageImage = rawImage;
   } else {
     pageImage = `${siteBase}${rawImage.startsWith('/') ? '' : '/'}${rawImage}`;
   }
