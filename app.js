@@ -113,6 +113,11 @@ app.use((req, res, next) => {
       if (url.startsWith('http')) return '/api/proxy-image?url=' + encodeURIComponent(url);
       return url;
     };
+    res.locals.newsImg = function(url, id) {
+      if (!url) return '';
+      if (url.startsWith('data:image/') && id) return '/api/news-image/' + encodeURIComponent(id);
+      return res.locals.proxyImg(url);
+    };
 
     // Clean emojis from text — replace 🔁🖼 and 🖼 with 🔴
     res.locals.cleanEmoji = function(text) {

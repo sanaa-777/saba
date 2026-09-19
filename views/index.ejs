@@ -56,7 +56,7 @@
         <a href="<%= articleLink(heroItems[0]) %>">
           <div class="hero-main-img">
             <% if (heroItems[0].image) { %>
-              <img src="<%= proxyImg(heroItems[0].image) %>" alt="<%= t(heroItems[0]) %>" width="1280" height="720" fetchpriority="high" decoding="async">
+              <img src="<%= newsImg(heroItems[0].image, heroItems[0].id || heroItems[0].news_id) %>" alt="<%= t(heroItems[0]) %>" width="1280" height="720" fetchpriority="high" decoding="async">
             <% } else { %>
               <div class="img-placeholder"></div>
             <% } %>
@@ -78,7 +78,7 @@
           <a href="<%= articleLink(item) %>">
             <% if (item.image) { %>
             <div class="hero-side-img">
-              <img src="<%= proxyImg(item.image) %>" alt="<%= t(item) %>" loading="lazy" decoding="async">
+              <img src="<%= newsImg(item.image, item.id || item.news_id) %>" alt="<%= t(item) %>" loading="lazy" decoding="async">
             </div>
             <% } %>
             <div class="hero-side-content">
@@ -112,7 +112,7 @@
               <a href="/news/<%= item.id %>">
                 <% if (item.image) { %>
                 <div class="news-card-img">
-                  <img src="<%= proxyImg(item.image) %>" alt="<%= t(item) %>" loading="lazy" decoding="async">
+                  <img src="<%= newsImg(item.image, item.id || item.news_id) %>" alt="<%= t(item) %>" loading="lazy" decoding="async">
                 </div>
                 <% } %>
                 <div class="news-card-body">
@@ -140,7 +140,7 @@
               <a href="/news/<%= item.id %>">
                 <% if (item.image) { %>
                 <div class="featured-card-img">
-                  <img src="<%= proxyImg(item.image) %>" alt="<%= t(item) %>" loading="lazy" decoding="async">
+                  <img src="<%= newsImg(item.image, item.id || item.news_id) %>" alt="<%= t(item) %>" loading="lazy" decoding="async">
                 </div>
                 <% } %>
                 <div class="featured-card-body">
@@ -170,7 +170,7 @@
                   <a href="/news/<%= items[0].id %>">
                     <% if (items[0].image) { %>
                     <div class="cat-lead-img">
-                      <img src="<%= proxyImg(items[0].image) %>" alt="<%= t(items[0]) %>" loading="lazy" decoding="async">
+                      <img src="<%= newsImg(items[0].image, items[0].id || items[0].news_id) %>" alt="<%= t(items[0]) %>" loading="lazy" decoding="async">
                     </div>
                     <% } %>
                     <div class="cat-lead-body">
@@ -186,7 +186,7 @@
                   <article class="cat-list-item<%= !item.image ? ' no-image' : '' %>">
                     <% if (item.image) { %>
                     <a href="/news/<%= item.id %>" class="cat-list-img">
-                      <img src="<%= proxyImg(item.image) %>" alt="<%= t(item) %>" loading="lazy" decoding="async">
+                      <img src="<%= newsImg(item.image, item.id || item.news_id) %>" alt="<%= t(item) %>" loading="lazy" decoding="async">
                     </a>
                     <% } %>
                     <div class="cat-list-body">

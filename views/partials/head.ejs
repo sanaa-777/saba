@@ -11,9 +11,10 @@
   // lightweight image endpoint instead of falling back to the site logo.
   let rawImage = (typeof article !== 'undefined' && article && article.image) ? String(article.image) : null;
   const isDataImage = !!rawImage && /^data:image\/[\w.+-]+;base64,/i.test(rawImage);
+  const isVideoUrl = !!rawImage && /\.(?:mp4|webm|mov|m4v|avi)(?:$|[?#])/i.test(rawImage);
   if (isDataImage && typeof article !== 'undefined' && article && article.id) {
     rawImage = `${siteBase}/api/news-image/${article.id}`;
-  } else if (!rawImage || rawImage.startsWith('data:') || rawImage.length > 500) {
+  } else if (!rawImage || rawImage.startsWith('data:') || rawImage.length > 500 || isVideoUrl) {
     rawImage = settings.site_logo || '/images/logo.png';
   }
   // For external images, use proxy to ensure Facebook/social platforms can fetch them
@@ -41,9 +42,7 @@
     return v.startsWith('http') ? v : `${siteBase}${v.startsWith('/') ? '' : '/'}${v}`;
   };
   const logoUrl = absoluteAsset(settings.site_logo || '/images/logo.png');
-  const articleImage = (typeof article !== 'undefined' && article && isDataImage && article.id)
-    ? `${siteBase}/api/news-image/${article.id}`
-    : absoluteAsset((typeof article !== 'undefined' && article && article.image && !String(article.image).startsWith('data:')) ? article.image : '/images/logo.png');
+  const articleImage = pageImage;
   const articleCanonical = (typeof article !== 'undefined' && article) ? `${siteBase}/news/${article.id}` : pageUrl;
   const jsonLd = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
   const organizationSchema = {
@@ -52,7 +51,7 @@
     sameAs: [settings.facebook, settings.twitter, settings.youtube, settings.telegram].filter(Boolean)
   };
   const websiteSchema = {
-    '@context': 'https://schema.org', '@type': 'WebSite', name: siteName, url: siteBase,
+    '@context': 'https://schema.org', '@type': 'WebSite', '@id': `${siteBase}/#website`, name: siteName, url: siteBase,
     potentialAction: { '@type': 'SearchAction', target: `${siteBase}/search?q={search_term_string}`, 'query-input': 'required name=search_term_string' }
   };
   const articleSchema = (typeof article !== 'undefined' && article) ? {
@@ -64,6 +63,11 @@
     publisher: { '@id': `${siteBase}/#organization` },
     mainEntityOfPage: { '@type': 'WebPage', '@id': articleCanonical }, isAccessibleForFree: true
   } : null;
+  const pageSchema = {
+    '@context': 'https://schema.org', '@type': 'WebPage', name: pageTitle,
+    url: cleanUrl, description: pageDescription, isPartOf: { '@id': `${siteBase}/#website` },
+    about: { '@id': `${siteBase}/#organization` }
+  };
 %>
 <html lang="<%= lang || 'ar' %>" dir="rtl">
 <head>
@@ -136,6 +140,7 @@
 
   <script type="application/ld+json"><%- jsonLd({ ...organizationSchema, '@id': `${siteBase}/#organization` }) %></script>
   <script type="application/ld+json"><%- jsonLd(websiteSchema) %></script>
+  <script type="application/ld+json"><%- jsonLd(pageSchema) %></script>
 
   <% if (articleSchema) { %>
   <script type="application/ld+json"><%- jsonLd(articleSchema) %></script>

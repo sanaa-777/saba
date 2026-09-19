@@ -31,7 +31,7 @@
             <article class="lead-card<%= !news[0].image ? ' no-image' : '' %>">
               <% if (news[0].image) { %>
               <a class="lead-card-media" href="/news/<%= news[0].id %>">
-                <img src="<%= proxyImg(news[0].image) %>" alt="<%= cleanEmoji(news[0].title) %>">
+                <img src="<%= newsImg(news[0].image, news[0].id) %>" alt="<%= cleanEmoji(news[0].title) %>">
               </a>
               <% } %>
               <div class="lead-card-body">
@@ -50,7 +50,7 @@
                 <article class="story-card-horizontal<%= !item.image ? ' no-image' : '' %>">
                   <% if (item.image) { %>
                   <a class="story-card-media" href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>">
-                    <img src="<%= proxyImg(item.image) %>" alt="<%= cleanEmoji(item.title) %>" loading="lazy">
+                    <img src="<%= newsImg(item.image, item.id) %>" alt="<%= cleanEmoji(item.title) %>" loading="lazy">
                   </a>
                   <% } %>
                   <div class="story-card-body">
@@ -72,7 +72,7 @@
                 <% if (item.image) { %>
                 <div class="list-item-image">
                   <a href="/news/<%= item.id %>-<%= (item.slug || item.title || "").replace(/\s+/g, "-").substring(0, 80).toLowerCase() %>">
-                    <img src="<%= proxyImg(item.image) %>" alt="<%= cleanEmoji(item.title) %>" loading="lazy">
+                    <img src="<%= newsImg(item.image, item.id) %>" alt="<%= cleanEmoji(item.title) %>" loading="lazy">
                   </a>
                 </div>
                 <% } %>

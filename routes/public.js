@@ -472,12 +472,13 @@ router.get('/files', (req, res) => {
 // RSS feed
 router.get('/rss', (req, res) => {
   const db = getDb();
+  const baseUrl = sitemapBase(res, req);
   const siteName = res.locals.settings.site_name || 'أوتر نيوز';
   const feed = new RSS({
     title: siteName,
     description: res.locals.settings.site_description || 'أوتر نيوز - المصدر الأول للأخبار',
-    feed_url: `${req.protocol}://${req.get('host')}/rss`,
-    site_url: `${req.protocol}://${req.get('host')}`,
+    feed_url: `${baseUrl}/rss`,
+    site_url: baseUrl,
     language: 'ar',
     pubDate: new Date()
   });
@@ -487,7 +488,7 @@ router.get('/rss', (req, res) => {
     feed.item({
       title: item.title,
       description: item.summary,
-      url: `${req.protocol}://${req.get('host')}/news/${item.id}`,
+      url: `${baseUrl}/news/${item.id}`,
       categories: [item.category_name],
       date: item.published_at
     });
@@ -517,7 +518,10 @@ function buildContentSitemap(db, baseUrl, page) {
   }
   const news = db.prepare('SELECT id, image, updated_at, published_at FROM news WHERE status = 1 ORDER BY published_at DESC LIMIT ? OFFSET ?').all(limit, offset);
   for (const item of news) {
-    const imageUrl = absolutePublicUrl(baseUrl, item.image);
+    const rawImage = String(item.image || '').trim();
+    const imageUrl = rawImage && !rawImage.startsWith('data:') && !/\.(?:mp4|webm|mov|mp3|wav|ogg)(?:$|[?#])/i.test(rawImage)
+      ? absolutePublicUrl(baseUrl, rawImage)
+      : '';
     const lastmod = new Date(item.updated_at || item.published_at || Date.now()).toISOString();
     xml += `  <url><loc>${baseUrl}/news/${item.id}</loc><lastmod>${lastmod}</lastmod><changefreq>daily</changefreq><priority>0.7</priority>${imageUrl ? `<image:image><image:loc>${xmlEscape(imageUrl)}</image:loc></image:image>` : ''}</url>\n`;
   }
