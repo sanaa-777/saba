@@ -535,7 +535,7 @@ router.get('/sitemap.xml', (req, res) => {
   const pages = Math.max(1, Math.ceil(total / 1000));
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
   for (let page = 1; page <= pages; page += 1) xml += `  <sitemap><loc>${baseUrl}/sitemap-${page}.xml</loc></sitemap>\n`;
-  xml += `  <sitemap><loc>${baseUrl}/news-sitemap.xml</loc></sitemap>\n</sitemapindex>`;
+  xml += '</sitemapindex>';
   res.set('Content-Type', 'application/xml; charset=utf-8');
   res.set('Cache-Control', 'public, s-maxage=300, max-age=60');
   res.send(xml);
@@ -566,7 +566,7 @@ router.get('/.well-known/ai.txt', (req, res) => res.redirect(301, '/llms.txt'));
 // Robots.txt
 router.get('/robots.txt', (req, res) => {
   const baseUrl = (res.locals.settings.site_url || `https://${req.get('host')}`).replace(/\/$/, '');
-  const txt = `User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/\nDisallow: /login\nSitemap: ${baseUrl}/sitemap.xml\nSitemap: ${baseUrl}/news-sitemap.xml\n`;
+  const txt = `User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/\nDisallow: /login\nSitemap: ${baseUrl}/sitemap.xml\n`;
   res.set('Content-Type', 'text/plain');
   res.send(txt);
 });
