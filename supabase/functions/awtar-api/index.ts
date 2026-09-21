@@ -85,6 +85,19 @@ Deno.serve(async(req)=>{ if(req.method==='OPTIONS')return new Response('ok',{hea
  if(path==='/cron/fetch-news'&&req.method==='GET'){if(!serviceAuth(req)&&req.headers.get('x-cron-secret')!==Deno.env.get('CRON_SECRET'))return json({error:'غير مصرح'},401);return json(await fetchAll(Number(u.searchParams.get('offset')||0),Math.min(Number(u.searchParams.get('limit')||12),20)));}
  if(path==='/auth/login'&&req.method==='POST'){const b=await req.json();const rows=await db(`/admin_users?username=eq.${enc(b.username||'')}&select=id,username,password,name,role&limit=1`);const a=rows[0];if(!a||!(await bcrypt.compare(b.password||'',a.password)))return json({error:'بيانات الدخول غير صحيحة'},401);delete a.password;return json({token:await makeToken(a),admin:a});}
  const a=await auth(req);if(!a)return json({error:'غير مصرح'},401);
+ if(path==='/admin/upload-image'&&req.method==='POST'){
+  const form=await req.formData(); const file=form.get('file');
+  if(!(file instanceof File))return json({error:'ملف الصورة مطلوب'},400);
+  if(!String(file.type).startsWith('image/'))return json({error:'يسمح برفع الصور فقط'},400);
+  if(file.size>8*1024*1024)return json({error:'حجم الصورة يتجاوز 8 ميجابايت'},400);
+  const bucket='news-images'; const storage=`${SUPABASE_URL}/storage/v1`;
+  await fetch(`${storage}/bucket`,{method:'POST',headers:{apikey:SERVICE_KEY,Authorization:`Bearer ${SERVICE_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({id:bucket,name:bucket,public:true})}).catch(()=>{});
+  const ext=(file.name.split('.').pop()||'jpg').replace(/[^a-z0-9]/gi,'').toLowerCase()||'jpg';
+  const path=`articles/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+  const up=await fetch(`${storage}/object/${bucket}/${path}`,{method:'POST',headers:{apikey:SERVICE_KEY,Authorization:`Bearer ${SERVICE_KEY}`,'Content-Type':file.type||'image/jpeg','x-upsert':'true'},body:await file.arrayBuffer()});
+  if(!up.ok)return json({error:'تعذر حفظ الصورة'},502);
+  return json({success:true,url:`${storage}/object/public/${bucket}/${path}`},201);
+ }
  if(path==='/admin/me'&&req.method==='GET')return json({admin:a});
  if(path==='/admin/overview'&&req.method==='GET'){const [news,sources,comments,subs]=await Promise.all([table('news','select=id&deleted_at=is.null'),table('news_sources','select=id&is_active=eq.1'),table('comments','select=id&status=eq.0'),table('newsletter_subscribers','select=id&is_active=eq.1')]);return json({news:news.length,sources:sources.length,pendingComments:comments.length,subscribers:subs.length});}
  if(path==='/admin/news'&&req.method==='GET')return json(await db('/news?select=*&order=created_at.desc&limit=200'));
