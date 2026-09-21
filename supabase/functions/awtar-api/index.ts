@@ -51,6 +51,8 @@ Deno.serve(async(req)=>{ if(req.method==='OPTIONS')return new Response('ok',{hea
  if(path==='/admin/overview'&&req.method==='GET'){const [news,sources,comments,subs]=await Promise.all([table('news','select=id&deleted_at=is.null'),table('news_sources','select=id&is_active=eq.1'),table('comments','select=id&status=eq.0'),table('newsletter_subscribers','select=id&is_active=eq.1')]);return json({news:news.length,sources:sources.length,pendingComments:comments.length,subscribers:subs.length});}
  if(path==='/admin/news'&&req.method==='GET')return json(await db('/news?select=*&order=created_at.desc&limit=200'));
  if(path==='/admin/news'&&req.method==='POST')return json(await db('/news',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(await req.json())}),201);
+ if(path==='/admin/trash'&&req.method==='GET')return json(await db('/news?select=*&deleted_at=not.is.null&order=deleted_at.desc&limit=200'));
+ if(path==='/admin/profile'&&req.method==='GET')return json({admin:a});
  const an=path.match(/^\/admin\/news\/(\d+)$/);if(an&&req.method==='PATCH')return json(await db(`/news?id=eq.${an[1]}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(await req.json())}));if(an&&req.method==='DELETE')return json(await db(`/news?id=eq.${an[1]}`,{method:'PATCH',body:JSON.stringify({deleted_at:new Date().toISOString(),status:0})}));
  if(path==='/admin/sources'&&req.method==='GET')return json(await db('/news_sources?select=*&order=id.asc'));
  if(path==='/admin/sources'&&req.method==='POST')return json(await db('/news_sources',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(await req.json())}),201);
