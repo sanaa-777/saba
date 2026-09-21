@@ -49,9 +49,14 @@ async function fetchArticleDetail(url:string){
   ];
   const candidates:string[]=[];
   for(const p of selectors){const b=extractBlock(h,p); if(b)candidates.push(cleanArticle(b));}
-  const best=candidates.sort((a,b)=>text(b).length-text(a).length)[0]||'';
-  if(text(best).length<300)return null;
-  return best.slice(0,120000);
+  const textBest=candidates.filter(x=>text(x).length>=300).sort((a,b)=>text(b).length-text(a).length)[0];
+  if(textBest)return textBest.slice(0,120000);
+  const imageOnly=candidates.find(x=>/<img\b/i.test(x));
+  if(imageOnly)return imageOnly.slice(0,120000);
+  const desc=(h.match(/<meta[^>]+(?:name|property)=[\"'](?:description|og:description)[\"'][^>]+content=[\"']([^\"']+)/i)||[])[1]||'';
+  const og=(h.match(/<meta[^>]+property=[\"']og:image[\"'][^>]+content=[\"']([^\"']+)/i)||[])[1]||'';
+  if(desc||og)return `${desc?`<p>${desc}</p>`:''}${og?`<p><img src=\"${og}\" alt=\"صورة المقال\" /></p>`:''}`;
+  return null;
  }catch{return null}
 }
 function catFor(a:any,cats:any[]){const s=`${a.title} ${a.summary}`.toLowerCase(); const rules:[number,string[]][]=[[16,['عاجل','breaking','urgent']],[5,['رياضة','football','sport','مباراة']],[4,['اقتصاد','نفط','سعر','دولار','ذهب']],[6,['ثقافة','فن','رواية']],[1,['اليمن','صنعاء','عدن','تعز','مأرب']],[2,['غزة','فلسطين','إيران','أمريكا','سوريا','دولي']]]; for(const [id,words] of rules) if(words.some(w=>s.includes(w))) return id; return cats.find((c:any)=>c.slug==='misc')?.id||7; }
@@ -99,6 +104,8 @@ Deno.serve(async(req)=>{ if(req.method==='OPTIONS')return new Response('ok',{hea
  if(path==='/admin/settings'&&req.method==='PATCH'){const b=await req.json();return json(await db('/settings?key=eq.'+enc(b.key),{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({value:b.value})}));}
  if(path==='/admin/comments'&&req.method==='GET')return json(await table('comments','select=*&order=created_at.desc'));
  if(path==='/admin/polls'&&req.method==='GET')return json(await table('polls','select=*,poll_options(*)&order=created_at.desc'));
+ if(path==='/admin/polls'&&req.method==='POST'){const b=await req.json();const question=String(b.question||'').trim();const options=Array.isArray(b.options)?b.options.map((x:any)=>String(x).trim()).filter(Boolean).slice(0,8):[];if(!question||options.length<2)return json({error:'السؤال وخياران مطلوبان'},400);const created=await db('/polls',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({question,is_active:b.is_active===0?0:1})});const poll=created?.[0];for(const option_text of options)await db('/poll_options',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({poll_id:poll.id,option_text,votes:0})});return json(poll,201);}
+ const ap=path.match(/^\/admin\/polls\/(\d+)$/);if(ap&&req.method==='DELETE'){await db(`/poll_options?poll_id=eq.${ap[1]}`,{method:'DELETE'});return json(await db(`/polls?id=eq.${ap[1]}`,{method:'DELETE'}));}
  if(path==='/admin/newsletter'&&req.method==='GET')return json(await table('newsletter_subscribers','select=*&order=created_at.desc'));
  if(path==='/admin/audit-log'&&req.method==='GET')return json(await table('audit_logs','select=*&order=created_at.desc&limit=100'));
  if(path==='/admin/action'&&req.method==='POST'){const b=await req.json();const allowed:any={comments:'comments',polls:'polls',newsletter:'newsletter_subscribers',ads:'ads',sliders:'sliders'};const tableName=allowed[b.table];if(!tableName||!Number.isFinite(Number(b.id)))return json({error:'عملية غير صالحة'},400);const patch=b.patch&&typeof b.patch==='object'?b.patch:{};return json(await db(`/${tableName}?id=eq.${Number(b.id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(patch)}));}
