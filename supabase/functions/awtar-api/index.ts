@@ -25,7 +25,35 @@ function sourceType(s:any){const u=String(s.url||'').toLowerCase(); if(u.include
 async function fetchSource(source:any){ const type=sourceType(source); if(type==='telegram'){ const m=String(source.url).match(/t\.me\/(?:s\/)?([\w]+)/); if(!m) return []; const r=await fetch(`https://t.me/s/${m[1]}`,{headers:{'User-Agent':'Mozilla/5.0'}}); const h=await r.text(); const out:any[]=[]; for(const part of h.split('tgme_widget_message_wrap').slice(1)){const clean=text(part); if(clean.length<30) continue; const title=clean.slice(0,150); out.push({title,summary:clean.slice(0,500),content:clean,source_url:`https://t.me/${m[1]}`,image:null,published_at:new Date().toISOString()});} return out.slice(0,30); }
  const r=await fetch(String(source.url),{headers:{'User-Agent':'Mozilla/5.0 (compatible; AwtarNewsBot/2.0)','Accept':'application/rss+xml, application/atom+xml, text/xml, text/html,*/*'},redirect:'follow'}); const raw=await r.text(); let feed:any; try{feed=await parser.parseString(raw)}catch{feed=null} if(feed?.items?.length){return feed.items.slice(0,30).map((i:any)=>{const html=String(i['content:encoded']||i.content||i.description||''); const im=i.enclosure?.url||i.mediaContent?.url||i.mediaThumbnail?.url||(html.match(/<img[^>]+src=["']([^"']+)/i)?.[1]||null); return {title:text(i.title),summary:text(i.contentSnippet||i.description).slice(0,700),content:html||text(i.contentSnippet||i.description),source_url:i.link||null,image:im&&validImage(abs(im,i.link||source.url))?abs(im,i.link||source.url):null,published_at:i.isoDate||i.pubDate||new Date().toISOString()};});}
  const images=[...raw.matchAll(/<img[^>]+(?:src|data-src)=["']([^"']+)/gi)].map(m=>abs(m[1],source.url)); const titles=[...raw.matchAll(/<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/gi)].map(m=>text(m[1])).filter(x=>x.length>12); return titles.slice(0,20).map((t,i)=>({title:t,summary:t,content:t,source_url:source.url,image:validImage(images[i])?images[i]:null,published_at:new Date().toISOString()})); }
-async function fetchArticleDetail(url:string){try{const r=await fetch(url,{signal:AbortSignal.timeout(7000),headers:{'User-Agent':'Mozilla/5.0 (compatible; AwtarNews/2.0)','Accept':'text/html'}});if(!r.ok)return null;const h=await r.text();const start=h.search(/<div[^>]+class=["'][^"']*(?:entry-content[^"']*single-post-content|single-post-content[^"']*entry-content)[^"']*["'][^>]*>/i);if(start<0)return null;const openEnd=h.indexOf('>',start)+1;let depth=1,pos=openEnd;const tags=/<\/?div\b[^>]*>/gi;tags.lastIndex=openEnd;let m;while((m=tags.exec(h))){if(/^<div\b/i.test(m[0]))depth++;else depth--;if(depth===0){pos=m.index;break}}const raw=h.slice(openEnd,pos).replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<iframe[\s\S]*?<\/iframe>/gi,'').trim();return text(raw).length>300?raw:null}catch{return null}}
+function extractBlock(html:string, pattern:RegExp){
+ const at=html.search(pattern); if(at<0)return '';
+ const open=html.slice(at).match(/^<([a-z0-9]+)\b[^>]*>/i); if(!open)return '';
+ const tag=open[1].toLowerCase(), bodyStart=at+open[0].length;
+ const tags=new RegExp(`<\\/?${tag}\\b[^>]*>`, 'gi'); tags.lastIndex=bodyStart;
+ let depth=1, m:any; while((m=tags.exec(html))){if(new RegExp(`^<${tag}\\b`,'i').test(m[0]))depth++;else depth--;if(depth===0)return html.slice(bodyStart,m.index);}
+ return html.slice(bodyStart);
+}
+function cleanArticle(raw:string){
+ return raw.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<iframe[\s\S]*?<\/iframe>|<noscript[\s\S]*?<\/noscript>/gi,'')
+  .replace(/\s+(?:onclick|onload|onerror|style)=(["'])[^"']*\1/gi,'').trim();
+}
+async function fetchArticleDetail(url:string){
+ try{
+  const r=await fetch(url,{signal:AbortSignal.timeout(12000),headers:{'User-Agent':'Mozilla/5.0 (compatible; AwtarNewsBot/2.1; +https://awter-news.web.app)','Accept':'text/html,application/xhtml+xml'}});
+  if(!r.ok)return null; const h=await r.text();
+  const selectors=[
+   /<[^>]+itemprop=["']articleBody["'][^>]*>/i,
+   /<(?:article|main)[^>]+class=["'][^"']*(?:article|post|entry|story|news)[^"']*(?:content|body|text)?[^"']*["'][^>]*>/i,
+   /<div[^>]+class=["'][^"']*(?:entry-content|post-content|article-content|article-body|single-post-content|td-post-content|story-content|news-content|post-body)[^"']*["'][^>]*>/i,
+   /<article\b[^>]*>/i
+  ];
+  const candidates:string[]=[];
+  for(const p of selectors){const b=extractBlock(h,p); if(b)candidates.push(cleanArticle(b));}
+  const best=candidates.sort((a,b)=>text(b).length-text(a).length)[0]||'';
+  if(text(best).length<300)return null;
+  return best.slice(0,120000);
+ }catch{return null}
+}
 function catFor(a:any,cats:any[]){const s=`${a.title} ${a.summary}`.toLowerCase(); const rules:[number,string[]][]=[[16,['عاجل','breaking','urgent']],[5,['رياضة','football','sport','مباراة']],[4,['اقتصاد','نفط','سعر','دولار','ذهب']],[6,['ثقافة','فن','رواية']],[1,['اليمن','صنعاء','عدن','تعز','مأرب']],[2,['غزة','فلسطين','إيران','أمريكا','سوريا','دولي']]]; for(const [id,words] of rules) if(words.some(w=>s.includes(w))) return id; return cats.find((c:any)=>c.slug==='misc')?.id||7; }
 async function saveArticles(source:any,articles:any[]){let cats:any[]=[];try{cats=await db('/categories?select=id,slug,name_ar')}catch{}; let inserted=0; for(const a of articles){if(!a.title||a.title.length<5)continue; const exists=await db(`/news?select=id&or=(title.eq.${enc(a.title)},source_url.eq.${enc(a.source_url||'')})&limit=1`).catch(()=>[]); if(exists?.length)continue; const row={title:a.title.slice(0,500),summary:(a.summary||a.content||'').slice(0,1000),content:a.content||a.summary||'',image:validImage(a.image)?a.image:null,category_id:source.category_id||catFor(a,cats),source:source.name,status:source.auto_publish?1:0,is_breaking:0,is_slider:0,is_featured:0,published_at:a.published_at||new Date().toISOString(),source_url:a.source_url||null,slug:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`}; try{await db('/news',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(row)});inserted++}catch{} } return inserted; }
 async function fetchAll(offset=0,limit=12){ const all=await db('/news_sources?select=*&is_active=eq.1&order=id.asc'); const sources=all.slice(offset,offset+limit); let total=0,errors=0; for(let i=0;i<sources.length;i+=3){const batch=sources.slice(i,i+3); const results=await Promise.all(batch.map(async(s:any)=>{try{return await saveArticles(s,await fetchSource(s))}catch{return errors++,0}})); total+=results.reduce((a,b)=>a+b,0); } return {totalNew:total,errors,sources:sources.length,offset,nextOffset:offset+sources.length,complete:offset+sources.length>=all.length,totalSources:all.length}; }
