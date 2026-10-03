@@ -52,6 +52,14 @@ SESSION_SECRET=replace-with-random-secret
 
 The application expects `DATABASE_URL` to point to your Supabase PostgreSQL instance.
 
+## Automatic Firebase News Refresh
+
+The static Firebase site is refreshed every 15 minutes by `.github/workflows/fetch-news.yml`. The workflow fetches BBC Arabic and Sky News Arabia RSS feeds, stores the result in `firebase-dist/data/news-fallback.json`, and deploys `firebase-dist` to the `awter-news` Firebase Hosting project.
+
+To enable the deployment step, add a repository secret named `FIREBASE_TOKEN`. Create the token from a trusted machine with Firebase CLI (`firebase login:ci`), then add it in **GitHub → Settings → Secrets and variables → Actions → New repository secret**. Do not commit the token or put it in source code.
+
+The frontend also falls back to the static JSON file when the Supabase API is unavailable, so the public news pages remain readable during API quota outages.
+
 ## Admin Panel
 
 Access: `http://localhost:3000/admin`

@@ -49,10 +49,9 @@ jobs:
       - name: Deploy refreshed static site to Firebase Hosting
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
         run: |
-          if [ -z "$FIREBASE_TOKEN" ] || [ -z "$FIREBASE_PROJECT_ID" ]; then
-            echo 'Firebase deploy skipped: add FIREBASE_TOKEN and FIREBASE_PROJECT_ID repository secrets.'
-            exit 0
+          if [ -z "$FIREBASE_TOKEN" ]; then
+            echo '::error::Missing FIREBASE_TOKEN repository secret. News is updated in GitHub, but Firebase Hosting cannot be refreshed until this secret is added.'
+            exit 1
           fi
-          npx --yes firebase-tools deploy --only hosting --project "$FIREBASE_PROJECT_ID" --token "$FIREBASE_TOKEN"
+          npx --yes firebase-tools deploy --only hosting --project awter-news --token "$FIREBASE_TOKEN"
